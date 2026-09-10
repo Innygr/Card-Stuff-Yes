@@ -1,515 +1,451 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <!-- =========================================================
+         BASIC PAGE INFORMATION
+         ========================================================= -->
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Card Stuff Yes - Profile</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    <title>Profile - Card Stuff Yes</title>
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: #fff;
-        }
 
-        .container {
-            width: min(700px, 92%);
-            margin: 40px auto;
-        }
+    <!-- =========================================================
+         PROFILE STYLESHEET
 
-        .card {
-            background: #1d1d1d;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
+         All visual styling is handled by profile.css.
+         ========================================================= -->
 
-        h1, h2 {
-            margin-top: 0;
-        }
+    <link
+        rel="stylesheet"
+        href="/profile.css"
+    >
 
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
 
-        .avatar {
-            width: 90px;
-            height: 90px;
-            border-radius: 12px;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            font-weight: bold;
-        }
+    <!-- =========================================================
+         PROFILE JAVASCRIPT
 
-        .username {
-            font-size: 28px;
-            font-weight: bold;
-        }
+         All functionality is handled by profile.js.
+         "defer" makes the script wait until the HTML is loaded.
+         ========================================================= -->
 
-        .rank {
-            margin-top: 5px;
-            color: #aaa;
-        }
+    <script
+        src="/profile.js"
+        defer
+    ></script>
 
-        .info {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .label {
-            color: #888;
-        }
-
-        .value {
-            font-weight: bold;
-        }
-
-        .badge {
-            max-width: 80px;
-            max-height: 80px;
-            object-fit: contain;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 7px 0;
-            border: 1px solid #444;
-            border-radius: 6px;
-            background: #111;
-            color: white;
-        }
-
-        button {
-            padding: 11px 18px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .primary {
-            background: #fff;
-            color: #111;
-        }
-
-        .danger {
-            background: #b33;
-            color: white;
-        }
-
-        .warning {
-            background: #4a3b16;
-            border: 1px solid #80651e;
-            color: #ffd96a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .message {
-            margin-top: 12px;
-            color: #aaa;
-        }
-
-        a {
-            color: #7db7ff;
-        }
-    </style>
 </head>
+
 
 <body>
 
-<div class="container">
+    <!-- =========================================================
+         PAGE NAVIGATION
+         ========================================================= -->
 
-    <div id="loading" class="card">
-        Loading profile...
-    </div>
+    <nav class="profile-navigation">
 
-    <div id="notSignedIn" class="card hidden">
-        <h1>Not signed in</h1>
-        <p>You need to sign in to view your profile.</p>
-        <a href="/">Return to Card Stuff Yes</a>
-    </div>
+        <a
+            class="back-link"
+            href="/"
+        >
+            ← Back to Card Stuff Yes
+        </a>
 
-    <div id="profile" class="hidden">
+    </nav>
 
-        <div id="passwordWarning" class="warning hidden">
-            <strong>Password change required</strong>
-            <p>
-                This account is using a temporary password.
-                You must change it before continuing.
+
+    <!-- =========================================================
+         MAIN PROFILE
+         ========================================================= -->
+
+    <main
+        id="profile"
+        class="profile-container"
+    >
+
+        <!-- =====================================================
+             PROFILE HEADER
+             ===================================================== -->
+
+        <header class="profile-header">
+
+            <h1 class="profile-title">
+                Profile
+            </h1>
+
+            <p
+                id="profile-subtitle"
+                class="profile-subtitle"
+            >
+                Loading profile...
             </p>
-        </div>
 
-        <div class="card">
+        </header>
 
-            <div class="profile-header">
 
-                <div class="avatar" id="avatar">
-                    ?
-                </div>
+        <!-- =====================================================
+             ACCOUNT INFORMATION
+             ===================================================== -->
 
-                <div>
-                    <div class="username" id="username">
-                        -
-                    </div>
+        <section
+            class="profile-section account-section"
+        >
 
-                    <div class="rank" id="rank">
-                        -
-                    </div>
+            <h2 class="section-title">
+                Account
+            </h2>
 
-                    <img
-                        id="badge"
-                        class="badge hidden"
-                        alt="Rank badge"
+
+            <div class="account-info">
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Username
+                    </span>
+
+                    <span
+                        id="username"
+                        class="account-value"
                     >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Player ID
+                    </span>
+
+                    <span
+                        id="player-id"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Rank
+                    </span>
+
+                    <span
+                        id="rank"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Account Created
+                    </span>
+
+                    <span
+                        id="created"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
                 </div>
 
             </div>
 
-            <div class="info">
+        </section>
 
-                <div class="label">
-                    Player ID
-                </div>
 
-                <div class="value" id="playerId">
-                    -
-                </div>
+        <!-- =====================================================
+             BADGES
+             
+             JavaScript fills this container using the badges
+             returned by the server.
+             ===================================================== -->
 
-                <div class="label">
-                    Rank
-                </div>
+        <section
+            class="profile-section badges-section"
+        >
 
-                <div class="value" id="rankInfo">
-                    -
-                </div>
+            <h2 class="section-title">
+                Badges
+            </h2>
 
-                <div class="label">
-                    Account created
-                </div>
-
-                <div class="value" id="createdAt">
-                    -
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="card">
-
-            <h2>Change Password</h2>
-
-            <input
-                id="currentPassword"
-                type="password"
-                placeholder="Current password"
-                autocomplete="current-password"
-            >
-
-            <input
-                id="newPassword"
-                type="password"
-                placeholder="New password"
-                autocomplete="new-password"
-            >
-
-            <input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm new password"
-                autocomplete="new-password"
-            >
-
-            <button
-                class="primary"
-                onclick="changePassword()"
-            >
-                Change Password
-            </button>
 
             <div
-                id="passwordMessage"
-                class="message"
-            ></div>
+                id="badges"
+                class="badges-container"
+            >
 
-        </div>
+                <div class="loading-message">
+                    Loading badges...
+                </div>
 
-        <div class="card">
+            </div>
 
-            <h2>Account</h2>
+        </section>
+
+
+        <!-- =====================================================
+             UNLOCKED CARDS
+             ===================================================== -->
+
+        <section
+            class="profile-section cards-section"
+        >
+
+            <h2 class="section-title">
+                Unlocked Cards
+            </h2>
+
+
+            <div
+                id="unlocked-cards"
+                class="cards-container"
+            >
+
+                <div class="loading-message">
+                    Loading cards...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             DECK
+             ===================================================== -->
+
+        <section
+            class="profile-section deck-section"
+        >
+
+            <h2 class="section-title">
+                Cards in Deck
+            </h2>
+
+
+            <div
+                id="deck"
+                class="cards-container"
+            >
+
+                <div class="loading-message">
+                    Loading deck...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PASSWORD CHANGE WARNING
+             
+             Hidden by default.
+             profile.js adds the "is-visible" class when needed.
+             ===================================================== -->
+
+        <section
+            id="password-warning"
+            class="password-warning"
+        >
+
+            <h2 class="password-warning-title">
+                Password Change Required
+            </h2>
+
+
+            <p class="password-warning-text">
+                This account is currently using a temporary
+                password. Please choose a new password.
+            </p>
+
+        </section>
+
+
+        <!-- =====================================================
+             CHANGE PASSWORD
+             ===================================================== -->
+
+        <section
+            class="profile-section password-section"
+        >
+
+            <h2 class="section-title">
+                Change Password
+            </h2>
+
+
+            <form
+                id="password-form"
+                class="password-form"
+            >
+
+                <label
+                    class="form-label"
+                    for="current-password"
+                >
+                    Current Password
+                </label>
+
+
+                <input
+                    id="current-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="new-password"
+                >
+                    New Password
+                </label>
+
+
+                <input
+                    id="new-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="confirm-password"
+                >
+                    Confirm New Password
+                </label>
+
+
+                <input
+                    id="confirm-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+
+
+                <button
+                    class="profile-button"
+                    type="submit"
+                >
+                    Change Password
+                </button>
+
+            </form>
+
+
+            <p
+                id="password-status"
+                class="form-status"
+                aria-live="polite"
+            ></p>
+
+        </section>
+
+
+        <!-- =====================================================
+             ACCOUNT ACTIONS
+             ===================================================== -->
+
+        <section
+            class="profile-section account-actions-section"
+        >
+
+            <h2 class="section-title">
+                Account Actions
+            </h2>
+
 
             <button
-                class="danger"
-                onclick="logout()"
+                id="logout-button"
+                class="profile-button logout-button"
+                type="button"
             >
                 Sign Out
             </button>
 
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         CARD ZOOM OVERLAY
+
+         This is hidden until a card is held.
+
+         profile.js controls the "is-visible" class.
+         profile.css controls how the overlay looks.
+         ========================================================= -->
+
+    <div
+        id="card-overlay"
+        class="card-overlay"
+        aria-hidden="true"
+    >
+
+        <div
+            id="zoom-card"
+            class="zoom-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Card preview"
+        >
+
             <div
-                id="logoutMessage"
-                class="message"
+                id="zoom-card-title"
+                class="zoom-card-title"
+            >
+                Card
+            </div>
+
+
+            <div
+                id="zoom-card-id"
+                class="zoom-card-id"
             ></div>
+
+
+            <p class="zoom-card-hint">
+                Release to close
+            </p>
 
         </div>
 
     </div>
 
-</div>
-
-<script>
-
-async function loadProfile() {
-
-    try {
-
-        const response = await fetch("/api/me", {
-            credentials: "same-origin"
-        });
-
-        const data = await response.json();
-
-        document.getElementById("loading").classList.add("hidden");
-
-        if (!response.ok) {
-
-            document
-                .getElementById("notSignedIn")
-                .classList.remove("hidden");
-
-            return;
-        }
-
-        const player = data.player;
-
-        document
-            .getElementById("profile")
-            .classList.remove("hidden");
-
-        document.getElementById("username").textContent =
-            player.username;
-
-        document.getElementById("playerId").textContent =
-            player.id;
-
-        document.getElementById("rank").textContent =
-            player.rank;
-
-        document.getElementById("rankInfo").textContent =
-            player.rank;
-
-        document.getElementById("createdAt").textContent =
-            formatDate(player.createdAt);
-
-        document.getElementById("avatar").textContent =
-            player.username.charAt(0).toUpperCase();
-
-        /*
-         * Badges are determined by the SERVER'S rank.
-         *
-         * Player = no badge
-         * Mod    = moderator badge
-         * Owner  = owner badge
-         */
-
-        const badge = document.getElementById("badge");
-
-        if (player.rank === "Owner") {
-
-            badge.src = "/assets/badges/owner.png";
-            badge.classList.remove("hidden");
-
-        } else if (player.rank === "Mod") {
-
-            badge.src = "/assets/badges/moderator.png";
-            badge.classList.remove("hidden");
-
-        }
-
-        if (player.mustChangePassword) {
-
-            document
-                .getElementById("passwordWarning")
-                .classList.remove("hidden");
-
-        }
-
-    } catch (error) {
-
-        document.getElementById("loading").textContent =
-            "Could not connect to the server.";
-
-        console.error(error);
-
-    }
-
-}
-
-
-function formatDate(dateString) {
-
-    if (!dateString) {
-        return "Unknown";
-    }
-
-    const date = new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-        return "Unknown";
-    }
-
-    return date.toLocaleString();
-
-}
-
-
-async function changePassword() {
-
-    const currentPassword =
-        document.getElementById("currentPassword").value;
-
-    const newPassword =
-        document.getElementById("newPassword").value;
-
-    const confirmPassword =
-        document.getElementById("confirmPassword").value;
-
-    const message =
-        document.getElementById("passwordMessage");
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-
-        message.textContent =
-            "Please fill in all password fields.";
-
-        return;
-    }
-
-    if (newPassword !== confirmPassword) {
-
-        message.textContent =
-            "The new passwords do not match.";
-
-        return;
-    }
-
-    try {
-
-        const response = await fetch(
-            "/api/auth/change-password",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                credentials: "same-origin",
-
-                body: JSON.stringify({
-                    currentPassword,
-                    newPassword
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            message.textContent =
-                data.error || "Could not change password.";
-
-            return;
-        }
-
-        /*
-         * The server invalidates every session after
-         * a successful password change.
-         */
-
-        message.textContent =
-            "Password changed successfully. Please sign in again.";
-
-        setTimeout(() => {
-            window.location.href = "/";
-        }, 1500);
-
-    } catch (error) {
-
-        message.textContent =
-            "Could not connect to the server.";
-
-        console.error(error);
-
-    }
-
-}
-
-
-async function logout() {
-
-    const message =
-        document.getElementById("logoutMessage");
-
-    try {
-
-        const response = await fetch(
-            "/api/auth/logout",
-            {
-                method: "POST",
-                credentials: "same-origin"
-            }
-        );
-
-        if (response.ok) {
-
-            window.location.href = "/";
-
-        } else {
-
-            message.textContent =
-                "Could not sign out.";
-
-        }
-
-    } catch (error) {
-
-        message.textContent =
-            "Could not connect to the server.";
-
-        console.error(error);
-
-    }
-
-}
-
-
-loadProfile();
-
-</script>
 
 </body>
+
 </html>
+```
