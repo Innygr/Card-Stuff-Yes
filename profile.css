@@ -1,0 +1,871 @@
+```css
+/* ================================================================
+   CARD STUFF YES - PROFILE STYLESHEET
+
+   IMPORTANT:
+   This file contains the visual design for profile.html.
+
+   You can change the appearance of the profile without touching
+   profile.html or profile.js.
+
+   ================================================================ */
+
+
+/* ================================================================
+   DESIGN VARIABLES
+
+   These are the easiest things to customize.
+
+   Change these values to change the overall appearance.
+   ================================================================ */
+
+:root {
+
+    /* Page */
+    --profile-background: #111111;
+
+    /* Main profile panel */
+    --profile-panel: #1c1c1c;
+
+    /* Secondary panels */
+    --profile-panel-secondary: #242424;
+
+    /* Hover panels */
+    --profile-panel-hover: #303030;
+
+    /* Text */
+    --profile-text: #ffffff;
+    --profile-text-secondary: #aaaaaa;
+    --profile-text-muted: #888888;
+
+    /* Borders */
+    --profile-border: #383838;
+
+    /* Buttons */
+    --button-background: #444444;
+    --button-hover: #555555;
+    --button-text: #ffffff;
+
+    /* Inputs */
+    --input-background: #292929;
+    --input-border: #444444;
+    --input-text: #ffffff;
+
+    /* Warning */
+    --warning-background: #493d00;
+    --warning-border: #806d00;
+    --warning-text: #ffffff;
+
+    /* Card zoom */
+    --overlay-background: rgba(0, 0, 0, 0.78);
+    --zoom-card-background: #222222;
+
+    /* Sizes */
+    --profile-max-width: 800px;
+    --profile-radius: 14px;
+    --element-radius: 8px;
+
+    /* Shadows */
+    --profile-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.35);
+
+    --zoom-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.65);
+
+    /* Animation */
+    --transition-speed: 0.15s;
+
+}
+
+
+/* ================================================================
+   PAGE
+   ================================================================ */
+
+html {
+    box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    padding: 20px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        var(--profile-background);
+
+    color:
+        var(--profile-text);
+
+}
+
+
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+
+.profile-navigation {
+
+    width: 100%;
+
+    max-width:
+        var(--profile-max-width);
+
+    margin:
+        0 auto 20px;
+
+}
+
+
+.back-link {
+
+    color:
+        var(--profile-text-secondary);
+
+    text-decoration: none;
+
+    transition:
+        color var(--transition-speed) ease;
+
+}
+
+
+.back-link:hover {
+
+    color:
+        var(--profile-text);
+
+}
+
+
+/* ================================================================
+   MAIN PROFILE CONTAINER
+   ================================================================ */
+
+.profile-container {
+
+    width: 100%;
+
+    max-width:
+        var(--profile-max-width);
+
+    margin: 0 auto;
+
+    padding: 28px;
+
+    background:
+        var(--profile-panel);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius:
+        var(--profile-radius);
+
+    box-shadow:
+        var(--profile-shadow);
+
+}
+
+
+/* ================================================================
+   PROFILE HEADER
+   ================================================================ */
+
+.profile-header {
+
+    margin-bottom: 30px;
+
+}
+
+
+.profile-title {
+
+    margin: 0;
+
+    font-size: 32px;
+
+}
+
+
+.profile-subtitle {
+
+    margin:
+        8px 0 0;
+
+    color:
+        var(--profile-text-secondary);
+
+}
+
+
+/* ================================================================
+   PROFILE SECTIONS
+   ================================================================ */
+
+.profile-section {
+
+    margin-top: 30px;
+
+    padding-top: 25px;
+
+    border-top:
+        1px solid var(--profile-border);
+
+}
+
+
+.section-title {
+
+    margin:
+        0 0 16px;
+
+    font-size: 21px;
+
+}
+
+
+/* ================================================================
+   ACCOUNT INFORMATION
+   ================================================================ */
+
+.account-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+
+.account-info-row {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(120px, 180px)
+        1fr;
+
+    gap: 15px;
+
+    padding: 11px;
+
+    background:
+        var(--profile-panel-secondary);
+
+    border-radius:
+        var(--element-radius);
+
+}
+
+
+.account-label {
+
+    font-weight: bold;
+
+    color:
+        var(--profile-text-secondary);
+
+}
+
+
+.account-value {
+
+    color:
+        var(--profile-text);
+
+    word-break: break-word;
+
+}
+
+
+/* ================================================================
+   BADGES
+   ================================================================ */
+
+.badges-container {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+}
+
+
+.badge {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    min-height: 50px;
+
+    padding: 8px 12px;
+
+    background:
+        var(--profile-panel-secondary);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius:
+        var(--element-radius);
+
+    transition:
+        transform var(--transition-speed) ease,
+        background var(--transition-speed) ease;
+
+}
+
+
+.badge:hover {
+
+    background:
+        var(--profile-panel-hover);
+
+    transform:
+        translateY(-2px);
+
+}
+
+
+.badge-image {
+
+    width: 36px;
+
+    height: 36px;
+
+    object-fit: contain;
+
+}
+
+
+.badge-name {
+
+    font-weight: bold;
+
+}
+
+
+/* ================================================================
+   CARD CONTAINERS
+   ================================================================ */
+
+.cards-container {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(140px, 1fr)
+        );
+
+    gap: 12px;
+
+}
+
+
+/* ================================================================
+   CARD
+
+   This is intentionally mostly controlled through CSS so the
+   eventual card artwork/design can be changed independently.
+   ================================================================ */
+
+.profile-card {
+
+    min-height: 110px;
+
+    padding: 14px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    background:
+        var(--profile-panel-secondary);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius:
+        var(--element-radius);
+
+    cursor: pointer;
+
+    user-select: none;
+
+    touch-action: manipulation;
+
+    transition:
+        transform var(--transition-speed) ease,
+        background var(--transition-speed) ease,
+        border-color var(--transition-speed) ease;
+
+}
+
+
+.profile-card:hover {
+
+    background:
+        var(--profile-panel-hover);
+
+    transform:
+        translateY(-3px);
+
+}
+
+
+.profile-card:active {
+
+    transform:
+        scale(0.98);
+
+}
+
+
+.card-name {
+
+    font-weight: bold;
+
+    word-break: break-word;
+
+}
+
+
+.card-slot {
+
+    margin-top: 8px;
+
+    color:
+        var(--profile-text-muted);
+
+    font-size: 13px;
+
+}
+
+
+.card-id {
+
+    margin-top: 8px;
+
+    color:
+        var(--profile-text-muted);
+
+    font-size: 12px;
+
+    word-break: break-all;
+
+}
+
+
+/* ================================================================
+   EMPTY / LOADING MESSAGES
+   ================================================================ */
+
+.loading-message,
+.empty-message {
+
+    padding: 12px 0;
+
+    color:
+        var(--profile-text-muted);
+
+}
+
+
+/* ================================================================
+   PASSWORD WARNING
+   ================================================================ */
+
+.password-warning {
+
+    display: none;
+
+    margin-top: 30px;
+
+    padding: 18px;
+
+    background:
+        var(--warning-background);
+
+    border:
+        1px solid var(--warning-border);
+
+    border-radius:
+        var(--element-radius);
+
+}
+
+
+.password-warning.is-visible {
+
+    display: block;
+
+}
+
+
+.password-warning-title {
+
+    margin: 0 0 8px;
+
+    color:
+        var(--warning-text);
+
+}
+
+
+.password-warning-text {
+
+    margin: 0;
+
+    color:
+        var(--warning-text);
+
+}
+
+
+/* ================================================================
+   PASSWORD FORM
+   ================================================================ */
+
+.password-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    max-width: 450px;
+
+}
+
+
+.form-label {
+
+    margin-top: 4px;
+
+    color:
+        var(--profile-text-secondary);
+
+    font-size: 14px;
+
+}
+
+
+.form-input {
+
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border:
+        1px solid var(--input-border);
+
+    border-radius:
+        var(--element-radius);
+
+    outline: none;
+
+    background:
+        var(--input-background);
+
+    color:
+        var(--input-text);
+
+    font-size: 16px;
+
+    transition:
+        border-color var(--transition-speed) ease;
+
+}
+
+
+.form-input:focus {
+
+    border-color:
+        var(--profile-text-secondary);
+
+}
+
+
+/* ================================================================
+   BUTTONS
+   ================================================================ */
+
+.profile-button {
+
+    margin-top: 8px;
+
+    padding: 11px 16px;
+
+    border: none;
+
+    border-radius:
+        var(--element-radius);
+
+    background:
+        var(--button-background);
+
+    color:
+        var(--button-text);
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition:
+        background var(--transition-speed) ease,
+        transform var(--transition-speed) ease;
+
+}
+
+
+.profile-button:hover {
+
+    background:
+        var(--button-hover);
+
+}
+
+
+.profile-button:active {
+
+    transform:
+        scale(0.98);
+
+}
+
+
+.logout-button {
+
+    width: fit-content;
+
+}
+
+
+/* ================================================================
+   FORM STATUS
+   ================================================================ */
+
+.form-status {
+
+    min-height: 20px;
+
+    margin:
+        12px 0 0;
+
+    color:
+        var(--profile-text-secondary);
+
+}
+
+
+/* ================================================================
+   CARD ZOOM OVERLAY
+   ================================================================ */
+
+.card-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        var(--overlay-background);
+
+}
+
+
+.card-overlay.is-visible {
+
+    display: flex;
+
+}
+
+
+/* ================================================================
+   ZOOMED CARD
+   ================================================================ */
+
+.zoom-card {
+
+    width:
+        min(420px, 90vw);
+
+    min-height:
+        min(600px, 80vh);
+
+    padding: 28px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    background:
+        var(--zoom-card-background);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius:
+        calc(var(--profile-radius) + 2px);
+
+    box-shadow:
+        var(--zoom-shadow);
+
+}
+
+
+.zoom-card-title {
+
+    font-size: 30px;
+
+    font-weight: bold;
+
+    word-break: break-word;
+
+}
+
+
+.zoom-card-id {
+
+    margin-top: 15px;
+
+    color:
+        var(--profile-text-muted);
+
+    word-break: break-word;
+
+}
+
+
+.zoom-card-hint {
+
+    margin-top: 40px;
+
+    color:
+        var(--profile-text-muted);
+
+    font-size: 14px;
+
+}
+
+
+/* ================================================================
+   MOBILE LAYOUT
+   ================================================================ */
+
+@media (max-width: 600px) {
+
+    body {
+
+        padding: 10px;
+
+    }
+
+
+    .profile-container {
+
+        padding: 20px;
+
+        border-radius:
+            var(--element-radius);
+
+    }
+
+
+    .profile-title {
+
+        font-size: 27px;
+
+    }
+
+
+    .account-info-row {
+
+        grid-template-columns:
+            1fr;
+
+        gap: 4px;
+
+    }
+
+
+    .cards-container {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+
+    }
+
+
+    .profile-card {
+
+        min-height: 100px;
+
+    }
+
+}
+
+
+/* ================================================================
+   VERY SMALL SCREENS
+   ================================================================ */
+
+@media (max-width: 360px) {
+
+    .cards-container {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+```
