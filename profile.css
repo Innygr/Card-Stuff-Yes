@@ -5,77 +5,15 @@
    IMPORTANT:
    This file contains the visual design for profile.html.
 
-   You can change the appearance of the profile without touching
-   profile.html or profile.js.
+   COLOURS:
+   All colours are controlled by the global colors.css file.
+
+   This means you can change the site's colour palette in ONE
+   place without having to edit every individual CSS file.
+
+   Make sure profile.html loads colors.css BEFORE profile.css.
 
    ================================================================ */
-
-
-/* ================================================================
-   DESIGN VARIABLES
-
-   These are the easiest things to customize.
-
-   Change these values to change the overall appearance.
-   ================================================================ */
-
-:root {
-
-    /* Page */
-    --profile-background: #111111;
-
-    /* Main profile panel */
-    --profile-panel: #1c1c1c;
-
-    /* Secondary panels */
-    --profile-panel-secondary: #242424;
-
-    /* Hover panels */
-    --profile-panel-hover: #303030;
-
-    /* Text */
-    --profile-text: #ffffff;
-    --profile-text-secondary: #aaaaaa;
-    --profile-text-muted: #888888;
-
-    /* Borders */
-    --profile-border: #383838;
-
-    /* Buttons */
-    --button-background: #444444;
-    --button-hover: #555555;
-    --button-text: #ffffff;
-
-    /* Inputs */
-    --input-background: #292929;
-    --input-border: #444444;
-    --input-text: #ffffff;
-
-    /* Warning */
-    --warning-background: #493d00;
-    --warning-border: #806d00;
-    --warning-text: #ffffff;
-
-    /* Card zoom */
-    --overlay-background: rgba(0, 0, 0, 0.78);
-    --zoom-card-background: #222222;
-
-    /* Sizes */
-    --profile-max-width: 800px;
-    --profile-radius: 14px;
-    --element-radius: 8px;
-
-    /* Shadows */
-    --profile-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.35);
-
-    --zoom-shadow:
-        0 15px 50px rgba(0, 0, 0, 0.65);
-
-    /* Animation */
-    --transition-speed: 0.15s;
-
-}
 
 
 /* ================================================================
@@ -107,17 +45,20 @@ body {
         Helvetica,
         sans-serif;
 
+    /* Page background comes from the global colour file. */
     background:
-        var(--profile-background);
+        var(--color-background);
 
     color:
-        var(--profile-text);
-
+        var(--color-text);
 }
 
 
 /* ================================================================
    NAVIGATION
+
+   Contains the link that takes the player back to the game.
+
    ================================================================ */
 
 .profile-navigation {
@@ -125,37 +66,37 @@ body {
     width: 100%;
 
     max-width:
-        var(--profile-max-width);
+        800px;
 
     margin:
         0 auto 20px;
-
 }
 
 
 .back-link {
 
     color:
-        var(--profile-text-secondary);
+        var(--color-text-secondary);
 
     text-decoration: none;
 
     transition:
-        color var(--transition-speed) ease;
-
+        color var(--global-transition-speed) ease;
 }
 
 
 .back-link:hover {
 
     color:
-        var(--profile-text);
-
+        var(--color-link-hover);
 }
 
 
 /* ================================================================
    MAIN PROFILE CONTAINER
+
+   This is the main panel containing the player's profile.
+
    ================================================================ */
 
 .profile-container {
@@ -163,35 +104,36 @@ body {
     width: 100%;
 
     max-width:
-        var(--profile-max-width);
+        800px;
 
     margin: 0 auto;
 
     padding: 28px;
 
     background:
-        var(--profile-panel);
+        var(--color-background-secondary);
 
     border:
-        1px solid var(--profile-border);
+        1px solid var(--color-border);
 
     border-radius:
-        var(--profile-radius);
+        14px;
 
     box-shadow:
-        var(--profile-shadow);
-
+        0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
 
 /* ================================================================
    PROFILE HEADER
+
+   Displays the profile title and subtitle.
+
    ================================================================ */
 
 .profile-header {
 
     margin-bottom: 30px;
-
 }
 
 
@@ -200,7 +142,6 @@ body {
     margin: 0;
 
     font-size: 32px;
-
 }
 
 
@@ -210,13 +151,21 @@ body {
         8px 0 0;
 
     color:
-        var(--profile-text-secondary);
-
+        var(--color-text-secondary);
 }
 
 
 /* ================================================================
    PROFILE SECTIONS
+
+   Separates sections such as:
+
+   - Account Information
+   - Badges
+   - Unlocked Cards
+   - Deck
+   - Password settings
+
    ================================================================ */
 
 .profile-section {
@@ -226,8 +175,7 @@ body {
     padding-top: 25px;
 
     border-top:
-        1px solid var(--profile-border);
-
+        1px solid var(--color-border);
 }
 
 
@@ -237,12 +185,19 @@ body {
         0 0 16px;
 
     font-size: 21px;
-
 }
 
 
 /* ================================================================
    ACCOUNT INFORMATION
+
+   Displays information such as:
+
+   Username
+   Player ID
+   Rank
+   Account creation date
+
    ================================================================ */
 
 .account-info {
@@ -252,7 +207,6 @@ body {
     flex-direction: column;
 
     gap: 10px;
-
 }
 
 
@@ -269,11 +223,10 @@ body {
     padding: 11px;
 
     background:
-        var(--profile-panel-secondary);
+        var(--color-background-tertiary);
 
     border-radius:
-        var(--element-radius);
-
+        8px;
 }
 
 
@@ -282,23 +235,31 @@ body {
     font-weight: bold;
 
     color:
-        var(--profile-text-secondary);
-
+        var(--color-text-secondary);
 }
 
 
 .account-value {
 
     color:
-        var(--profile-text);
+        var(--color-text);
 
     word-break: break-word;
-
 }
 
 
 /* ================================================================
    BADGES
+
+   Badges are displayed in a flexible row.
+
+   Players can eventually have multiple badges, such as:
+
+   - Owner
+   - Moderator
+   - Tournament Winner
+   - Other special achievements
+
    ================================================================ */
 
 .badges-container {
@@ -308,7 +269,6 @@ body {
     flex-wrap: wrap;
 
     gap: 12px;
-
 }
 
 
@@ -325,29 +285,27 @@ body {
     padding: 8px 12px;
 
     background:
-        var(--profile-panel-secondary);
+        var(--color-background-tertiary);
 
     border:
-        1px solid var(--profile-border);
+        1px solid var(--color-border);
 
     border-radius:
-        var(--element-radius);
+        8px;
 
     transition:
-        transform var(--transition-speed) ease,
-        background var(--transition-speed) ease;
-
+        transform var(--global-transition-speed) ease,
+        background var(--global-transition-speed) ease;
 }
 
 
 .badge:hover {
 
     background:
-        var(--profile-panel-hover);
+        var(--color-background-hover);
 
     transform:
         translateY(-2px);
-
 }
 
 
@@ -358,19 +316,33 @@ body {
     height: 36px;
 
     object-fit: contain;
-
 }
 
 
 .badge-name {
 
     font-weight: bold;
+}
 
+
+/*
+   Used by profile.js when a badge image cannot be loaded.
+
+   This keeps visual styling inside CSS instead of using
+   JavaScript to directly change the element's style.
+*/
+
+.image-hidden {
+
+    display: none;
 }
 
 
 /* ================================================================
    CARD CONTAINERS
+
+   Creates a responsive grid for unlocked cards and deck cards.
+
    ================================================================ */
 
 .cards-container {
@@ -384,15 +356,17 @@ body {
         );
 
     gap: 12px;
-
 }
 
 
 /* ================================================================
    CARD
 
-   This is intentionally mostly controlled through CSS so the
-   eventual card artwork/design can be changed independently.
+   This is the basic card container.
+
+   The eventual card artwork/design can be added later without
+   changing the profile layout.
+
    ================================================================ */
 
 .profile-card {
@@ -408,13 +382,13 @@ body {
     justify-content: space-between;
 
     background:
-        var(--profile-panel-secondary);
+        var(--color-background-tertiary);
 
     border:
-        1px solid var(--profile-border);
+        1px solid var(--color-border);
 
     border-radius:
-        var(--element-radius);
+        8px;
 
     cursor: pointer;
 
@@ -423,21 +397,19 @@ body {
     touch-action: manipulation;
 
     transition:
-        transform var(--transition-speed) ease,
-        background var(--transition-speed) ease,
-        border-color var(--transition-speed) ease;
-
+        transform var(--global-transition-speed) ease,
+        background var(--global-transition-speed) ease,
+        border-color var(--global-transition-speed) ease;
 }
 
 
 .profile-card:hover {
 
     background:
-        var(--profile-panel-hover);
+        var(--color-background-hover);
 
     transform:
         translateY(-3px);
-
 }
 
 
@@ -445,7 +417,6 @@ body {
 
     transform:
         scale(0.98);
-
 }
 
 
@@ -454,7 +425,6 @@ body {
     font-weight: bold;
 
     word-break: break-word;
-
 }
 
 
@@ -463,10 +433,9 @@ body {
     margin-top: 8px;
 
     color:
-        var(--profile-text-muted);
+        var(--color-text-muted);
 
     font-size: 13px;
-
 }
 
 
@@ -475,17 +444,20 @@ body {
     margin-top: 8px;
 
     color:
-        var(--profile-text-muted);
+        var(--color-text-muted);
 
     font-size: 12px;
 
     word-break: break-all;
-
 }
 
 
 /* ================================================================
    EMPTY / LOADING MESSAGES
+
+   Used while player data is loading or when a section contains
+   nothing yet.
+
    ================================================================ */
 
 .loading-message,
@@ -494,13 +466,16 @@ body {
     padding: 12px 0;
 
     color:
-        var(--profile-text-muted);
-
+        var(--color-text-muted);
 }
 
 
 /* ================================================================
    PASSWORD WARNING
+
+   This warning is hidden until profile.js determines that the
+   player must change their temporary password.
+
    ================================================================ */
 
 .password-warning {
@@ -512,31 +487,29 @@ body {
     padding: 18px;
 
     background:
-        var(--warning-background);
+        var(--color-warning-background);
 
     border:
-        1px solid var(--warning-border);
+        1px solid var(--color-warning-border);
 
     border-radius:
-        var(--element-radius);
-
+        8px;
 }
 
 
 .password-warning.is-visible {
 
     display: block;
-
 }
 
 
 .password-warning-title {
 
-    margin: 0 0 8px;
+    margin:
+        0 0 8px;
 
     color:
-        var(--warning-text);
-
+        var(--color-warning-text);
 }
 
 
@@ -545,13 +518,15 @@ body {
     margin: 0;
 
     color:
-        var(--warning-text);
-
+        var(--color-warning-text);
 }
 
 
 /* ================================================================
    PASSWORD FORM
+
+   Contains the fields used to change a player's password.
+
    ================================================================ */
 
 .password-form {
@@ -563,7 +538,6 @@ body {
     gap: 9px;
 
     max-width: 450px;
-
 }
 
 
@@ -572,10 +546,9 @@ body {
     margin-top: 4px;
 
     color:
-        var(--profile-text-secondary);
+        var(--color-text-secondary);
 
     font-size: 14px;
-
 }
 
 
@@ -586,37 +559,38 @@ body {
     padding: 11px 12px;
 
     border:
-        1px solid var(--input-border);
+        1px solid var(--color-input-border);
 
     border-radius:
-        var(--element-radius);
+        8px;
 
     outline: none;
 
     background:
-        var(--input-background);
+        var(--color-input);
 
     color:
-        var(--input-text);
+        var(--color-input-text);
 
     font-size: 16px;
 
     transition:
-        border-color var(--transition-speed) ease;
-
+        border-color var(--global-transition-speed) ease;
 }
 
 
 .form-input:focus {
 
     border-color:
-        var(--profile-text-secondary);
-
+        var(--color-text-secondary);
 }
 
 
 /* ================================================================
    BUTTONS
+
+   General buttons used throughout the profile page.
+
    ================================================================ */
 
 .profile-button {
@@ -628,30 +602,28 @@ body {
     border: none;
 
     border-radius:
-        var(--element-radius);
+        8px;
 
     background:
-        var(--button-background);
+        var(--color-button);
 
     color:
-        var(--button-text);
+        var(--color-button-text);
 
     font-size: 15px;
 
     cursor: pointer;
 
     transition:
-        background var(--transition-speed) ease,
-        transform var(--transition-speed) ease;
-
+        background var(--global-transition-speed) ease,
+        transform var(--global-transition-speed) ease;
 }
 
 
 .profile-button:hover {
 
     background:
-        var(--button-hover);
-
+        var(--color-button-hover);
 }
 
 
@@ -659,19 +631,21 @@ body {
 
     transform:
         scale(0.98);
-
 }
 
 
 .logout-button {
 
     width: fit-content;
-
 }
 
 
 /* ================================================================
    FORM STATUS
+
+   Displays success, error, or informational messages from the
+   password form.
+
    ================================================================ */
 
 .form-status {
@@ -682,13 +656,18 @@ body {
         12px 0 0;
 
     color:
-        var(--profile-text-secondary);
-
+        var(--color-text-secondary);
 }
 
 
 /* ================================================================
    CARD ZOOM OVERLAY
+
+   Appears when the player holds down on a card.
+
+   The overlay dims the rest of the page while the enlarged card
+   is displayed in the centre.
+
    ================================================================ */
 
 .card-overlay {
@@ -708,20 +687,21 @@ body {
     padding: 20px;
 
     background:
-        var(--overlay-background);
-
+        var(--color-overlay);
 }
 
 
 .card-overlay.is-visible {
 
     display: flex;
-
 }
 
 
 /* ================================================================
    ZOOMED CARD
+
+   Displays the enlarged, read-only version of the card.
+
    ================================================================ */
 
 .zoom-card {
@@ -745,17 +725,16 @@ body {
     text-align: center;
 
     background:
-        var(--zoom-card-background);
+        var(--color-zoom-card);
 
     border:
-        1px solid var(--profile-border);
+        1px solid var(--color-border);
 
     border-radius:
-        calc(var(--profile-radius) + 2px);
+        16px;
 
     box-shadow:
-        var(--zoom-shadow);
-
+        0 15px 50px rgba(0, 0, 0, 0.65);
 }
 
 
@@ -766,7 +745,6 @@ body {
     font-weight: bold;
 
     word-break: break-word;
-
 }
 
 
@@ -775,10 +753,9 @@ body {
     margin-top: 15px;
 
     color:
-        var(--profile-text-muted);
+        var(--color-text-muted);
 
     word-break: break-word;
-
 }
 
 
@@ -787,15 +764,17 @@ body {
     margin-top: 40px;
 
     color:
-        var(--profile-text-muted);
+        var(--color-text-muted);
 
     font-size: 14px;
-
 }
 
 
 /* ================================================================
    MOBILE LAYOUT
+
+   Makes the profile easier to use on phones and small tablets.
+
    ================================================================ */
 
 @media (max-width: 600px) {
@@ -803,7 +782,6 @@ body {
     body {
 
         padding: 10px;
-
     }
 
 
@@ -812,15 +790,13 @@ body {
         padding: 20px;
 
         border-radius:
-            var(--element-radius);
-
+            8px;
     }
 
 
     .profile-title {
 
         font-size: 27px;
-
     }
 
 
@@ -830,7 +806,6 @@ body {
             1fr;
 
         gap: 4px;
-
     }
 
 
@@ -841,14 +816,12 @@ body {
                 2,
                 minmax(0, 1fr)
             );
-
     }
 
 
     .profile-card {
 
         min-height: 100px;
-
     }
 
 }
@@ -856,6 +829,9 @@ body {
 
 /* ================================================================
    VERY SMALL SCREENS
+
+   On extremely narrow screens, cards use a single column.
+
    ================================================================ */
 
 @media (max-width: 360px) {
@@ -864,7 +840,6 @@ body {
 
         grid-template-columns:
             1fr;
-
     }
 
 }
