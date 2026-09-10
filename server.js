@@ -100,6 +100,34 @@ const server = http.createServer((req, res) => {
 
 
     // ================================
+    // Test profile page
+    // ================================
+
+    if (req.url === "/profile" && req.method === "GET") {
+
+        fs.readFile("./profile.html", (err, data) => {
+
+            if (err) {
+                res.writeHead(500, {
+                    "Content-Type": "text/plain"
+                });
+
+                res.end("Could not load profile page.");
+                return;
+            }
+
+            res.writeHead(200, {
+                "Content-Type": "text/html"
+            });
+
+            res.end(data);
+        });
+
+        return;
+    }
+
+
+    // ================================
     // Server status
     // ================================
 
