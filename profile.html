@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Card Stuff Yes - Test Profile</title>
+</head>
+
+<body>
+
+    <h1>Card Stuff Yes</h1>
+
+    <h2>Test Profile</h2>
+
+    <input
+        id="username"
+        type="text"
+        placeholder="Username"
+        autocomplete="username"
+    >
+
+    <br><br>
+
+    <input
+        id="password"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+    >
+
+    <br><br>
+
+    <button onclick="signIn()">Sign In</button>
+
+    <hr>
+
+    <h2>Profile</h2>
+
+    <p>
+        Username:
+        <strong id="profileUsername">
+            Not signed in
+        </strong>
+    </p>
+
+    <p>
+        Player ID:
+        <strong id="profileId">
+            -
+        </strong>
+    </p>
+
+    <p>
+        Rank:
+        <strong id="profileRank">
+            -
+        </strong>
+    </p>
+
+    <p id="message"></p>
+
+
+    <script>
+
+        async function signIn() {
+
+            const username =
+                document.getElementById(
+                    "username"
+                ).value;
+
+            const password =
+                document.getElementById(
+                    "password"
+                ).value;
+
+            const message =
+                document.getElementById(
+                    "message"
+                );
+
+
+            if (!username || !password) {
+
+                message.textContent =
+                    "Enter a username and password.";
+
+                return;
+            }
+
+
+            try {
+
+                const response = await fetch(
+                    "/api/auth/login",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        data.error ||
+                        "Sign in failed.";
+
+                    return;
+                }
+
+
+                // Display profile
+
+                document.getElementById(
+                    "profileUsername"
+                ).textContent =
+                    data.player.username;
+
+
+                document.getElementById(
+                    "profileId"
+                ).textContent =
+                    data.player.id;
+
+
+                document.getElementById(
+                    "profileRank"
+                ).textContent =
+                    data.player.rank;
+
+
+                message.textContent =
+                    "Successfully signed in!";
+
+
+            } catch (error) {
+
+                message.textContent =
+                    "Could not connect to the server.";
+
+                console.error(error);
+            }
+        }
+
+    </script>
+
+</body>
+</html>
