@@ -784,7 +784,7 @@ function setupDeckButton() {
         () => {
 
             window.location.href =
-                "/deck-builder.html";
+                "/deckbuild.html";
 
         }
     );
