@@ -1,451 +1,167 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <!-- =========================================================
-         BASIC PAGE INFORMATION
-         ========================================================= -->
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Profile - Card Stuff Yes</title>
 
+    <!-- Global color variables used by every page -->
+    <link rel="stylesheet" href="/colors.css">
 
-    <!-- =========================================================
-         PROFILE STYLESHEET
+    <!-- Profile-specific styling -->
+    <link rel="stylesheet" href="/profile.css">
 
-         All visual styling is handled by profile.css.
-         ========================================================= -->
-
-    <link
-        rel="stylesheet"
-        href="/profile.css"
-    >
-
-
-    <!-- =========================================================
-         PROFILE JAVASCRIPT
-
-         All functionality is handled by profile.js.
-         "defer" makes the script wait until the HTML is loaded.
-         ========================================================= -->
-
-    <script
-        src="/profile.js"
-        defer
-    ></script>
-
+    <!-- Profile functionality -->
+    <script src="/profile.js" defer></script>
 </head>
 
-
 <body>
+    <!-- Main profile page container -->
+    <main class="profile-page">
 
-    <!-- =========================================================
-         PAGE NAVIGATION
-         ========================================================= -->
+        <!-- Navigation -->
+        <nav class="profile-nav">
+            <a href="/homepage.html">← Back to Card Stuff Yes</a>
+        </nav>
 
-    <nav class="profile-navigation">
-
-        <a
-            class="back-link"
-            href="/"
-        >
-            ← Back to Card Stuff Yes
-        </a>
-
-    </nav>
-
-
-    <!-- =========================================================
-         MAIN PROFILE
-         ========================================================= -->
-
-    <main
-        id="profile"
-        class="profile-container"
-    >
-
-        <!-- =====================================================
-             PROFILE HEADER
-             ===================================================== -->
-
+        <!-- Profile header -->
         <header class="profile-header">
-
-            <h1 class="profile-title">
-                Profile
-            </h1>
-
-            <p
-                id="profile-subtitle"
-                class="profile-subtitle"
-            >
-                Loading profile...
-            </p>
-
+            <h1 id="profile-username">Loading...</h1>
+            <p id="profile-rank">Loading...</p>
         </header>
 
-
-        <!-- =====================================================
-             ACCOUNT INFORMATION
-             ===================================================== -->
-
-        <section
-            class="profile-section account-section"
-        >
-
-            <h2 class="section-title">
-                Account
-            </h2>
-
+        <!-- Account information -->
+        <section class="profile-section">
+            <h2>Account</h2>
 
             <div class="account-info">
-
-                <div class="account-info-row">
-
-                    <span class="account-label">
-                        Username
-                    </span>
-
-                    <span
-                        id="username"
-                        class="account-value"
-                    >
-                        Loading...
-                    </span>
-
+                <div class="account-row">
+                    <span class="account-label">Username</span>
+                    <span id="username">Loading...</span>
                 </div>
 
-
-                <div class="account-info-row">
-
-                    <span class="account-label">
-                        Player ID
-                    </span>
-
-                    <span
-                        id="player-id"
-                        class="account-value"
-                    >
-                        Loading...
-                    </span>
-
+                <div class="account-row">
+                    <span class="account-label">Player ID</span>
+                    <span id="player-id">Loading...</span>
                 </div>
 
-
-                <div class="account-info-row">
-
-                    <span class="account-label">
-                        Rank
-                    </span>
-
-                    <span
-                        id="rank"
-                        class="account-value"
-                    >
-                        Loading...
-                    </span>
-
+                <div class="account-row">
+                    <span class="account-label">Rating</span>
+                    <span id="elo">Loading...</span>
                 </div>
 
-
-                <div class="account-info-row">
-
-                    <span class="account-label">
-                        Account Created
-                    </span>
-
-                    <span
-                        id="created"
-                        class="account-value"
-                    >
-                        Loading...
-                    </span>
-
+                <div class="account-row">
+                    <span class="account-label">Rank</span>
+                    <span id="rank">Loading...</span>
                 </div>
 
+                <div class="account-row">
+                    <span class="account-label">Account Created</span>
+                    <span id="created">Loading...</span>
+                </div>
             </div>
-
         </section>
 
+        <!-- Badges -->
+        <section class="profile-section">
+            <h2>Badges</h2>
 
-        <!-- =====================================================
-             BADGES
-             
-             JavaScript fills this container using the badges
-             returned by the server.
-             ===================================================== -->
-
-        <section
-            class="profile-section badges-section"
-        >
-
-            <h2 class="section-title">
-                Badges
-            </h2>
-
-
-            <div
-                id="badges"
-                class="badges-container"
-            >
-
-                <div class="loading-message">
-                    Loading badges...
-                </div>
-
+            <div id="badges" class="badges-container">
+                <p class="loading-text">Loading badges...</p>
             </div>
-
         </section>
 
+        <!-- Unlocked cards -->
+        <section class="profile-section">
+            <h2>Unlocked Cards</h2>
 
-        <!-- =====================================================
-             UNLOCKED CARDS
-             ===================================================== -->
-
-        <section
-            class="profile-section cards-section"
-        >
-
-            <h2 class="section-title">
-                Unlocked Cards
-            </h2>
-
-
-            <div
-                id="unlocked-cards"
-                class="cards-container"
-            >
-
-                <div class="loading-message">
-                    Loading cards...
-                </div>
-
+            <div id="unlocked-cards" class="card-grid">
+                <p class="loading-text">Loading cards...</p>
             </div>
-
         </section>
 
+        <!-- Current deck -->
+        <section class="profile-section">
+            <h2>Cards in Deck</h2>
 
-        <!-- =====================================================
-             DECK
-             ===================================================== -->
-
-        <section
-            class="profile-section deck-section"
-        >
-
-            <h2 class="section-title">
-                Cards in Deck
-            </h2>
-
-
-            <div
-                id="deck"
-                class="cards-container"
-            >
-
-                <div class="loading-message">
-                    Loading deck...
-                </div>
-
+            <div id="deck" class="card-grid">
+                <p class="loading-text">Loading deck...</p>
             </div>
-
         </section>
 
+        <!-- Password warning -->
+        <section id="password-warning" class="password-warning hidden">
+            <h2>Password Change Required</h2>
 
-        <!-- =====================================================
-             PASSWORD CHANGE WARNING
-             
-             Hidden by default.
-             profile.js adds the "is-visible" class when needed.
-             ===================================================== -->
-
-        <section
-            id="password-warning"
-            class="password-warning"
-        >
-
-            <h2 class="password-warning-title">
-                Password Change Required
-            </h2>
-
-
-            <p class="password-warning-text">
-                This account is currently using a temporary
-                password. Please choose a new password.
+            <p>
+                Your account is currently using a temporary password.
+                Please change your password before continuing.
             </p>
-
         </section>
 
+        <!-- Change password -->
+        <section class="profile-section">
+            <h2>Change Password</h2>
 
-        <!-- =====================================================
-             CHANGE PASSWORD
-             ===================================================== -->
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <input
+                        type="password"
+                        id="current-password"
+                        name="currentPassword"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
 
-        <section
-            class="profile-section password-section"
-        >
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input
+                        type="password"
+                        id="new-password"
+                        name="newPassword"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
 
-            <h2 class="section-title">
-                Change Password
-            </h2>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input
+                        type="password"
+                        id="confirm-password"
+                        name="confirmPassword"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
 
+                <button type="submit">Change Password</button>
 
-            <form
-                id="password-form"
-                class="password-form"
-            >
-
-                <label
-                    class="form-label"
-                    for="current-password"
-                >
-                    Current Password
-                </label>
-
-
-                <input
-                    id="current-password"
-                    class="form-input"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                >
-
-
-                <label
-                    class="form-label"
-                    for="new-password"
-                >
-                    New Password
-                </label>
-
-
-                <input
-                    id="new-password"
-                    class="form-input"
-                    type="password"
-                    autocomplete="new-password"
-                    minlength="6"
-                    required
-                >
-
-
-                <label
-                    class="form-label"
-                    for="confirm-password"
-                >
-                    Confirm New Password
-                </label>
-
-
-                <input
-                    id="confirm-password"
-                    class="form-input"
-                    type="password"
-                    autocomplete="new-password"
-                    minlength="6"
-                    required
-                >
-
-
-                <button
-                    class="profile-button"
-                    type="submit"
-                >
-                    Change Password
-                </button>
-
+                <p id="password-message" class="form-message"></p>
             </form>
-
-
-            <p
-                id="password-status"
-                class="form-status"
-                aria-live="polite"
-            ></p>
-
         </section>
 
+        <!-- Account actions -->
+        <section class="profile-section account-actions">
+            <h2>Account Actions</h2>
 
-        <!-- =====================================================
-             ACCOUNT ACTIONS
-             ===================================================== -->
-
-        <section
-            class="profile-section account-actions-section"
-        >
-
-            <h2 class="section-title">
-                Account Actions
-            </h2>
-
-
-            <button
-                id="logout-button"
-                class="profile-button logout-button"
-                type="button"
-            >
+            <button id="logout-button" type="button">
                 Sign Out
             </button>
-
         </section>
 
     </main>
 
+    <!-- Card zoom overlay -->
+    <div id="card-overlay" class="card-overlay hidden">
+        <div class="card-overlay-background"></div>
 
-    <!-- =========================================================
-         CARD ZOOM OVERLAY
-
-         This is hidden until a card is held.
-
-         profile.js controls the "is-visible" class.
-         profile.css controls how the overlay looks.
-         ========================================================= -->
-
-    <div
-        id="card-overlay"
-        class="card-overlay"
-        aria-hidden="true"
-    >
-
-        <div
-            id="zoom-card"
-            class="zoom-card"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Card preview"
-        >
-
-            <div
-                id="zoom-card-title"
-                class="zoom-card-title"
-            >
-                Card
-            </div>
-
-
-            <div
-                id="zoom-card-id"
-                class="zoom-card-id"
-            ></div>
-
-
-            <p class="zoom-card-hint">
-                Release to close
-            </p>
-
+        <div class="card-overlay-content">
+            <img id="zoomed-card" src="" alt="Zoomed card">
         </div>
-
     </div>
-
-
 </body>
-
 </html>
-```
