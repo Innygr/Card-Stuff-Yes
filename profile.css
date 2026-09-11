@@ -1,846 +1,496 @@
-```css
-/* ================================================================
-   CARD STUFF YES - PROFILE STYLESHEET
-
-   IMPORTANT:
-   This file contains the visual design for profile.html.
-
-   COLOURS:
-   All colours are controlled by the global colors.css file.
-
-   This means you can change the site's colour palette in ONE
-   place without having to edit every individual CSS file.
-
-   Make sure profile.html loads colors.css BEFORE profile.css.
-
-   ================================================================ */
+/*
+ * Card Stuff Yes - Profile Page
+ *
+ * This file contains styling specific to the profile page.
+ * Site-wide colors come from /colors.css.
+ */
 
 
-/* ================================================================
+/* =========================================================
    PAGE
-   ================================================================ */
+   ========================================================= */
 
-html {
-    box-sizing: border-box;
-}
-
-
-*,
-*::before,
-*::after {
-    box-sizing: inherit;
-}
-
-
-body {
-
-    margin: 0;
-
-    min-height: 100vh;
-
-    padding: 20px;
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    /* Page background comes from the global colour file. */
-    background:
-        var(--color-background);
-
-    color:
-        var(--color-text);
-}
-
-
-/* ================================================================
-   NAVIGATION
-
-   Contains the link that takes the player back to the game.
-
-   ================================================================ */
-
-.profile-navigation {
-
-    width: 100%;
-
-    max-width:
-        800px;
-
-    margin:
-        0 auto 20px;
-}
-
-
-.back-link {
-
-    color:
-        var(--color-text-secondary);
-
-    text-decoration: none;
-
-    transition:
-        color var(--global-transition-speed) ease;
-}
-
-
-.back-link:hover {
-
-    color:
-        var(--color-link-hover);
-}
-
-
-/* ================================================================
-   MAIN PROFILE CONTAINER
-
-   This is the main panel containing the player's profile.
-
-   ================================================================ */
-
-.profile-container {
-
-    width: 100%;
-
-    max-width:
-        800px;
-
+/* Main profile page layout */
+.profile-page {
+    width: min(900px, calc(100% - 32px));
     margin: 0 auto;
-
-    padding: 28px;
-
-    background:
-        var(--color-background-secondary);
-
-    border:
-        1px solid var(--color-border);
-
-    border-radius:
-        14px;
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.35);
+    padding: 24px 0 48px;
 }
 
 
-/* ================================================================
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+/* Back link at the top of the page */
+.profile-nav {
+    margin-bottom: 24px;
+}
+
+.profile-nav a {
+    color: var(--color-link);
+    text-decoration: none;
+    transition: color var(--global-transition-speed) ease;
+}
+
+.profile-nav a:hover {
+    color: var(--color-link-hover);
+}
+
+
+/* =========================================================
    PROFILE HEADER
+   ========================================================= */
 
-   Displays the profile title and subtitle.
-
-   ================================================================ */
-
+/* Main profile heading */
 .profile-header {
+    padding: 24px;
+    margin-bottom: 24px;
 
-    margin-bottom: 30px;
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
 }
 
+/* Username */
+.profile-header h1 {
+    margin: 0 0 8px;
 
-.profile-title {
+    color: var(--color-text);
+    font-size: 32px;
+    word-break: break-word;
+}
 
+/* Rank below username */
+.profile-header p {
     margin: 0;
 
-    font-size: 32px;
+    color: var(--color-text-secondary);
+    font-size: 16px;
 }
 
 
-.profile-subtitle {
+/* =========================================================
+   SECTIONS
+   ========================================================= */
 
-    margin:
-        8px 0 0;
-
-    color:
-        var(--color-text-secondary);
-}
-
-
-/* ================================================================
-   PROFILE SECTIONS
-
-   Separates sections such as:
-
-   - Account Information
-   - Badges
-   - Unlocked Cards
-   - Deck
-   - Password settings
-
-   ================================================================ */
-
+/* Generic profile section */
 .profile-section {
+    margin-bottom: 24px;
+    padding: 24px;
 
-    margin-top: 30px;
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
 
-    padding-top: 25px;
+/* Section heading */
+.profile-section h2 {
+    margin: 0 0 18px;
 
-    border-top:
-        1px solid var(--color-border);
+    color: var(--color-text);
+    font-size: 22px;
 }
 
 
-.section-title {
-
-    margin:
-        0 0 16px;
-
-    font-size: 21px;
-}
-
-
-/* ================================================================
+/* =========================================================
    ACCOUNT INFORMATION
+   ========================================================= */
 
-   Displays information such as:
-
-   Username
-   Player ID
-   Rank
-   Account creation date
-
-   ================================================================ */
-
+/* Account information container */
 .account-info {
-
     display: flex;
-
     flex-direction: column;
-
-    gap: 10px;
 }
 
+/* Individual account row */
+.account-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
 
-.account-info-row {
+    padding: 12px 0;
 
-    display: grid;
-
-    grid-template-columns:
-        minmax(120px, 180px)
-        1fr;
-
-    gap: 15px;
-
-    padding: 11px;
-
-    background:
-        var(--color-background-tertiary);
-
-    border-radius:
-        8px;
+    border-bottom: 1px solid var(--color-border);
 }
 
+/* Remove border from final row */
+.account-row:last-child {
+    border-bottom: none;
+}
 
+/* Left-side labels */
 .account-label {
+    color: var(--color-text-secondary);
+}
 
+/* Account values */
+.account-row > span:last-child {
+    color: var(--color-text);
+    text-align: right;
+    word-break: break-word;
+}
+
+/* ELO rating */
+#elo {
     font-weight: bold;
-
-    color:
-        var(--color-text-secondary);
 }
 
 
-.account-value {
+/* =========================================================
+   BADGES
+   ========================================================= */
 
-    color:
-        var(--color-text);
+/* Badge container */
+.badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
 
+/* Individual badge */
+.badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    width: 96px;
+    padding: 12px;
+
+    background: var(--color-background-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+/* Badge image */
+.badge img {
+    width: 56px;
+    height: 56px;
+
+    object-fit: contain;
+}
+
+/* Badge name */
+.badge-name {
+    color: var(--color-text);
+    font-size: 13px;
+    text-align: center;
     word-break: break-word;
 }
 
 
-/* ================================================================
-   BADGES
+/* =========================================================
+   CARDS
+   ========================================================= */
 
-   Badges are displayed in a flexible row.
-
-   Players can eventually have multiple badges, such as:
-
-   - Owner
-   - Moderator
-   - Tournament Winner
-   - Other special achievements
-
-   ================================================================ */
-
-.badges-container {
-
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 12px;
+/* Card grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
 }
 
-
-.badge {
-
+/* Individual card */
+.card-item {
     display: flex;
-
+    flex-direction: column;
     align-items: center;
+    gap: 8px;
 
-    gap: 9px;
+    padding: 12px;
 
-    min-height: 50px;
+    background: var(--color-background-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
 
-    padding: 8px 12px;
-
-    background:
-        var(--color-background-tertiary);
-
-    border:
-        1px solid var(--color-border);
-
-    border-radius:
-        8px;
+    cursor: pointer;
 
     transition:
-        transform var(--global-transition-speed) ease,
-        background var(--global-transition-speed) ease;
+        background var(--global-transition-speed) ease,
+        border-color var(--global-transition-speed) ease;
+}
+
+.card-item:hover {
+    background: var(--color-background-hover);
+    border-color: var(--color-border-light);
+}
+
+/* Card image */
+.card-item img {
+    width: 100%;
+    max-width: 110px;
+    height: auto;
+
+    object-fit: contain;
+
+    border-radius: 4px;
+}
+
+/* Card name */
+.card-name {
+    color: var(--color-text);
+    font-size: 13px;
+    text-align: center;
+    word-break: break-word;
 }
 
 
-.badge:hover {
+/* =========================================================
+   LOADING / EMPTY STATES
+   ========================================================= */
 
-    background:
-        var(--color-background-hover);
+/* Generic loading text */
+.loading-text {
+    margin: 0;
 
-    transform:
-        translateY(-2px);
+    color: var(--color-text-secondary);
+}
+
+/* Empty sections */
+.empty-text {
+    margin: 0;
+
+    color: var(--color-text-secondary);
 }
 
 
-.badge-image {
+/* =========================================================
+   PASSWORD WARNING
+   ========================================================= */
 
-    width: 36px;
+/* Temporary-password warning */
+.password-warning {
+    margin-bottom: 24px;
+    padding: 20px;
 
-    height: 36px;
+    background: var(--color-warning-background);
+    border: 1px solid var(--color-warning-border);
+    border-radius: 8px;
+}
+
+/* Warning heading */
+.password-warning h2 {
+    margin: 0 0 10px;
+
+    color: var(--color-warning-text);
+    font-size: 20px;
+}
+
+/* Warning text */
+.password-warning p {
+    margin: 0;
+
+    color: var(--color-warning-text);
+}
+
+
+/* =========================================================
+   FORMS
+   ========================================================= */
+
+/* Form group */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    margin-bottom: 16px;
+}
+
+/* Form labels */
+.form-group label {
+    color: var(--color-text-secondary);
+}
+
+/* Inputs */
+.form-group input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+
+    color: var(--color-input-text);
+    background: var(--color-input);
+
+    border: 1px solid var(--color-input-border);
+    border-radius: 5px;
+
+    font: inherit;
+}
+
+/* Input focus */
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-border-light);
+}
+
+/* Buttons */
+button {
+    padding: 10px 16px;
+
+    color: var(--color-button-text);
+    background: var(--color-button);
+
+    border: 1px solid var(--color-border-light);
+    border-radius: 5px;
+
+    font: inherit;
+    cursor: pointer;
+
+    transition:
+        background var(--global-transition-speed) ease,
+        border-color var(--global-transition-speed) ease;
+}
+
+/* Button hover */
+button:hover {
+    background: var(--color-button-hover);
+}
+
+/* Button disabled state */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   FORM MESSAGES
+   ========================================================= */
+
+/* Message below password form */
+.form-message {
+    min-height: 20px;
+    margin: 12px 0 0;
+
+    color: var(--color-text-secondary);
+}
+
+/* Successful message */
+.form-message.success {
+    color: var(--color-success);
+}
+
+/* Error message */
+.form-message.error {
+    color: var(--color-error);
+}
+
+
+/* =========================================================
+   ACCOUNT ACTIONS
+   ========================================================= */
+
+/* Account actions section */
+.account-actions {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   CARD ZOOM OVERLAY
+   ========================================================= */
+
+/* Full-screen card overlay */
+.card-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dark background behind zoomed card */
+.card-overlay-background {
+    position: absolute;
+    inset: 0;
+
+    background: var(--color-overlay);
+}
+
+/* Overlay content */
+.card-overlay-content {
+    position: relative;
+    z-index: 1;
+
+    max-width: min(90vw, 700px);
+    max-height: 90vh;
+
+    padding: 16px;
+
+    background: var(--color-zoom-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Zoomed card */
+.card-overlay-content img {
+    display: block;
+
+    max-width: 80vw;
+    max-height: 80vh;
+
+    width: auto;
+    height: auto;
 
     object-fit: contain;
 }
 
 
-.badge-name {
+/* =========================================================
+   UTILITY CLASSES
+   ========================================================= */
 
-    font-weight: bold;
+/* Used to hide elements */
+.hidden {
+    display: none !important;
 }
 
-
-/*
-   Used by profile.js when a badge image cannot be loaded.
-
-   This keeps visual styling inside CSS instead of using
-   JavaScript to directly change the element's style.
-*/
-
+/* Used when an image fails to load */
 .image-hidden {
-
-    display: none;
+    display: none !important;
 }
 
 
-/* ================================================================
-   CARD CONTAINERS
-
-   Creates a responsive grid for unlocked cards and deck cards.
-
-   ================================================================ */
-
-.cards-container {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            auto-fill,
-            minmax(140px, 1fr)
-        );
-
-    gap: 12px;
-}
-
-
-/* ================================================================
-   CARD
-
-   This is the basic card container.
-
-   The eventual card artwork/design can be added later without
-   changing the profile layout.
-
-   ================================================================ */
-
-.profile-card {
-
-    min-height: 110px;
-
-    padding: 14px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    justify-content: space-between;
-
-    background:
-        var(--color-background-tertiary);
-
-    border:
-        1px solid var(--color-border);
-
-    border-radius:
-        8px;
-
-    cursor: pointer;
-
-    user-select: none;
-
-    touch-action: manipulation;
-
-    transition:
-        transform var(--global-transition-speed) ease,
-        background var(--global-transition-speed) ease,
-        border-color var(--global-transition-speed) ease;
-}
-
-
-.profile-card:hover {
-
-    background:
-        var(--color-background-hover);
-
-    transform:
-        translateY(-3px);
-}
-
-
-.profile-card:active {
-
-    transform:
-        scale(0.98);
-}
-
-
-.card-name {
-
-    font-weight: bold;
-
-    word-break: break-word;
-}
-
-
-.card-slot {
-
-    margin-top: 8px;
-
-    color:
-        var(--color-text-muted);
-
-    font-size: 13px;
-}
-
-
-.card-id {
-
-    margin-top: 8px;
-
-    color:
-        var(--color-text-muted);
-
-    font-size: 12px;
-
-    word-break: break-all;
-}
-
-
-/* ================================================================
-   EMPTY / LOADING MESSAGES
-
-   Used while player data is loading or when a section contains
-   nothing yet.
-
-   ================================================================ */
-
-.loading-message,
-.empty-message {
-
-    padding: 12px 0;
-
-    color:
-        var(--color-text-muted);
-}
-
-
-/* ================================================================
-   PASSWORD WARNING
-
-   This warning is hidden until profile.js determines that the
-   player must change their temporary password.
-
-   ================================================================ */
-
-.password-warning {
-
-    display: none;
-
-    margin-top: 30px;
-
-    padding: 18px;
-
-    background:
-        var(--color-warning-background);
-
-    border:
-        1px solid var(--color-warning-border);
-
-    border-radius:
-        8px;
-}
-
-
-.password-warning.is-visible {
-
-    display: block;
-}
-
-
-.password-warning-title {
-
-    margin:
-        0 0 8px;
-
-    color:
-        var(--color-warning-text);
-}
-
-
-.password-warning-text {
-
-    margin: 0;
-
-    color:
-        var(--color-warning-text);
-}
-
-
-/* ================================================================
-   PASSWORD FORM
-
-   Contains the fields used to change a player's password.
-
-   ================================================================ */
-
-.password-form {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 9px;
-
-    max-width: 450px;
-}
-
-
-.form-label {
-
-    margin-top: 4px;
-
-    color:
-        var(--color-text-secondary);
-
-    font-size: 14px;
-}
-
-
-.form-input {
-
-    width: 100%;
-
-    padding: 11px 12px;
-
-    border:
-        1px solid var(--color-input-border);
-
-    border-radius:
-        8px;
-
-    outline: none;
-
-    background:
-        var(--color-input);
-
-    color:
-        var(--color-input-text);
-
-    font-size: 16px;
-
-    transition:
-        border-color var(--global-transition-speed) ease;
-}
-
-
-.form-input:focus {
-
-    border-color:
-        var(--color-text-secondary);
-}
-
-
-/* ================================================================
-   BUTTONS
-
-   General buttons used throughout the profile page.
-
-   ================================================================ */
-
-.profile-button {
-
-    margin-top: 8px;
-
-    padding: 11px 16px;
-
-    border: none;
-
-    border-radius:
-        8px;
-
-    background:
-        var(--color-button);
-
-    color:
-        var(--color-button-text);
-
-    font-size: 15px;
-
-    cursor: pointer;
-
-    transition:
-        background var(--global-transition-speed) ease,
-        transform var(--global-transition-speed) ease;
-}
-
-
-.profile-button:hover {
-
-    background:
-        var(--color-button-hover);
-}
-
-
-.profile-button:active {
-
-    transform:
-        scale(0.98);
-}
-
-
-.logout-button {
-
-    width: fit-content;
-}
-
-
-/* ================================================================
-   FORM STATUS
-
-   Displays success, error, or informational messages from the
-   password form.
-
-   ================================================================ */
-
-.form-status {
-
-    min-height: 20px;
-
-    margin:
-        12px 0 0;
-
-    color:
-        var(--color-text-secondary);
-}
-
-
-/* ================================================================
-   CARD ZOOM OVERLAY
-
-   Appears when the player holds down on a card.
-
-   The overlay dims the rest of the page while the enlarged card
-   is displayed in the centre.
-
-   ================================================================ */
-
-.card-overlay {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 1000;
-
-    display: none;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    background:
-        var(--color-overlay);
-}
-
-
-.card-overlay.is-visible {
-
-    display: flex;
-}
-
-
-/* ================================================================
-   ZOOMED CARD
-
-   Displays the enlarged, read-only version of the card.
-
-   ================================================================ */
-
-.zoom-card {
-
-    width:
-        min(420px, 90vw);
-
-    min-height:
-        min(600px, 80vh);
-
-    padding: 28px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    text-align: center;
-
-    background:
-        var(--color-zoom-card);
-
-    border:
-        1px solid var(--color-border);
-
-    border-radius:
-        16px;
-
-    box-shadow:
-        0 15px 50px rgba(0, 0, 0, 0.65);
-}
-
-
-.zoom-card-title {
-
-    font-size: 30px;
-
-    font-weight: bold;
-
-    word-break: break-word;
-}
-
-
-.zoom-card-id {
-
-    margin-top: 15px;
-
-    color:
-        var(--color-text-muted);
-
-    word-break: break-word;
-}
-
-
-.zoom-card-hint {
-
-    margin-top: 40px;
-
-    color:
-        var(--color-text-muted);
-
-    font-size: 14px;
-}
-
-
-/* ================================================================
-   MOBILE LAYOUT
-
-   Makes the profile easier to use on phones and small tablets.
-
-   ================================================================ */
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
 @media (max-width: 600px) {
 
-    body {
-
-        padding: 10px;
+    .profile-page {
+        width: min(100% - 20px, 900px);
+        padding-top: 12px;
     }
 
-
-    .profile-container {
-
-        padding: 20px;
-
-        border-radius:
-            8px;
+    .profile-section,
+    .profile-header {
+        padding: 16px;
     }
 
-
-    .profile-title {
-
-        font-size: 27px;
+    .profile-header h1 {
+        font-size: 26px;
     }
 
-
-    .account-info-row {
-
-        grid-template-columns:
-            1fr;
-
+    .account-row {
+        flex-direction: column;
         gap: 4px;
     }
 
-
-    .cards-container {
-
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0, 1fr)
-            );
+    .account-row > span:last-child {
+        text-align: left;
     }
 
-
-    .profile-card {
-
-        min-height: 100px;
+    .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .badges-container {
+        justify-content: center;
+    }
 }
-
-
-/* ================================================================
-   VERY SMALL SCREENS
-
-   On extremely narrow screens, cards use a single column.
-
-   ================================================================ */
-
-@media (max-width: 360px) {
-
-    .cards-container {
-
-        grid-template-columns:
-            1fr;
-    }
-
-}
-```
