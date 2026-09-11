@@ -1,1 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+    <!-- ========================================================
+         PAGE INFORMATION
+         ======================================================== -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Deck Builder - Card Stuff Yes</title>
+
+
+    <!-- ========================================================
+         STYLES
+         ======================================================== -->
+
+    <!-- Global Card Stuff Yes colors/theme. -->
+    <link
+        rel="stylesheet"
+        href="/colors.css"
+    >
+
+    <!-- Deck Builder-specific styling. -->
+    <link
+        rel="stylesheet"
+        href="/deckbuild.css"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- ========================================================
+         HEADER
+         ======================================================== -->
+
+    <header class="deckbuild-header">
+
+        <a
+            class="back-button"
+            href="/homepage.html"
+        >
+            ← BACK
+        </a>
+
+
+        <h1>
+            DECK BUILDER
+        </h1>
+
+
+        <button
+            id="save-deck-button"
+            class="save-button"
+            type="button"
+        >
+            SAVE DECK
+        </button>
+
+    </header>
+
+
+    <!-- ========================================================
+         PAGE CONTENT
+         ======================================================== -->
+
+    <main class="deckbuild-page">
+
+
+        <!-- ====================================================
+             CURRENT DECK
+             ==================================================== -->
+
+        <section class="deck-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        CURRENT DECK
+                    </h2>
+
+                    <p
+                        id="deck-count"
+                        class="section-subtitle"
+                    >
+                        0 cards
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!--
+                JavaScript fills this container with the cards
+                currently in the player's deck.
+            -->
+
+            <div
+                id="current-deck"
+                class="card-grid current-deck-grid"
+            >
+
+                <p class="loading-message">
+                    Loading deck...
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================================
+             UNLOCKED CARDS
+             ==================================================== -->
+
+        <section class="cards-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        UNLOCKED CARDS
+                    </h2>
+
+                    <p class="section-subtitle">
+                        Select cards to add them to your deck.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!--
+                JavaScript creates a section for every card set.
+
+                Example:
+
+                SET 01
+                [ S01-01 ] [ S01-02 ] [ S01-03 ]
+
+                SET 02
+                [ S02-01 ] [ S02-02 ]
+            -->
+
+            <div id="unlocked-cards">
+
+                <p class="loading-message">
+                    Loading cards...
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================================
+             STATUS MESSAGE
+             ==================================================== -->
+
+        <div
+            id="deck-status"
+            class="deck-status"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+    </main>
+
+
+    <!-- ========================================================
+         CARD ZOOM OVERLAY
+         ======================================================== -->
+
+    <div
+        id="card-overlay"
+        class="card-overlay hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            id="card-overlay-backdrop"
+            class="card-overlay-backdrop"
+        ></div>
+
+
+        <div class="card-overlay-content">
+
+            <button
+                id="close-card-overlay"
+                class="close-overlay-button"
+                type="button"
+                aria-label="Close card preview"
+            >
+                ×
+            </button>
+
+
+            <img
+                id="zoomed-card"
+                class="zoomed-card"
+                src=""
+                alt="Card preview"
+            >
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         JAVASCRIPT
+         ======================================================== -->
+
+    <script
+        src="/deckbuild.js"
+        defer
+    ></script>
+
+</body>
+
+</html>
