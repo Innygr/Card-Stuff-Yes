@@ -1,0 +1,630 @@
+```css
+/*
+ * ============================================================
+ * Card Stuff Yes
+ * Homepage Styles
+ * ============================================================
+ *
+ * This file contains only the layout and styling for the
+ * homepage.
+ *
+ * Colors come from colors.css.
+ *
+ * ============================================================
+ */
+
+
+/* ============================================================
+   PAGE
+   ============================================================ */
+
+/*
+ * The body contains the entire homepage.
+ *
+ * colors.css supplies the actual color values.
+ */
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    background: var(--color-background);
+
+    color: var(--color-text);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.site-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 18px 24px;
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+
+    background:
+        var(--color-background-secondary);
+}
+
+
+/*
+ * Main website title in the header.
+ */
+.site-title {
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+    letter-spacing: 1px;
+}
+
+
+/*
+ * Account controls on the right side.
+ */
+.header-account {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+}
+
+
+/*
+ * Current username.
+ */
+#header-username {
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+/*
+ * Profile link.
+ */
+.header-profile-link {
+
+    color:
+        var(--color-link);
+
+    text-decoration: none;
+
+    transition:
+        color
+        var(--global-transition-speed);
+}
+
+
+.header-profile-link:hover {
+
+    color:
+        var(--color-link-hover);
+}
+
+
+/* ============================================================
+   MAIN HOMEPAGE
+   ============================================================ */
+
+.homepage {
+
+    width: min(
+        100% - 32px,
+        760px
+    );
+
+    margin: 0 auto;
+}
+
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+
+.hero-section {
+
+    text-align: center;
+
+    padding:
+        70px
+        20px
+        55px;
+}
+
+
+/*
+ * Large homepage title.
+ */
+.hero-section h1 {
+
+    margin: 0;
+
+    font-size:
+        clamp(
+            34px,
+            8vw,
+            64px
+        );
+
+    letter-spacing: 2px;
+}
+
+
+/*
+ * Subtitle underneath the title.
+ */
+.hero-subtitle {
+
+    margin:
+        12px
+        0
+        36px;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 18px;
+}
+
+
+/* ============================================================
+   MAIN ACTION BUTTONS
+   ============================================================ */
+
+.main-actions {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+/*
+ * Shared style for the three large homepage buttons.
+ */
+.main-button {
+
+    width: min(
+        100%,
+        300px
+    );
+
+    min-height: 52px;
+
+    padding:
+        12px
+        20px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 6px;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background
+        var(--global-transition-speed),
+        border-color
+        var(--global-transition-speed);
+}
+
+
+.main-button:hover {
+
+    background:
+        var(--color-button-hover);
+
+    border-color:
+        var(--color-link);
+}
+
+
+.main-button:active {
+
+    transform: translateY(1px);
+}
+
+
+/* ============================================================
+   SERVER SECTION
+   ============================================================ */
+
+.server-section {
+
+    padding:
+        28px
+        0;
+
+    border-top:
+        1px solid
+        var(--color-border);
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+}
+
+
+/*
+ * Section headings.
+ */
+.server-section h2,
+.profile-section h2 {
+
+    margin:
+        0
+        0
+        20px;
+
+    font-size: 18px;
+
+    letter-spacing: 1px;
+}
+
+
+/*
+ * Online/offline indicator.
+ */
+.server-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 18px;
+
+    font-weight: bold;
+}
+
+
+/*
+ * Status dot.
+ */
+.status-dot {
+
+    color:
+        var(--color-success);
+
+    font-size: 14px;
+}
+
+
+/*
+ * Used when the server is offline.
+ */
+.status-dot.offline {
+
+    color:
+        var(--color-error);
+}
+
+
+/*
+ * Individual server statistics.
+ */
+.server-stat {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding:
+        8px
+        0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.server-stat strong {
+
+    color:
+        var(--color-text);
+
+    font-weight: normal;
+}
+
+
+/* ============================================================
+   PROFILE SECTION
+   ============================================================ */
+
+.profile-section {
+
+    padding:
+        28px
+        0;
+}
+
+
+/*
+ * Profile information displayed when signed in.
+ */
+.profile-card {
+
+    padding: 22px;
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 6px;
+
+    background:
+        var(--color-background-secondary);
+}
+
+
+/*
+ * Username.
+ */
+.profile-username {
+
+    margin: 0 0 14px;
+
+    font-size: 24px;
+
+    font-weight: bold;
+}
+
+
+/*
+ * Individual profile information rows.
+ */
+.profile-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 7px 0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.profile-row strong {
+
+    color:
+        var(--color-text);
+
+    font-weight: normal;
+}
+
+
+/*
+ * ELO gets a little more emphasis because it is the
+ * player's competitive rating.
+ */
+.profile-elo {
+
+    font-size: 18px;
+}
+
+
+.profile-elo strong {
+
+    font-weight: bold;
+}
+
+
+/*
+ * Rank text.
+ */
+.profile-rank {
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+/* ============================================================
+   PROFILE BUTTON
+   ============================================================ */
+
+.profile-button {
+
+    display: inline-block;
+
+    margin-top: 18px;
+
+    padding:
+        10px
+        16px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 5px;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    text-decoration: none;
+
+    transition:
+        background
+        var(--global-transition-speed);
+}
+
+
+.profile-button:hover {
+
+    background:
+        var(--color-button-hover);
+}
+
+
+/* ============================================================
+   SIGN-IN MESSAGE
+   ============================================================ */
+
+.profile-login-message {
+
+    padding: 20px;
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 6px;
+
+    background:
+        var(--color-background-secondary);
+
+    color:
+        var(--color-text-secondary);
+
+    text-align: center;
+}
+
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.site-footer {
+
+    padding:
+        42px
+        20px
+        30px;
+
+    text-align: center;
+
+    border-top:
+        1px solid
+        var(--color-border);
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+/*
+ * Footer game name.
+ */
+.footer-title {
+
+    margin-bottom: 8px;
+
+    color:
+        var(--color-text);
+
+    font-size: 16px;
+
+    font-weight: bold;
+}
+
+
+/*
+ * "Made by Innygr and Mythic".
+ */
+.footer-credit {
+
+    font-size: 14px;
+}
+
+
+/* ============================================================
+   MOBILE ADJUSTMENTS
+   ============================================================ */
+
+@media (max-width: 500px) {
+
+    .site-header {
+
+        padding:
+            15px
+            16px;
+    }
+
+
+    .site-title {
+
+        font-size: 16px;
+    }
+
+
+    .header-account {
+
+        gap: 8px;
+    }
+
+
+    #header-username {
+
+        max-width: 120px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+    }
+
+
+    .hero-section {
+
+        padding-top: 50px;
+    }
+
+
+    .server-stat,
+    .profile-row {
+
+        font-size: 14px;
+    }
+
+}
+```
