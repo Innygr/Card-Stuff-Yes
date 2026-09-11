@@ -1,86 +1,76 @@
-```javascript
-/*
- * ============================================================
- * Card Stuff Yes
- * Homepage JavaScript
- * ============================================================
- *
- * This file handles:
- *
- * - Server status
- * - Player counts
- * - Signed-in player information
- * - ELO display
- * - Homepage buttons
- *
- * The browser does NOT decide the player's ELO or rank.
- *
- * Those values come from the server.
- *
- * ============================================================
- */
+/* ============================================================
+   CARD STUFF YES — HOMEPAGE JAVASCRIPT
+   ------------------------------------------------------------
+   This file controls the interactive behavior of the homepage.
+
+   It:
+   - Gets live server information.
+   - Displays online/queue/battle player counts.
+   - Loads the currently signed-in player's profile.
+   - Displays ELO and rank.
+   - Handles the PLAY button.
+   - Handles the DECK BUILDER button.
+   - Handles the HOW TO PLAY button.
+   - Periodically refreshes server information.
+   ============================================================ */
 
 
 /* ============================================================
-   API HELPER
+   CONFIGURATION
    ============================================================ */
 
 /*
- * Sends a request to the Card Stuff Yes server API.
+ * How often the homepage asks the server for updated information.
  *
- * Keeping this in one function makes the rest of the file
- * easier to read.
+ * 10 seconds gives the page reasonably live player counts without
+ * constantly sending requests to the server.
  */
-async function apiRequest(
-    url,
-    options = {}
-) {
-
-    const response =
-        await fetch(
-            url,
-            {
-                credentials: "same-origin",
-                ...options
-            }
-        );
+const STATUS_REFRESH_INTERVAL = 10000;
 
 
-    let data = null;
+/* ============================================================
+   DOM ELEMENTS
+   ============================================================ */
 
+/*
+ * Store references to the HTML elements we need to update.
+ *
+ * Doing this once makes the rest of the script easier to read.
+ */
+const elements = {
+    serverStatusDot:
+        document.getElementById("server-status-dot"),
 
-    /*
-     * Try to read the JSON response.
-     */
-    try {
+    serverStatusText:
+        document.getElementById("server-status-text"),
 
-        data =
-            await response.json();
+    playersOnline:
+        document.getElementById("players-online"),
 
-    } catch {
+    playersQueue:
+        document.getElementById("players-queue"),
 
-        data = null;
-    }
+    playersBattle:
+        document.getElementById("players-battle"),
 
+    profileContent:
+        document.getElementById("profile-content"),
 
-    /*
-     * Turn HTTP errors into JavaScript errors.
-     */
-    if (!response.ok) {
+    headerUsername:
+        document.getElementById("header-username"),
 
-        const message =
-            data &&
-            data.error
-                ? data.error
-                : "Request failed.";
+    headerProfileLink:
+        document.getElementById("header-profile-link"),
 
+    playButton:
+        document.getElementById("play-button"),
 
-        throw new Error(message);
-    }
+    deckButton:
+        document.getElementById("deck-button"),
 
-
-    return data;
-}
+    howToPlayButton:
+        document.getElementById("how-to-play-button")
+};
 
 
 /* ============================================================
@@ -88,409 +78,537 @@ async function apiRequest(
    ============================================================ */
 
 /*
- * Loads the current server status and player counts.
+ * Set the visual server status.
+ *
+ * `online` determines whether the server is considered available.
  */
-async function loadServerStatus() {
+function setServerStatus(online) {
 
-    const statusText =
-        document.getElementById(
-            "server-status-text"
+    if (online) {
+
+        elements.serverStatusDot.textContent = "●";
+
+        elements.serverStatusDot.classList.remove(
+            "offline",
+            "loading"
         );
 
+        elements.serverStatusText.textContent =
+            "Server Online";
 
-    const statusDot =
-        document.getElementById(
-            "server-status-dot"
-        );
+        return;
+    }
 
 
+    /*
+     * If the request fails, the server is treated as offline.
+     */
+    elements.serverStatusDot.textContent = "●";
+
+    elements.serverStatusDot.classList.remove(
+        "loading"
+    );
+
+    elements.serverStatusDot.classList.add(
+        "offline"
+    );
+
+    elements.serverStatusText.textContent =
+        "Server Offline";
+}
+
+
+/* ============================================================
+   LOADING SERVER STATUS
+   ============================================================ */
+
+/*
+ * Put the status section into a loading state.
+ *
+ * This is mainly useful when the page is first opened.
+ */
+function setServerLoading() {
+
+    elements.serverStatusDot.textContent = "●";
+
+    elements.serverStatusDot.classList.remove(
+        "offline"
+    );
+
+    elements.serverStatusDot.classList.add(
+        "loading"
+    );
+
+    elements.serverStatusText.textContent =
+        "Checking server...";
+}
+
+
+/* ============================================================
+   UPDATE SERVER COUNTERS
+   ============================================================ */
+
+/*
+ * Update the three server statistics using information returned
+ * by the backend.
+ */
+function updateServerCounters(data) {
+
+    /*
+     * Use zero as a fallback if the server does not provide one
+     * of the values.
+     */
     const playersOnline =
-        document.getElementById(
-            "players-online"
-        );
+        Number.isFinite(Number(data.playersOnline))
+            ? Number(data.playersOnline)
+            : 0;
 
 
-    const playersQueue =
-        document.getElementById(
-            "players-queue"
-        );
+    const playersInQueue =
+        Number.isFinite(Number(data.playersInQueue))
+            ? Number(data.playersInQueue)
+            : 0;
 
 
-    const playersBattle =
-        document.getElementById(
-            "players-battle"
-        );
+    const playersInBattle =
+        Number.isFinite(Number(data.playersInBattle))
+            ? Number(data.playersInBattle)
+            : 0;
 
+
+    elements.playersOnline.textContent =
+        playersOnline;
+
+
+    elements.playersQueue.textContent =
+        playersInQueue;
+
+
+    elements.playersBattle.textContent =
+        playersInBattle;
+}
+
+
+/* ============================================================
+   LOAD SERVER INFORMATION
+   ============================================================ */
+
+/*
+ * Request the homepage information from the backend.
+ *
+ * The backend endpoint is:
+ *
+ *     GET /api/homepage
+ *
+ * This endpoint supplies:
+ * - Server status.
+ * - Players online.
+ * - Players in queue.
+ * - Players in battle.
+ * - Current season.
+ * - Current season name.
+ */
+async function loadServerInformation() {
 
     try {
 
-        const data =
-            await apiRequest(
-                "/api/homepage"
+        const response =
+            await fetch(
+                "/api/homepage",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store"
+                }
             );
 
 
         /*
-         * Display whether the server is online.
+         * A non-2xx response means the request failed.
          */
-        if (data.online) {
-
-            statusText.textContent =
-                "Server Online";
-
-            statusDot.textContent =
-                "●";
-
-            statusDot.classList.remove(
-                "offline"
-            );
-
-        } else {
-
-            statusText.textContent =
-                "Server Offline";
-
-            statusDot.textContent =
-                "●";
-
-            statusDot.classList.add(
-                "offline"
+        if (!response.ok) {
+            throw new Error(
+                `Server returned HTTP ${response.status}`
             );
         }
 
 
-        /*
-         * Display the current number of connected players.
-         */
-        playersOnline.textContent =
-            Number.isFinite(
-                data.playersOnline
-            )
-                ? data.playersOnline
-                : 0;
+        const data =
+            await response.json();
 
 
         /*
-         * Display the number of players waiting
-         * for matchmaking.
+         * Update the online indicator.
          */
-        playersQueue.textContent =
-            Number.isFinite(
-                data.playersInQueue
-            )
-                ? data.playersInQueue
-                : 0;
+        setServerStatus(
+            data.online === true
+        );
 
 
         /*
-         * Display the number of players currently
-         * participating in battles.
+         * Update player counters.
          */
-        playersBattle.textContent =
-            Number.isFinite(
-                data.playersInBattle
-            )
-                ? data.playersInBattle
-                : 0;
+        updateServerCounters(data);
 
+
+        /*
+         * Return the data in case another function needs it.
+         */
+        return data;
 
     } catch (error) {
 
-        /*
-         * If the request itself fails, show the server
-         * as unavailable rather than leaving the page
-         * stuck on "Checking server...".
-         */
-
-        statusText.textContent =
-            "Server Offline";
-
-
-        statusDot.textContent =
-            "●";
-
-
-        statusDot.classList.add(
-            "offline"
-        );
-
-
-        playersOnline.textContent =
-            "0";
-
-
-        playersQueue.textContent =
-            "0";
-
-
-        playersBattle.textContent =
-            "0";
-
-
         console.error(
-            "Could not load server status:",
+            "Failed to load server information:",
             error
         );
+
+
+        /*
+         * Reset the counters when the server cannot be reached.
+         */
+        elements.playersOnline.textContent = "0";
+
+        elements.playersQueue.textContent = "0";
+
+        elements.playersBattle.textContent = "0";
+
+
+        setServerStatus(false);
+
+
+        return null;
     }
 }
 
 
 /* ============================================================
-   CURRENT PLAYER
+   PROFILE RANK DISPLAY
    ============================================================ */
 
 /*
- * Loads the currently signed-in player.
+ * Return a CSS class for a player's rank.
  *
- * If there is no session, /api/me returns an authentication
- * error and the homepage displays a sign-in message instead.
+ * This is kept separate so rank-specific styling can be expanded
+ * later without changing the profile-loading code.
+ */
+function getRankClass(rank) {
+
+    switch (String(rank).toLowerCase()) {
+
+        case "owner":
+            return "profile-rank";
+
+        case "mod":
+        case "moderator":
+            return "profile-rank";
+
+        default:
+            return "profile-rank";
+    }
+}
+
+
+/* ============================================================
+   CREATE PROFILE ROW
+   ============================================================ */
+
+/*
+ * Create one row for the profile summary.
+ *
+ * Example:
+ *
+ *     Username: Innygr
+ *
+ * Keeping this in a function prevents repeated HTML-building
+ * code throughout the profile section.
+ */
+function createProfileRow(label, value, extraClass = "") {
+
+    const row =
+        document.createElement("div");
+
+    row.className = "profile-row";
+
+
+    const labelElement =
+        document.createElement("span");
+
+    labelElement.className =
+        "profile-label";
+
+    labelElement.textContent =
+        label;
+
+
+    const valueElement =
+        document.createElement("span");
+
+    valueElement.className =
+        `profile-value ${extraClass}`.trim();
+
+    valueElement.textContent =
+        value;
+
+
+    row.appendChild(labelElement);
+
+    row.appendChild(valueElement);
+
+
+    return row;
+}
+
+
+/* ============================================================
+   DISPLAY SIGNED-OUT PROFILE
+   ============================================================ */
+
+/*
+ * Display the profile section when nobody is signed in.
+ */
+function displaySignedOutProfile() {
+
+    /*
+     * Update the header.
+     */
+    elements.headerUsername.textContent =
+        "Not signed in";
+
+
+    /*
+     * Keep the profile link available so a user can go to the
+     * profile/login page.
+     */
+    elements.headerProfileLink.textContent =
+        "Profile";
+
+
+    elements.profileContent.innerHTML = "";
+
+
+    const message =
+        document.createElement("p");
+
+    message.className =
+        "profile-login-message";
+
+    message.textContent =
+        "Sign in to see your profile and ELO.";
+
+
+    elements.profileContent.appendChild(
+        message
+    );
+}
+
+
+/* ============================================================
+   DISPLAY SIGNED-IN PROFILE
+   ============================================================ */
+
+/*
+ * Display information belonging to the currently signed-in
+ * player.
+ */
+function displaySignedInProfile(player) {
+
+    /*
+     * Make sure there is a usable username.
+     */
+    const username =
+        typeof player.username === "string"
+            ? player.username
+            : "Unknown";
+
+
+    /*
+     * ELO defaults to 1000 because that is the server's starting
+     * rating.
+     */
+    const elo =
+        Number.isFinite(Number(player.elo))
+            ? Number(player.elo)
+            : 1000;
+
+
+    /*
+     * Rank defaults to Player for normal accounts.
+     */
+    const rank =
+        typeof player.rank === "string"
+            ? player.rank
+            : "Player";
+
+
+    /*
+     * Update the small account indicator in the header.
+     */
+    elements.headerUsername.textContent =
+        username;
+
+
+    elements.headerProfileLink.textContent =
+        "Profile";
+
+
+    /*
+     * Clear the old profile content before rebuilding it.
+     */
+    elements.profileContent.innerHTML = "";
+
+
+    /*
+     * Username row.
+     */
+    elements.profileContent.appendChild(
+        createProfileRow(
+            "Username:",
+            username
+        )
+    );
+
+
+    /*
+     * ELO row.
+     */
+    elements.profileContent.appendChild(
+        createProfileRow(
+            "Rating:",
+            `${elo} ELO`
+        )
+    );
+
+
+    /*
+     * Rank row.
+     */
+    elements.profileContent.appendChild(
+        createProfileRow(
+            "Rank:",
+            rank,
+            getRankClass(rank)
+        )
+    );
+
+
+    /*
+     * Create the VIEW PROFILE link.
+     */
+    const profileButton =
+        document.createElement("a");
+
+    profileButton.className =
+        "profile-button";
+
+    profileButton.href =
+        "/profile";
+
+    profileButton.textContent =
+        "VIEW PROFILE";
+
+
+    elements.profileContent.appendChild(
+        profileButton
+    );
+}
+
+
+/* ============================================================
+   LOAD CURRENT PLAYER
+   ============================================================ */
+
+/*
+ * Ask the backend who is currently signed in.
+ *
+ * The server endpoint:
+ *
+ *     GET /api/me
+ *
+ * returns the current player when a valid session exists.
  */
 async function loadCurrentPlayer() {
 
-    const profileContent =
-        document.getElementById(
-            "profile-content"
-        );
-
-
-    const headerUsername =
-        document.getElementById(
-            "header-username"
-        );
-
-
-    const headerProfileLink =
-        document.getElementById(
-            "header-profile-link"
-        );
-
-
     try {
 
+        const response =
+            await fetch(
+                "/api/me",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store"
+                }
+            );
+
+
+        /*
+         * A 401 means there is no signed-in player.
+         */
+        if (response.status === 401) {
+
+            displaySignedOutProfile();
+
+            return null;
+        }
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Server returned HTTP ${response.status}`
+            );
+        }
+
+
         const data =
-            await apiRequest(
-                "/api/me"
-            );
+            await response.json();
 
 
+        /*
+         * The API may return the player directly or under a
+         * `player` property depending on the server response.
+         */
         const player =
-            data.player;
+            data.player || data;
 
 
         /*
-         * The server supplies the username.
+         * Make sure the response actually contains player data.
          */
-        headerUsername.textContent =
-            player.username;
+        if (
+            !player ||
+            typeof player !== "object" ||
+            typeof player.username !== "string"
+        ) {
 
+            displaySignedOutProfile();
 
-        /*
-         * The profile link points to the current user's
-         * profile page.
-         */
-        headerProfileLink.href =
-            "/profile";
+            return null;
+        }
 
 
-        /*
-         * Create the profile summary.
-         *
-         * textContent is used for player-controlled values
-         * so usernames cannot inject HTML into the page.
-         */
-        profileContent.innerHTML = "";
+        displaySignedInProfile(player);
 
 
-        const card =
-            document.createElement(
-                "div"
-            );
-
-
-        card.className =
-            "profile-card";
-
-
-        const username =
-            document.createElement(
-                "h3"
-            );
-
-
-        username.className =
-            "profile-username";
-
-
-        username.textContent =
-            player.username;
-
-
-        card.appendChild(
-            username
-        );
-
-
-        /*
-         * ELO.
-         */
-        const eloRow =
-            document.createElement(
-                "div"
-            );
-
-
-        eloRow.className =
-            "profile-row profile-elo";
-
-
-        const eloLabel =
-            document.createElement(
-                "span"
-            );
-
-
-        eloLabel.textContent =
-            "Rating:";
-
-
-        const eloValue =
-            document.createElement(
-                "strong"
-            );
-
-
-        eloValue.textContent =
-            `${Number(player.elo) || 0} ELO`;
-
-
-        eloRow.appendChild(
-            eloLabel
-        );
-
-
-        eloRow.appendChild(
-            eloValue
-        );
-
-
-        card.appendChild(
-            eloRow
-        );
-
-
-        /*
-         * Rank.
-         */
-        const rankRow =
-            document.createElement(
-                "div"
-            );
-
-
-        rankRow.className =
-            "profile-row profile-rank";
-
-
-        const rankLabel =
-            document.createElement(
-                "span"
-            );
-
-
-        rankLabel.textContent =
-            "Rank:";
-
-
-        const rankValue =
-            document.createElement(
-                "strong"
-            );
-
-
-        rankValue.textContent =
-            player.rank;
-
-
-        rankRow.appendChild(
-            rankLabel
-        );
-
-
-        rankRow.appendChild(
-            rankValue
-        );
-
-
-        card.appendChild(
-            rankRow
-        );
-
-
-        /*
-         * Profile button.
-         */
-        const profileButton =
-            document.createElement(
-                "a"
-            );
-
-
-        profileButton.className =
-            "profile-button";
-
-
-        profileButton.href =
-            "/profile";
-
-
-        profileButton.textContent =
-            "VIEW PROFILE";
-
-
-        card.appendChild(
-            profileButton
-        );
-
-
-        profileContent.appendChild(
-            card
-        );
-
+        return player;
 
     } catch (error) {
 
-        /*
-         * No signed-in session.
-         */
-        headerUsername.textContent =
-            "Not signed in";
-
-
-        headerProfileLink.href =
-            "/profile";
-
-
-        profileContent.innerHTML = "";
-
-
-        const message =
-            document.createElement(
-                "div"
-            );
-
-
-        message.className =
-            "profile-login-message";
-
-
-        message.textContent =
-            "Sign in to see your profile and ELO.";
-
-
-        profileContent.appendChild(
-            message
+        console.error(
+            "Failed to load current player:",
+            error
         );
 
+
+        /*
+         * If the account request fails, we still want the homepage
+         * itself to remain usable.
+         */
+        displaySignedOutProfile();
+
+
+        return null;
     }
 }
 
@@ -500,64 +618,32 @@ async function loadCurrentPlayer() {
    ============================================================ */
 
 /*
- * The actual multiplayer matchmaking system will eventually
- * live behind this button.
+ * Handle the PLAY button.
+ *
+ * The actual matchmaking system will eventually be connected
+ * here. For now, it opens the card game page.
  */
-function setupPlayButton() {
+function handlePlay() {
 
-    const button =
-        document.getElementById(
-            "play-button"
-        );
-
-
-    button.addEventListener(
-        "click",
-        () => {
-
-            /*
-             * This is temporarily the destination for
-             * multiplayer gameplay.
-             *
-             * The actual lobby/matchmaking page can replace
-             * this later.
-             */
-            window.location.href =
-                "/cardgame.html";
-        }
-    );
+    window.location.href =
+        "/cardgame.html";
 }
 
 
 /* ============================================================
-   DECK BUTTON
+   DECK BUILDER BUTTON
    ============================================================ */
 
 /*
- * Opens the deck builder.
+ * Handle the DECK BUILDER button.
+ *
+ * The current card game page is used as the temporary destination
+ * until the dedicated deck-builder page is created.
  */
-function setupDeckButton() {
+function handleDeckBuilder() {
 
-    const button =
-        document.getElementById(
-            "deck-button"
-        );
-
-
-    button.addEventListener(
-        "click",
-        () => {
-
-            /*
-             * The deck builder will eventually have its own
-             * page.
-             *
-             * For now, use the game page as the destination.
-             */
-            window.location.href =
-                "/cardgame.html";
-        }
-    );
+    window.location.href =
+        "/cardgame.html";
 }
 
 
@@ -566,79 +652,75 @@ function setupDeckButton() {
    ============================================================ */
 
 /*
- * Opens the rules/instructions page.
+ * Handle the HOW TO PLAY button.
  *
- * The actual rules page can be added later.
+ * `/how-to-play` is the planned rules page.
  */
-function setupHowToPlayButton() {
+function handleHowToPlay() {
 
-    const button =
-        document.getElementById(
-            "how-to-play-button"
-        );
-
-
-    button.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "/how-to-play";
-        }
-    );
+    window.location.href =
+        "/how-to-play";
 }
 
 
 /* ============================================================
-   AUTOMATIC STATUS REFRESH
+   BUTTON EVENT LISTENERS
    ============================================================ */
 
 /*
- * Refresh server information periodically.
- *
- * This means the numbers on the homepage can change without
- * requiring the player to manually refresh the page.
+ * Connect each button to its corresponding function.
  */
-function startStatusRefresh() {
+elements.playButton.addEventListener(
+    "click",
+    handlePlay
+);
 
-    /*
-     * Update once every 10 seconds.
-     */
-    setInterval(
-        loadServerStatus,
-        10000
-    );
-}
+
+elements.deckButton.addEventListener(
+    "click",
+    handleDeckBuilder
+);
+
+
+elements.howToPlayButton.addEventListener(
+    "click",
+    handleHowToPlay
+);
 
 
 /* ============================================================
-   PAGE STARTUP
+   INITIAL PAGE LOAD
    ============================================================ */
 
 /*
- * All scripts use defer, so the DOM is available when this
- * function runs.
+ * Put the server indicator into a loading state immediately.
  */
-async function initializeHomepage() {
-
-    await Promise.all([
-        loadServerStatus(),
-        loadCurrentPlayer()
-    ]);
-
-
-    setupPlayButton();
-
-    setupDeckButton();
-
-    setupHowToPlayButton();
-
-    startStatusRefresh();
-}
+setServerLoading();
 
 
 /*
- * Start the homepage.
+ * Load both pieces of dynamic information when the page opens.
+ *
+ * Promise.all lets the two requests happen at the same time.
  */
-initializeHomepage();
-```
+Promise.all([
+    loadServerInformation(),
+    loadCurrentPlayer()
+]);
+
+
+/* ============================================================
+   AUTOMATIC SERVER REFRESH
+   ============================================================ */
+
+/*
+ * Refresh the server statistics periodically.
+ *
+ * The player's profile does not need to be reloaded every 10
+ * seconds because their profile information normally changes
+ * much less frequently.
+ */
+setInterval(
+    loadServerInformation,
+    STATUS_REFRESH_INTERVAL
+);
