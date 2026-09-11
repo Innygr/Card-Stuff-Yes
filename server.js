@@ -1205,13 +1205,410 @@ function sendText(
 }
 
 
+
 // ============================================================
-// READ JSON BODY
+// STATIC FILE SERVING
 // ============================================================
 //
-// Reads POST request data.
+// Serves the website's public files, including:
 //
-// A size limit prevents enormous requests.
+//     /colors.css
+//     /profile.css
+//     /profile.js
+//
+// It also serves files inside:
+//
+//     /assets/
+//
+// Only explicitly allowed website files and files inside the
+// assets directory can be served.
+//
+// Path resolution is checked so a URL cannot escape the
+// intended website/assets directories.
+//
+// ============================================================
+
+const WEBSITE_DIRECTORY =
+    path.resolve(__dirname);
+
+
+const ASSETS_DIRECTORY =
+    path.resolve(
+        __dirname,
+        "assets"
+    );
+
+
+// ============================================================
+// MIME TYPES
+// ============================================================
+//
+// Tells the browser what kind of file it received.
+//
+// ============================================================
+
+const MIME_TYPES = {
+
+    ".html":
+        "text/html; charset=utf-8",
+
+    ".css":
+        "text/css; charset=utf-8",
+
+    ".js":
+        "application/javascript; charset=utf-8",
+
+    ".json":
+        "application/json; charset=utf-8",
+
+    ".png":
+        "image/png",
+
+    ".jpg":
+        "image/jpeg",
+
+    ".jpeg":
+        "image/jpeg",
+
+    ".webp":
+        "image/webp",
+
+    ".gif":
+        "image/gif",
+
+    ".svg":
+        "image/svg+xml",
+
+    ".ico":
+        "image/x-icon"
+
+};
+
+
+// ============================================================
+// SERVE STATIC FILE
+// ============================================================
+//
+// Returns true when the request was handled.
+//
+// Returns false when the request is not a static file request,
+// allowing the API routes below to handle it.
+//
+// ============================================================
+
+function serveStaticFile(
+    req,
+    res
+) {
+
+    if (
+        req.method !== "GET" &&
+        req.method !== "HEAD"
+    ) {
+
+        return false;
+
+    }
+
+
+    // --------------------------------------------------------
+    // GET ONLY THE URL PATH
+    // --------------------------------------------------------
+    //
+    // This removes query strings such as:
+    //
+    //     /profile.css?v=2
+    //
+    // --------------------------------------------------------
+
+    let pathname;
+
+    try {
+
+        pathname =
+            new URL(
+                req.url,
+                "http://localhost"
+            ).pathname;
+
+    } catch {
+
+        sendText(
+            res,
+            400,
+            "Invalid file path."
+        );
+
+        return true;
+
+    }
+
+
+    // --------------------------------------------------------
+    // DECODE URL
+    // --------------------------------------------------------
+    //
+    // Decode URL-encoded characters before checking the path.
+    //
+    // --------------------------------------------------------
+
+    try {
+
+        pathname =
+            decodeURIComponent(
+                pathname
+            );
+
+    } catch {
+
+        sendText(
+            res,
+            400,
+            "Invalid file path."
+        );
+
+        return true;
+
+    }
+
+
+    let filePath = null;
+
+
+    // ========================================================
+    // WEBSITE FILES
+    // ========================================================
+    //
+    // Only these direct website files are exposed.
+    //
+    // This prevents arbitrary server files such as players.db
+    // from being requested through the browser.
+    //
+    // ========================================================
+
+    const allowedWebsiteFiles = new Set([
+
+        "/colors.css",
+        "/profile.css",
+        "/profile.js",
+
+        "/cardgame.css",
+        "/cardgame.js",
+        "/cardgame.html",
+
+        "/test.html"
+
+    ]);
+
+
+    if (
+        allowedWebsiteFiles.has(
+            pathname
+        )
+    ) {
+
+        filePath =
+            path.resolve(
+                WEBSITE_DIRECTORY,
+                pathname.substring(1)
+            );
+
+    }
+
+
+    // ========================================================
+    // ASSETS
+    // ========================================================
+    //
+    // Files under /assets/ are allowed.
+    //
+    // Example:
+    //
+    //     /assets/badges/owner.png
+    //
+    // ========================================================
+
+    else if (
+        pathname.startsWith(
+            "/assets/"
+        )
+    ) {
+
+        const relativeAssetPath =
+            pathname.substring(
+                "/assets/".length
+            );
+
+
+        filePath =
+            path.resolve(
+                ASSETS_DIRECTORY,
+                relativeAssetPath
+            );
+
+
+        // ----------------------------------------------------
+        // PATH TRAVERSAL PROTECTION
+        // ----------------------------------------------------
+        //
+        // The resolved file must remain inside ./assets.
+        //
+        // ----------------------------------------------------
+
+        const assetsPrefix =
+            ASSETS_DIRECTORY +
+            path.sep;
+
+
+        if (
+            !filePath.startsWith(
+                assetsPrefix
+            )
+        ) {
+
+            sendText(
+                res,
+                403,
+                "Forbidden."
+            );
+
+            return true;
+
+        }
+
+    }
+
+
+    // --------------------------------------------------------
+    // NOT A STATIC FILE
+    // --------------------------------------------------------
+
+    else {
+
+        return false;
+
+    }
+
+
+    // ========================================================
+    // FILE EXTENSION
+    // ========================================================
+
+    const extension =
+        path.extname(
+            filePath
+        ).toLowerCase();
+
+
+    const contentType =
+        MIME_TYPES[extension];
+
+
+    if (!contentType) {
+
+        sendText(
+            res,
+            415,
+            "Unsupported file type."
+        );
+
+        return true;
+
+    }
+
+
+    // ========================================================
+    // READ FILE
+    // ========================================================
+
+    fs.readFile(
+        filePath,
+        (error, data) => {
+
+            if (error) {
+
+                if (
+                    error.code ===
+                    "ENOENT"
+                ) {
+
+                    sendText(
+                        res,
+                        404,
+                        "File not found."
+                    );
+
+                } else {
+
+                    console.error(
+                        "Static file error:",
+                        error
+                    );
+
+                    sendText(
+                        res,
+                        500,
+                        "Could not load file."
+                    );
+
+                }
+
+                return;
+
+            }
+
+
+            // ------------------------------------------------
+            // RESPONSE HEADERS
+            // ------------------------------------------------
+
+            res.writeHead(
+                200,
+                {
+                    "Content-Type":
+                        contentType,
+
+                    "Cache-Control":
+                        "no-cache"
+                }
+            );
+
+
+            // ------------------------------------------------
+            // HEAD REQUEST
+            // ------------------------------------------------
+            //
+            // HEAD returns the headers without the file body.
+            //
+            // ------------------------------------------------
+
+            if (
+                req.method === "HEAD"
+            ) {
+
+                res.end();
+
+                return;
+
+            }
+
+
+            res.end(data);
+
+        }
+    );
+
+
+    return true;
+
+}
+
+
+// ============================================================
+// READ JSON REQUEST BODY
+// ============================================================
+//
+// Reads the request body and parses it as JSON.
 //
 // ============================================================
 
@@ -1227,12 +1624,17 @@ function readJSON(req) {
                 "data",
                 chunk => {
 
-                    body += chunk;
+                    body +=
+                        chunk.toString();
 
+
+                    // ------------------------------------------------
+                    // Prevent excessively large request bodies.
+                    // ------------------------------------------------
 
                     if (
                         body.length >
-                        100000
+                        1024 * 1024
                     ) {
 
                         reject(
@@ -1241,9 +1643,10 @@ function readJSON(req) {
                             )
                         );
 
-
                         req.destroy();
+
                     }
+
                 }
             );
 
@@ -1257,6 +1660,7 @@ function readJSON(req) {
                         resolve({});
 
                         return;
+
                     }
 
 
@@ -1273,7 +1677,9 @@ function readJSON(req) {
                                 "Invalid JSON."
                             )
                         );
+
                     }
+
                 }
             );
 
@@ -1282,8 +1688,10 @@ function readJSON(req) {
                 "error",
                 reject
             );
+
         }
     );
+
 }
 
 
@@ -1291,18 +1699,10 @@ function readJSON(req) {
 // DECK VALIDATION
 // ============================================================
 //
-// Checks whether a requested deck is valid.
+// Checks whether a submitted deck is valid.
 //
-// Rules currently:
-//
-// - Deck must be an array
-// - Each card ID must be a string
-// - Card IDs must not be empty
-// - Every card must be unlocked
-// - Slots are generated by the server
-//
-// We will add actual deck-size/card-copy rules when
-// the card-game rules are finalized.
+// The server checks card ownership rather than trusting
+// information supplied by the browser.
 //
 // ============================================================
 
@@ -1315,57 +1715,70 @@ function validateDeck(
 
         return {
             valid: false,
-            error: "Deck must be an array."
+            error:
+                "Deck must be an array."
         };
+
     }
 
 
-    // Current temporary maximum.
-    //
-    // We can change this when the actual game rules
-    // define the deck size.
+    // --------------------------------------------------------
+    // Temporary maximum deck size.
+    // --------------------------------------------------------
 
     if (cards.length > 100) {
 
         return {
             valid: false,
-            error: "Deck cannot contain more than 100 cards."
+            error:
+                "Deck contains too many cards."
         };
+
     }
 
 
-    for (const cardId of cards) {
+    for (
+        const cardId of cards
+    ) {
+
+        // ----------------------------------------------------
+        // Card IDs must be strings.
+        // ----------------------------------------------------
 
         if (
-            typeof cardId !== "string" ||
-            !cardId.trim()
+            typeof cardId !==
+            "string"
         ) {
 
             return {
                 valid: false,
-                error: "Every deck card must have a valid card ID."
+                error:
+                    "Every card ID must be a string."
             };
+
         }
 
 
+        // ----------------------------------------------------
+        // Prevent empty or excessively large card IDs.
+        // ----------------------------------------------------
+
         if (
+            !cardId ||
             cardId.length > 128
         ) {
 
             return {
                 valid: false,
-                error: "A card ID is too long."
+                error:
+                    "Invalid card ID."
             };
+
         }
 
 
         // ----------------------------------------------------
-        // IMPORTANT:
-        //
-        // The server checks ownership.
-        //
-        // The client cannot simply submit a card it
-        // doesn't own.
+        // The player must actually own the card.
         // ----------------------------------------------------
 
         if (
@@ -1377,22 +1790,144 @@ function validateDeck(
 
             return {
                 valid: false,
-
                 error:
-                    `You have not unlocked card "${cardId}".`
+                    `Player does not own card: ${cardId}`
             };
+
         }
+
     }
 
 
     return {
         valid: true
     };
+
 }
 
 
 // ============================================================
-// SERVER
+// SAVE PLAYER DECK
+// ============================================================
+//
+// Deletes the old deck and writes the submitted deck.
+//
+// A transaction makes the whole operation succeed or fail
+// together.
+//
+// ============================================================
+
+function savePlayerDeck(
+    playerId,
+    cards
+) {
+
+    const validation =
+        validateDeck(
+            playerId,
+            cards
+        );
+
+
+    if (!validation.valid) {
+
+        return validation;
+
+    }
+
+
+    const saveDeck =
+        db.transaction(
+            () => {
+
+                // ------------------------------------------------
+                // Remove the player's previous deck.
+                // ------------------------------------------------
+
+                db.prepare(`
+                    DELETE FROM player_deck
+                    WHERE playerId = ?
+                `).run(
+                    playerId
+                );
+
+
+                // ------------------------------------------------
+                // Prepare the insert statement once.
+                // ------------------------------------------------
+
+                const insert =
+                    db.prepare(`
+                        INSERT INTO player_deck
+                        (
+                            playerId,
+                            slot,
+                            cardId
+                        )
+                        VALUES (?, ?, ?)
+                    `);
+
+
+                // ------------------------------------------------
+                // Insert every card using its server-generated
+                // slot number.
+                // ------------------------------------------------
+
+                for (
+                    let slot = 0;
+                    slot < cards.length;
+                    slot++
+                ) {
+
+                    insert.run(
+                        playerId,
+                        slot,
+                        cards[slot]
+                    );
+
+                }
+
+            }
+        );
+
+
+    try {
+
+        saveDeck();
+
+
+        return {
+            valid: true
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Failed to save deck:",
+            error
+        );
+
+
+        return {
+            valid: false,
+            error:
+                "Failed to save deck."
+        };
+
+    }
+
+}
+
+
+// ============================================================
+// HTTP SERVER
+// ============================================================
+//
+// This is the main request router.
+//
+// Requests are handled here and sent to the appropriate
+// API endpoint or website file.
+//
 // ============================================================
 
 const server =
@@ -1401,52 +1936,82 @@ const server =
 
             try {
 
+                const requestURL =
+                    new URL(
+                        req.url,
+                        `http://${req.headers.host || "localhost"}`
+                    );
+
+
+                const pathname =
+                    requestURL.pathname;
+
+
+                const method =
+                    req.method;
+
+
                 // ====================================================
                 // ROOT PAGE
                 // ====================================================
                 //
-                // Currently loads test.html.
-                //
-                // Later this can become the actual game homepage.
+                // The root currently loads test.html.
                 //
                 // ====================================================
 
                 if (
-                    req.url === "/" &&
-                    req.method === "GET"
+                    method === "GET" &&
+                    pathname === "/"
                 ) {
 
-                    fs.readFile(
-                        "./test.html",
-                        (err, data) => {
-
-                            if (err) {
-
-                                sendText(
-                                    res,
-                                    500,
-                                    "Could not load test page."
-                                );
-
-                                return;
-                            }
+                    const filePath =
+                        path.join(
+                            WEBSITE_DIRECTORY,
+                            "test.html"
+                        );
 
 
-                            res.writeHead(
-                                200,
-                                {
-                                    "Content-Type":
-                                        "text/html"
-                                }
+                    try {
+
+                        const file =
+                            fs.readFileSync(
+                                filePath
                             );
 
 
-                            res.end(data);
-                        }
-                    );
+                        res.writeHead(
+                            200,
+                            {
+                                "Content-Type":
+                                    "text/html; charset=utf-8",
+
+                                "Cache-Control":
+                                    "no-cache"
+                            }
+                        );
+
+
+                        res.end(file);
+
+                    } catch (error) {
+
+                        console.error(
+                            "Failed to serve test.html:",
+                            error
+                        );
+
+
+                        sendText(
+                            res,
+                            500,
+                            "Could not load the website."
+                        );
+
+                    }
 
 
                     return;
+
                 }
 
 
@@ -1454,57 +2019,105 @@ const server =
                 // PROFILE PAGE
                 // ====================================================
                 //
-                // The profile page uses /api/me to determine
-                // who is signed in.
+                // /profile loads profile.html.
                 //
                 // ====================================================
 
                 if (
-                    req.url === "/profile" &&
-                    req.method === "GET"
+                    method === "GET" &&
+                    pathname === "/profile"
                 ) {
 
-                    fs.readFile(
-                        "./profile.html",
-                        (err, data) => {
-
-                            if (err) {
-
-                                sendText(
-                                    res,
-                                    500,
-                                    "Could not load profile page."
-                                );
-
-                                return;
-                            }
+                    const filePath =
+                        path.join(
+                            WEBSITE_DIRECTORY,
+                            "profile.html"
+                        );
 
 
-                            res.writeHead(
-                                200,
-                                {
-                                    "Content-Type":
-                                        "text/html"
-                                }
+                    try {
+
+                        const file =
+                            fs.readFileSync(
+                                filePath
                             );
 
 
-                            res.end(data);
-                        }
-                    );
+                        res.writeHead(
+                            200,
+                            {
+                                "Content-Type":
+                                    "text/html; charset=utf-8",
+
+                                "Cache-Control":
+                                    "no-cache"
+                            }
+                        );
+
+
+                        res.end(file);
+
+                    } catch (error) {
+
+                        console.error(
+                            "Failed to serve profile.html:",
+                            error
+                        );
+
+
+                        sendText(
+                            res,
+                            500,
+                            "Could not load the profile page."
+                        );
+
+                    }
 
 
                     return;
+
                 }
 
 
                 // ====================================================
-                // SERVER STATUS
+                // STATIC FILES
+                // ====================================================
+                //
+                // Handles:
+                //
+                //     /colors.css
+                //     /profile.css
+                //     /profile.js
+                //     /cardgame.css
+                //     /cardgame.js
+                //     /assets/...
+                //
                 // ====================================================
 
                 if (
-                    req.url === "/api/status" &&
-                    req.method === "GET"
+                    serveStaticFile(
+                        req,
+                        res
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                // ====================================================
+                // API: SERVER STATUS
+                // ====================================================
+                //
+                // Lets the website check whether Card Stuff Yes
+                // is currently online.
+                //
+                // ====================================================
+
+                if (
+                    method === "GET" &&
+                    pathname === "/api/status"
                 ) {
 
                     sendJSON(
@@ -1518,23 +2131,23 @@ const server =
 
 
                     return;
+
                 }
 
 
                 // ====================================================
-                // PLAYER LIST
+                // API: PLAYERS
                 // ====================================================
                 //
-                // Returns basic public information about
-                // every player.
+                // Returns public information about all players.
                 //
-                // Password hashes are never included.
+                // Password hashes are removed by publicPlayer().
                 //
                 // ====================================================
 
                 if (
-                    req.url === "/api/players" &&
-                    req.method === "GET"
+                    method === "GET" &&
+                    pathname === "/api/players"
                 ) {
 
                     const players =
@@ -1550,34 +2163,36 @@ const server =
                         `).all();
 
 
-                    const safePlayers =
-                        players.map(
-                            publicPlayer
-                        );
-
-
                     sendJSON(
                         res,
                         200,
                         {
                             players:
-                                safePlayers
+                                players.map(
+                                    publicPlayer
+                                )
                         }
                     );
 
 
                     return;
+
                 }
 
 
                 // ====================================================
-                // REGISTER
+                // API: REGISTER
+                // ====================================================
+                //
+                // Creates a normal Player account.
+                //
+                // The client cannot choose its own rank.
+                //
                 // ====================================================
 
                 if (
-                    req.url ===
-                        "/api/auth/register" &&
-                    req.method === "POST"
+                    method === "POST" &&
+                    pathname === "/api/auth/register"
                 ) {
 
                     let body;
@@ -1588,19 +2203,20 @@ const server =
                         body =
                             await readJSON(req);
 
-                    } catch (error) {
+                    } catch {
 
                         sendJSON(
                             res,
                             400,
                             {
                                 error:
-                                    error.message
+                                    "Invalid JSON."
                             }
                         );
 
 
                         return;
+
                     }
 
 
@@ -1618,44 +2234,12 @@ const server =
                             : "";
 
 
+                    // ------------------------------------------------
+                    // Validate username.
+                    // ------------------------------------------------
+
                     if (
                         !username ||
-                        !password
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Username and password are required."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    if (
-                        username.length < 3
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Username must be at least 3 characters."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    if (
                         username.length > 32
                     ) {
 
@@ -1664,17 +2248,23 @@ const server =
                             400,
                             {
                                 error:
-                                    "Username must be 32 characters or less."
+                                    "Username must be between 1 and 32 characters."
                             }
                         );
 
 
                         return;
+
                     }
 
 
+                    // ------------------------------------------------
+                    // Validate password.
+                    // ------------------------------------------------
+
                     if (
-                        password.length < 6
+                        !password ||
+                        password.length < 8
                     ) {
 
                         sendJSON(
@@ -1682,17 +2272,18 @@ const server =
                             400,
                             {
                                 error:
-                                    "Password must be at least 6 characters."
+                                    "Password must be at least 8 characters."
                             }
                         );
 
 
                         return;
+
                     }
 
 
                     // ------------------------------------------------
-                    // USERNAME UNIQUENESS
+                    // Check whether the username is already used.
                     // ------------------------------------------------
 
                     const existing =
@@ -1708,21 +2299,26 @@ const server =
                             409,
                             {
                                 error:
-                                    "Username already exists. Please sign in."
+                                    "Username is already taken."
                             }
                         );
 
 
                         return;
+
                     }
 
 
                     // ------------------------------------------------
-                    // CREATE PLAYER
+                    // Assign the next available player ID.
                     // ------------------------------------------------
 
-                    const id =
+                    const playerId =
                         getNextPlayerId();
+
+
+                    const createdAt =
+                        new Date().toISOString();
 
 
                     const passwordHash =
@@ -1731,42 +2327,74 @@ const server =
                         );
 
 
-                    const createdAt =
-                        new Date().toISOString();
+                    // ------------------------------------------------
+                    // Create the player.
+                    //
+                    // Every normal registered account starts as
+                    // Player.
+                    // ------------------------------------------------
 
+                    try {
 
-                    db.prepare(`
-                        INSERT INTO players
-                        (
-                            id,
+                        db.prepare(`
+                            INSERT INTO players
+                            (
+                                id,
+                                username,
+                                passwordHash,
+                                rank,
+                                createdAt,
+                                mustChangePassword
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?,
+                                ?,
+                                'Player',
+                                ?,
+                                0
+                            )
+                        `).run(
+                            playerId,
                             username,
                             passwordHash,
-                            rank,
-                            createdAt,
-                            mustChangePassword
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `).run(
-                        id,
-                        username,
-                        passwordHash,
-                        "Player",
-                        createdAt,
-                        0
-                    );
+                            createdAt
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Registration error:",
+                            error
+                        );
+
+
+                        sendJSON(
+                            res,
+                            500,
+                            {
+                                error:
+                                    "Could not create account."
+                            }
+                        );
+
+
+                        return;
+
+                    }
 
 
                     const player =
-                        getPlayerById(id);
+                        getPlayerById(
+                            playerId
+                        );
 
 
                     sendJSON(
                         res,
                         201,
                         {
-                            message:
-                                "Account created.",
-
                             player:
                                 publicPlayer(
                                     player
@@ -1776,210 +2404,8 @@ const server =
 
 
                     return;
-                }
 
-
-                // ====================================================
-                // LOGIN
-                // ====================================================
-
-                if (
-                    req.url ===
-                        "/api/auth/login" &&
-                    req.method === "POST"
-                ) {
-
-                    let body;
-
-
-                    try {
-
-                        body =
-                            await readJSON(req);
-
-                    } catch (error) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    error.message
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    const username =
-                        typeof body.username ===
-                        "string"
-                            ? body.username.trim()
-                            : "";
-
-
-                    const password =
-                        typeof body.password ===
-                        "string"
-                            ? body.password
-                            : "";
-
-
-                    if (
-                        !username ||
-                        !password
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Username and password are required."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    const player =
-                        getPlayerByUsername(
-                            username
-                        );
-
-
-                    if (!player) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "Invalid username or password."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    const valid =
-                        checkPassword(
-                            password,
-                            player.passwordHash
-                        );
-
-
-                    if (!valid) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "Invalid username or password."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    // ------------------------------------------------
-                    // CREATE SESSION
-                    // ------------------------------------------------
-
-                    const session =
-                        createSession(
-                            player.id
-                        );
-
-
-                    // ------------------------------------------------
-                    // SESSION COOKIE
-                    // ------------------------------------------------
-                    //
-                    // HttpOnly:
-                    // JavaScript cannot directly read the cookie.
-                    //
-                    // Secure:
-                    // Cookie is sent over HTTPS.
-                    //
-                    // SameSite=Lax:
-                    // Helps protect against unwanted cross-site
-                    // requests.
-                    //
-                    // Max-Age:
-                    // Seven-day session.
-                    //
-                    // ------------------------------------------------
-
-                    res.setHeader(
-                        "Set-Cookie",
-                        `sessionId=${encodeURIComponent(session.sessionId)}; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_LENGTH_MS / 1000}; Path=/`
-                    );
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-                            message:
-                                "Signed in.",
-
-                            player:
-                                publicPlayer(
-                                    player
-                                ),
-
-                            expiresAt:
-                                session.expiresAt
-                                    .toISOString()
-                        }
-                    );
-
-
-                    return;
-                }
-
-
-                // ====================================================
-                // CURRENT USER
-                // ====================================================
-                //
-                // GET /api/me
-                //
-                // Returns the currently signed-in player.
-                //
-                // This is what profile.html uses.
-                //
-                // ====================================================
-
-                if (
-                    req.url === "/api/me" &&
-                    req.method === "GET"
-                ) {
-
-                    const player =
-                        getPlayerFromSession(
-                            req
-                        );
-
-
-                    if (!player) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "Not signed in."
+                }                                    "Not signed in."
                             }
                         );
 
@@ -2366,13 +2792,9 @@ const server =
                                     "Current password and new password are required."
                             }
                         );
-
-
+k
                         return;
-                    }
-
-
-                    // ------------------------------------------------
+                    }                    // ------------------------------------------------
                     // VERIFY CURRENT PASSWORD
                     // ------------------------------------------------
 
