@@ -7,16 +7,16 @@
          PAGE INFORMATION
          ======================================================== -->
 
-    <!-- Tell the browser this page uses modern HTML. -->
+    <!-- Use modern HTML character encoding. -->
     <meta charset="UTF-8">
 
-    <!-- Make the page scale correctly on phones and tablets. -->
+    <!-- Make the page responsive on phones, tablets, and PCs. -->
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <!-- Text shown in the browser tab. -->
+    <!-- Browser tab title. -->
     <title>Card Stuff Yes</title>
 
 
@@ -24,7 +24,12 @@
          STYLESHEETS
          ======================================================== -->
 
-    <!-- Global Card Stuff Yes color palette. -->
+    <!--
+        Global Card Stuff Yes colors.
+
+        All pages should load colors.css before their
+        page-specific CSS.
+    -->
     <link
         rel="stylesheet"
         href="/colors.css"
@@ -47,28 +52,38 @@
 
     <header class="site-header">
 
-        <!-- Main website title. -->
+        <!-- Website/game name. -->
         <div class="site-title">
             CARD STUFF YES
         </div>
 
 
-        <!-- Profile/login area. -->
+        <!--
+            Account controls.
+
+            The username is filled in by homepage.js.
+        -->
         <div class="header-account">
 
-            <!-- Filled in by homepage.js. -->
             <span id="header-username">
                 Not signed in
             </span>
 
 
-            <!-- Opens the player's profile. -->
             <a
                 id="header-profile-link"
+                class="header-link"
                 href="/profile"
-                class="header-profile-link"
             >
                 Profile
+            </a>
+
+
+            <a
+                class="header-link"
+                href="/settings.html"
+            >
+                Settings
             </a>
 
         </div>
@@ -82,28 +97,28 @@
 
     <main class="homepage">
 
+
         <!-- ====================================================
-             GAME INTRODUCTION
+             HERO
              ==================================================== -->
 
         <section class="hero-section">
 
-            <!-- Large game title. -->
             <h1>
                 CARD STUFF YES
             </h1>
 
 
-            <!-- Game description. -->
             <p class="hero-subtitle">
                 Multiplayer Card Game
             </p>
 
 
-            <!-- Main game actions. -->
+            <!-- Main homepage buttons. -->
             <div class="main-actions">
 
-                <!-- Starts matchmaking/gameplay. -->
+
+                <!-- Play the game. -->
                 <button
                     id="play-button"
                     class="main-button"
@@ -113,7 +128,7 @@
                 </button>
 
 
-                <!-- Opens the deck builder. -->
+                <!-- Open the deck builder. -->
                 <button
                     id="deck-button"
                     class="main-button"
@@ -123,13 +138,33 @@
                 </button>
 
 
-                <!-- Opens the rules/instructions. -->
+                <!-- Open the news page. -->
+                <button
+                    id="news-button"
+                    class="main-button"
+                    type="button"
+                >
+                    NEWS
+                </button>
+
+
+                <!-- Open the rules. -->
                 <button
                     id="how-to-play-button"
                     class="main-button"
                     type="button"
                 >
                     HOW TO PLAY
+                </button>
+
+
+                <!-- Open settings. -->
+                <button
+                    id="settings-button"
+                    class="main-button"
+                    type="button"
+                >
+                    SETTINGS
                 </button>
 
             </div>
@@ -148,19 +183,18 @@
             </h2>
 
 
-            <!-- Current server state. -->
+            <!-- Server online/offline status. -->
             <div class="server-status">
 
-                <!-- The dot changes depending on server status. -->
                 <span
                     id="server-status-dot"
                     class="status-dot"
+                    aria-hidden="true"
                 >
                     ●
                 </span>
 
 
-                <!-- Filled in by homepage.js. -->
                 <span id="server-status-text">
                     Checking server...
                 </span>
@@ -168,12 +202,13 @@
             </div>
 
 
-            <!-- Number of connected players. -->
+            <!-- Connected players. -->
             <div class="server-stat">
 
                 <span>
                     Players Online:
                 </span>
+
 
                 <strong id="players-online">
                     0
@@ -182,12 +217,13 @@
             </div>
 
 
-            <!-- Number of players waiting for matchmaking. -->
+            <!-- Players waiting for a match. -->
             <div class="server-stat">
 
                 <span>
                     Players in Queue:
                 </span>
+
 
                 <strong id="players-queue">
                     0
@@ -196,12 +232,13 @@
             </div>
 
 
-            <!-- Number of players currently in a battle. -->
+            <!-- Players currently in battles. -->
             <div class="server-stat">
 
                 <span>
                     Players in Battle:
                 </span>
+
 
                 <strong id="players-battle">
                     0
@@ -213,7 +250,7 @@
 
 
         <!-- ====================================================
-             PLAYER PROFILE SUMMARY
+             YOUR PROFILE
              ==================================================== -->
 
         <section
@@ -226,7 +263,10 @@
             </h2>
 
 
-            <!-- Filled in by homepage.js. -->
+            <!--
+                homepage.js replaces this with the signed-in
+                player's information.
+            -->
             <div id="profile-content">
 
                 <p>
@@ -262,7 +302,10 @@
          HOMEPAGE JAVASCRIPT
          ======================================================== -->
 
-    <!-- defer lets the HTML load before the script runs. -->
+    <!--
+        defer waits until the HTML has been parsed before
+        running the JavaScript.
+    -->
     <script
         src="/homepage.js"
         defer
