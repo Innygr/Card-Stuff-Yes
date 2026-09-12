@@ -1,0 +1,551 @@
+/*
+
+* ============================================================
+* CARD STUFF YES - SET MANAGER STYLES
+* ============================================================
+*
+* This file controls the appearance of the Set Manager.
+*
+* IMPORTANT:
+* All colours come from the global colors.css file.
+* Do not put hard-coded theme colours here unless necessary.
+*
+* ============================================================
+  */
+
+/* ============================================================
+PAGE
+============================================================ */
+
+body {
+margin: 0;
+min-height: 100vh;
+
+```
+background: var(--color-background);
+color: var(--color-text);
+
+font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+```
+
+}
+
+/* ============================================================
+MAIN CONTAINER
+============================================================ */
+
+.set-manager {
+width: min(1100px, calc(100% - 32px));
+margin: 0 auto;
+padding: 24px 0 48px;
+}
+
+/* ============================================================
+HEADER
+============================================================ */
+
+.set-manager-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 16px;
+
+```
+margin-bottom: 24px;
+padding-bottom: 16px;
+
+border-bottom: 1px solid var(--color-border);
+```
+
+}
+
+.set-manager-title {
+margin: 0;
+font-size: 32px;
+}
+
+.set-manager-subtitle {
+margin: 6px 0 0;
+
+```
+color: var(--color-text-secondary);
+font-size: 15px;
+```
+
+}
+
+/* ============================================================
+BUTTONS
+============================================================ */
+
+button {
+border: 1px solid var(--color-border-light);
+border-radius: 6px;
+
+```
+padding: 10px 16px;
+
+background: var(--color-button);
+color: var(--color-button-text);
+
+font: inherit;
+cursor: pointer;
+
+transition:
+    background var(--global-transition-speed),
+    transform var(--global-transition-speed);
+```
+
+}
+
+button:hover {
+background: var(--color-button-hover);
+}
+
+button:active {
+transform: translateY(1px);
+}
+
+button:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.primary-button {
+padding: 11px 18px;
+}
+
+.danger-button {
+background: var(--color-error);
+}
+
+.danger-button:hover {
+background: var(--color-error);
+opacity: 0.85;
+}
+
+.secondary-button {
+background: var(--color-background-tertiary);
+}
+
+/* ============================================================
+SECTIONS
+============================================================ */
+
+.manager-section {
+margin-bottom: 24px;
+
+```
+padding: 20px;
+
+border: 1px solid var(--color-border);
+border-radius: 8px;
+
+background: var(--color-background-secondary);
+```
+
+}
+
+.manager-section h2 {
+margin: 0 0 16px;
+font-size: 21px;
+}
+
+/* ============================================================
+FORM GRID
+============================================================ */
+
+.form-grid {
+display: grid;
+
+```
+grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+gap: 16px;
+```
+
+}
+
+.form-group {
+display: flex;
+flex-direction: column;
+gap: 7px;
+}
+
+.form-group.full-width {
+grid-column: 1 / -1;
+}
+
+.form-group label {
+font-size: 14px;
+font-weight: bold;
+}
+
+.form-help {
+color: var(--color-text-muted);
+font-size: 12px;
+}
+
+/* ============================================================
+INPUTS
+============================================================ */
+
+input,
+select,
+textarea {
+width: 100%;
+box-sizing: border-box;
+
+```
+border: 1px solid var(--color-input-border);
+border-radius: 6px;
+
+padding: 10px;
+
+background: var(--color-input);
+color: var(--color-input-text);
+
+font: inherit;
+
+outline: none;
+```
+
+}
+
+textarea {
+min-height: 130px;
+resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+border-color: var(--color-link);
+}
+
+/* ============================================================
+CHECKBOX
+============================================================ */
+
+.checkbox-row {
+display: flex;
+align-items: center;
+gap: 10px;
+
+```
+min-height: 42px;
+```
+
+}
+
+.checkbox-row input {
+width: auto;
+}
+
+/* ============================================================
+FORM ACTIONS
+============================================================ */
+
+.form-actions {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+
+```
+margin-top: 18px;
+```
+
+}
+
+/* ============================================================
+SET LIST
+============================================================ */
+
+.set-list {
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+.set-card {
+display: grid;
+
+```
+grid-template-columns: 1fr auto;
+
+gap: 16px;
+
+padding: 16px;
+
+border: 1px solid var(--color-border);
+border-radius: 7px;
+
+background: var(--color-background-tertiary);
+```
+
+}
+
+.set-card-info h3 {
+margin: 0 0 5px;
+font-size: 18px;
+}
+
+.set-id {
+color: var(--color-text-muted);
+font-family: monospace;
+}
+
+.set-release {
+margin-top: 8px;
+
+```
+color: var(--color-text-secondary);
+font-size: 14px;
+```
+
+}
+
+.set-status {
+display: inline-block;
+
+```
+margin-top: 8px;
+padding: 4px 8px;
+
+border: 1px solid var(--color-border);
+border-radius: 4px;
+
+font-size: 12px;
+font-weight: bold;
+```
+
+}
+
+.set-status.released {
+color: var(--color-success);
+}
+
+.set-status.scheduled {
+color: var(--color-info);
+}
+
+/* ============================================================
+SET ACTIONS
+============================================================ */
+
+.set-card-actions {
+display: flex;
+align-items: center;
+gap: 8px;
+
+```
+flex-wrap: wrap;
+justify-content: flex-end;
+```
+
+}
+
+/* ============================================================
+CARD UPLOAD AREA
+============================================================ */
+
+.upload-area {
+padding: 18px;
+
+```
+border: 1px dashed var(--color-border-light);
+border-radius: 7px;
+
+background: var(--color-background-tertiary);
+```
+
+}
+
+.upload-area input[type="file"] {
+padding: 8px;
+}
+
+/* ============================================================
+CARD LIST
+============================================================ */
+
+.card-list {
+display: grid;
+
+```
+grid-template-columns:
+    repeat(auto-fill, minmax(240px, 1fr));
+
+gap: 14px;
+
+margin-top: 16px;
+```
+
+}
+
+.card-entry {
+display: flex;
+flex-direction: column;
+gap: 10px;
+
+```
+padding: 14px;
+
+border: 1px solid var(--color-border);
+border-radius: 7px;
+
+background: var(--color-background-tertiary);
+```
+
+}
+
+.card-entry-image {
+width: 100%;
+aspect-ratio: 5 / 7;
+
+```
+object-fit: contain;
+
+border-radius: 5px;
+
+background: var(--color-background);
+```
+
+}
+
+.card-entry-name {
+font-weight: bold;
+}
+
+.card-entry-id {
+color: var(--color-text-muted);
+
+```
+font-family: monospace;
+font-size: 12px;
+```
+
+}
+
+.card-entry-details {
+display: grid;
+
+```
+grid-template-columns: 1fr 1fr;
+
+gap: 5px;
+
+color: var(--color-text-secondary);
+
+font-size: 13px;
+```
+
+}
+
+/* ============================================================
+MESSAGE BOX
+============================================================ */
+
+.message {
+display: none;
+
+```
+margin-bottom: 16px;
+padding: 12px;
+
+border: 1px solid var(--color-border);
+border-radius: 6px;
+
+background: var(--color-background-tertiary);
+```
+
+}
+
+.message.visible {
+display: block;
+}
+
+.message.success {
+border-color: var(--color-success);
+}
+
+.message.error {
+border-color: var(--color-error);
+}
+
+/* ============================================================
+LOADING / EMPTY STATES
+============================================================ */
+
+.loading,
+.empty-state {
+padding: 24px;
+
+```
+color: var(--color-text-secondary);
+
+text-align: center;
+```
+
+}
+
+.empty-state {
+border: 1px dashed var(--color-border);
+border-radius: 7px;
+}
+
+/* ============================================================
+RESPONSIVE DESIGN
+============================================================ */
+
+@media (max-width: 700px) {
+
+```
+.set-manager {
+    width: min(100% - 20px, 1100px);
+    padding-top: 14px;
+}
+
+.set-manager-header {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.form-grid {
+    grid-template-columns: 1fr;
+}
+
+.form-group.full-width {
+    grid-column: auto;
+}
+
+.set-card {
+    grid-template-columns: 1fr;
+}
+
+.set-card-actions {
+    justify-content: flex-start;
+}
+
+.manager-section {
+    padding: 15px;
+}
+
+.set-manager-title {
+    font-size: 27px;
+}
+```
+
+}
+
+/* ============================================================
+REDUCED MOTION
+============================================================ */
+
+html.reduce-motion button {
+transition: none;
+}
