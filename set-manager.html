@@ -1,0 +1,90 @@
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+<!DOCTYPE html>
+                    Display Name
+                    <input id="display-name" name="displayName" type="text" placeholder="Genesis" maxlength="100" required>
+                </label>
+
+                <div class="two-column">
+                    <label>
+                        Release Date
+                        <input id="release-date" name="releaseDate" type="date" required>
+                    </label>
+
+                    <label>
+                        Release Time
+                        <input id="release-time" name="releaseTime" type="time" value="00:00" required>
+                    </label>
+                </div>
+
+                <label>
+                    Timezone
+                    <select id="time-zone" name="timeZone">
+                        <option value="America/Vancouver">Pacific Time</option>
+                    </select>
+                </label>
+
+                <div class="form-actions">
+                    <button id="submit-button" class="button primary" type="submit">CREATE SET</button>
+                    <button id="cancel-button" class="button" type="button" hidden>CANCEL EDIT</button>
+                </div>
+            </form>
+
+            <p id="form-status" class="status" role="status" aria-live="polite"></p>
+        </section>
+
+        <!-- Existing sets are loaded from the server. -->
+        <section class="panel">
+            <h2>SETS</h2>
+            <div id="sets-list">
+                <p class="muted">Loading sets...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="/set-manager.js" defer></script>
+</body>
+</html>
