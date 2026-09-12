@@ -1,551 +1,897 @@
-/*
+/* ================================================================
+   CARD STUFF YES - SET MANAGER STYLES
 
-* ============================================================
-* CARD STUFF YES - SET MANAGER STYLES
-* ============================================================
-*
-* This file controls the appearance of the Set Manager.
-*
-* IMPORTANT:
-* All colours come from the global colors.css file.
-* Do not put hard-coded theme colours here unless necessary.
-*
-* ============================================================
-  */
+   This file controls the appearance of the Set Manager.
 
-/* ============================================================
-PAGE
-============================================================ */
+   Colors come from the global colors.css file.
+   ================================================================ */
+
+
+/* ================================================================
+   PAGE BASICS
+   ================================================================ */
+
+html {
+    box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
 
 body {
-margin: 0;
-min-height: 100vh;
 
-```
-background: var(--color-background);
-color: var(--color-text);
+    margin: 0;
 
-font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-```
+    min-height: 100vh;
 
-}
+    padding: 20px;
 
-/* ============================================================
-MAIN CONTAINER
-============================================================ */
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
-.set-manager {
-width: min(1100px, calc(100% - 32px));
-margin: 0 auto;
-padding: 24px 0 48px;
-}
+    background:
+        var(--color-background);
 
-/* ============================================================
-HEADER
-============================================================ */
-
-.set-manager-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 16px;
-
-```
-margin-bottom: 24px;
-padding-bottom: 16px;
-
-border-bottom: 1px solid var(--color-border);
-```
+    color:
+        var(--color-text);
 
 }
 
-.set-manager-title {
-margin: 0;
-font-size: 32px;
-}
 
-.set-manager-subtitle {
-margin: 6px 0 0;
+/* ================================================================
+   HEADER
+   ================================================================ */
 
-```
-color: var(--color-text-secondary);
-font-size: 15px;
-```
+.manager-header {
 
-}
+    width: 100%;
 
-/* ============================================================
-BUTTONS
-============================================================ */
+    max-width: 1000px;
 
-button {
-border: 1px solid var(--color-border-light);
-border-radius: 6px;
-
-```
-padding: 10px 16px;
-
-background: var(--color-button);
-color: var(--color-button-text);
-
-font: inherit;
-cursor: pointer;
-
-transition:
-    background var(--global-transition-speed),
-    transform var(--global-transition-speed);
-```
+    margin: 0 auto 20px;
 
 }
 
-button:hover {
-background: var(--color-button-hover);
+
+.header-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+
 }
 
-button:active {
-transform: translateY(1px);
+
+.back-link {
+
+    width: fit-content;
+
+    color:
+        var(--color-link);
+
+    text-decoration: none;
+
+    transition:
+        color var(--global-transition-speed) ease;
+
 }
 
-button:disabled {
-opacity: 0.5;
-cursor: not-allowed;
+
+.back-link:hover {
+
+    color:
+        var(--color-link-hover);
+
 }
 
-.primary-button {
-padding: 11px 18px;
+
+.header-title h1 {
+
+    margin: 0;
+
+    font-size: 32px;
+
 }
 
-.danger-button {
-background: var(--color-error);
+
+.header-title p {
+
+    margin: 8px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
 }
 
-.danger-button:hover {
-background: var(--color-error);
-opacity: 0.85;
+
+/* ================================================================
+   MAIN CONTAINER
+   ================================================================ */
+
+.manager-container {
+
+    width: 100%;
+
+    max-width: 1000px;
+
+    margin: 0 auto;
+
 }
 
-.secondary-button {
-background: var(--color-background-tertiary);
-}
 
-/* ============================================================
-SECTIONS
-============================================================ */
+/* ================================================================
+   SECTIONS
+   ================================================================ */
 
 .manager-section {
-margin-bottom: 24px;
 
-```
-padding: 20px;
+    margin-bottom: 25px;
 
-border: 1px solid var(--color-border);
-border-radius: 8px;
+    padding: 25px;
 
-background: var(--color-background-secondary);
-```
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius: 14px;
+
+}
+
+
+.section-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
 
 }
 
-.manager-section h2 {
-margin: 0 0 16px;
-font-size: 21px;
-}
 
-/* ============================================================
-FORM GRID
-============================================================ */
+.section-heading h2 {
 
-.form-grid {
-display: grid;
+    margin: 0;
 
-```
-grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-
-gap: 16px;
-```
+    font-size: 22px;
 
 }
+
+
+.section-heading p {
+
+    margin: 7px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
+}
+
+
+/* ================================================================
+   FORMS
+   ================================================================ */
+
+.manager-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 16px;
+
+}
+
 
 .form-group {
-display: flex;
-flex-direction: column;
-gap: 7px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
 }
 
-.form-group.full-width {
-grid-column: 1 / -1;
-}
 
 .form-group label {
-font-size: 14px;
-font-weight: bold;
-}
 
-.form-help {
-color: var(--color-text-muted);
-font-size: 12px;
-}
-
-/* ============================================================
-INPUTS
-============================================================ */
-
-input,
-select,
-textarea {
-width: 100%;
-box-sizing: border-box;
-
-```
-border: 1px solid var(--color-input-border);
-border-radius: 6px;
-
-padding: 10px;
-
-background: var(--color-input);
-color: var(--color-input-text);
-
-font: inherit;
-
-outline: none;
-```
+    font-weight: bold;
 
 }
 
-textarea {
-min-height: 130px;
-resize: vertical;
-}
 
-input:focus,
-select:focus,
-textarea:focus {
-border-color: var(--color-link);
-}
+.form-group small,
+.checkbox-help {
 
-/* ============================================================
-CHECKBOX
-============================================================ */
+    color:
+        var(--color-text-muted);
 
-.checkbox-row {
-display: flex;
-align-items: center;
-gap: 10px;
+    font-size: 13px;
 
-```
-min-height: 42px;
-```
+    line-height: 1.4;
 
 }
 
-.checkbox-row input {
-width: auto;
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border:
+        1px solid var(--color-input-border);
+
+    border-radius:
+        var(--element-radius);
+
+    outline: none;
+
+    background:
+        var(--color-input);
+
+    color:
+        var(--color-input-text);
+
+    font:
+        inherit;
+
 }
 
-/* ============================================================
-FORM ACTIONS
-============================================================ */
+
+.form-group textarea {
+
+    resize: vertical;
+
+    font-family:
+        monospace;
+
+}
+
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+
+    border-color:
+        var(--color-text-secondary);
+
+}
+
+
+/* ================================================================
+   CHECKBOXES
+   ================================================================ */
+
+.checkbox-group {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+
+.checkbox-group input {
+
+    width: 18px;
+
+    height: 18px;
+
+    margin: 0;
+
+}
+
+
+.checkbox-group label {
+
+    font-weight: bold;
+
+}
+
+
+/* ================================================================
+   BUTTONS
+   ================================================================ */
+
+.manager-button {
+
+    width: fit-content;
+
+    padding: 11px 16px;
+
+    border: none;
+
+    border-radius:
+        var(--element-radius);
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background var(--global-transition-speed) ease,
+        transform var(--global-transition-speed) ease;
+
+}
+
+
+.manager-button:hover {
+
+    background:
+        var(--color-button-hover);
+
+}
+
+
+.manager-button:active {
+
+    transform:
+        scale(0.98);
+
+}
+
+
+.manager-button:disabled {
+
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+}
+
+
+.secondary-button {
+
+    background:
+        var(--color-background-tertiary);
+
+    border:
+        1px solid var(--color-border);
+
+}
+
+
+/* ================================================================
+   FORM ACTIONS
+   ================================================================ */
 
 .form-actions {
-display: flex;
-flex-wrap: wrap;
-gap: 10px;
 
-```
-margin-top: 18px;
-```
+    display: flex;
 
-}
+    flex-wrap: wrap;
 
-/* ============================================================
-SET LIST
-============================================================ */
-
-.set-list {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-
-.set-card {
-display: grid;
-
-```
-grid-template-columns: 1fr auto;
-
-gap: 16px;
-
-padding: 16px;
-
-border: 1px solid var(--color-border);
-border-radius: 7px;
-
-background: var(--color-background-tertiary);
-```
+    gap: 10px;
 
 }
 
-.set-card-info h3 {
-margin: 0 0 5px;
-font-size: 18px;
+
+/* ================================================================
+   STATUS / MESSAGES
+   ================================================================ */
+
+.form-status {
+
+    min-height: 20px;
+
+    margin: 0;
+
+    color:
+        var(--color-text-secondary);
+
 }
+
+
+.message-box {
+
+    margin-bottom: 20px;
+
+    padding: 15px;
+
+    border-radius:
+        var(--element-radius);
+
+}
+
+
+.error-message {
+
+    background:
+        rgba(244, 67, 54, 0.15);
+
+    border:
+        1px solid var(--color-error);
+
+}
+
+
+.success-message {
+
+    background:
+        rgba(76, 175, 80, 0.15);
+
+    border:
+        1px solid var(--color-success);
+
+}
+
+
+.hidden {
+
+    display: none !important;
+
+}
+
+
+/* ================================================================
+   SET LIST
+   ================================================================ */
+
+.sets-list {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(250px, 1fr)
+        );
+
+    gap: 15px;
+
+}
+
+
+.set-item {
+
+    overflow: hidden;
+
+    background:
+        var(--color-background-tertiary);
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius:
+        var(--element-radius);
+
+}
+
+
+.set-cover {
+
+    width: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    object-fit: cover;
+
+    background:
+        var(--color-background);
+
+}
+
+
+.set-cover-placeholder {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    color:
+        var(--color-text-muted);
+
+}
+
+
+.set-info {
+
+    padding: 15px;
+
+}
+
+
+.set-info h3 {
+
+    margin: 0;
+
+    font-size: 18px;
+
+}
+
 
 .set-id {
-color: var(--color-text-muted);
-font-family: monospace;
+
+    margin-top: 5px;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 13px;
+
 }
+
 
 .set-release {
-margin-top: 8px;
 
-```
-color: var(--color-text-secondary);
-font-size: 14px;
-```
+    margin-top: 10px;
 
-}
+    color:
+        var(--color-text-secondary);
 
-.set-status {
-display: inline-block;
-
-```
-margin-top: 8px;
-padding: 4px 8px;
-
-border: 1px solid var(--color-border);
-border-radius: 4px;
-
-font-size: 12px;
-font-weight: bold;
-```
+    font-size: 13px;
 
 }
 
-.set-status.released {
-color: var(--color-success);
-}
 
-.set-status.scheduled {
-color: var(--color-info);
-}
+.set-actions {
 
-/* ============================================================
-SET ACTIONS
-============================================================ */
+    display: flex;
 
-.set-card-actions {
-display: flex;
-align-items: center;
-gap: 8px;
+    flex-wrap: wrap;
 
-```
-flex-wrap: wrap;
-justify-content: flex-end;
-```
+    gap: 8px;
+
+    margin-top: 15px;
 
 }
 
-/* ============================================================
-CARD UPLOAD AREA
-============================================================ */
 
-.upload-area {
-padding: 18px;
+/* ================================================================
+   CARDS LIST
+   ================================================================ */
 
-```
-border: 1px dashed var(--color-border-light);
-border-radius: 7px;
+.cards-list {
 
-background: var(--color-background-tertiary);
-```
+    display: grid;
 
-}
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(200px, 1fr)
+        );
 
-.upload-area input[type="file"] {
-padding: 8px;
-}
-
-/* ============================================================
-CARD LIST
-============================================================ */
-
-.card-list {
-display: grid;
-
-```
-grid-template-columns:
-    repeat(auto-fill, minmax(240px, 1fr));
-
-gap: 14px;
-
-margin-top: 16px;
-```
+    gap: 15px;
 
 }
 
-.card-entry {
-display: flex;
-flex-direction: column;
-gap: 10px;
 
-```
-padding: 14px;
+.card-item {
 
-border: 1px solid var(--color-border);
-border-radius: 7px;
+    overflow: hidden;
 
-background: var(--color-background-tertiary);
-```
+    background:
+        var(--color-background-tertiary);
 
-}
+    border:
+        1px solid var(--color-border);
 
-.card-entry-image {
-width: 100%;
-aspect-ratio: 5 / 7;
-
-```
-object-fit: contain;
-
-border-radius: 5px;
-
-background: var(--color-background);
-```
+    border-radius:
+        var(--element-radius);
 
 }
 
-.card-entry-name {
-font-weight: bold;
-}
 
-.card-entry-id {
-color: var(--color-text-muted);
+.card-image {
 
-```
-font-family: monospace;
-font-size: 12px;
-```
+    width: 100%;
 
-}
+    aspect-ratio: 2 / 3;
 
-.card-entry-details {
-display: grid;
+    object-fit: contain;
 
-```
-grid-template-columns: 1fr 1fr;
+    background:
+        var(--color-background);
 
-gap: 5px;
-
-color: var(--color-text-secondary);
-
-font-size: 13px;
-```
+    cursor: pointer;
 
 }
 
-/* ============================================================
-MESSAGE BOX
-============================================================ */
 
-.message {
-display: none;
+.card-info {
 
-```
-margin-bottom: 16px;
-padding: 12px;
-
-border: 1px solid var(--color-border);
-border-radius: 6px;
-
-background: var(--color-background-tertiary);
-```
+    padding: 12px;
 
 }
 
-.message.visible {
-display: block;
-}
 
-.message.success {
-border-color: var(--color-success);
-}
+.card-info h3 {
 
-.message.error {
-border-color: var(--color-error);
-}
+    margin: 0;
 
-/* ============================================================
-LOADING / EMPTY STATES
-============================================================ */
+    font-size: 16px;
 
-.loading,
-.empty-state {
-padding: 24px;
-
-```
-color: var(--color-text-secondary);
-
-text-align: center;
-```
+    word-break: break-word;
 
 }
 
-.empty-state {
-border: 1px dashed var(--color-border);
-border-radius: 7px;
+
+.card-info p {
+
+    margin: 6px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 13px;
+
 }
 
-/* ============================================================
-RESPONSIVE DESIGN
-============================================================ */
 
-@media (max-width: 700px) {
+.special-card-label {
 
-```
-.set-manager {
-    width: min(100% - 20px, 1100px);
-    padding-top: 14px;
+    display: inline-block;
+
+    margin-top: 8px;
+
+    padding: 4px 7px;
+
+    background:
+        var(--color-warning-background);
+
+    border:
+        1px solid var(--color-warning-border);
+
+    border-radius: 5px;
+
+    color:
+        var(--color-warning-text);
+
+    font-size: 11px;
+
+    font-weight: bold;
+
 }
 
-.set-manager-header {
-    align-items: flex-start;
+
+/* ================================================================
+   COVER PREVIEW
+   ================================================================ */
+
+.cover-preview {
+
+    width: 180px;
+
+    overflow: hidden;
+
+    margin-top: 5px;
+
+    border:
+        1px solid var(--color-border);
+
+    border-radius:
+        var(--element-radius);
+
+}
+
+
+.cover-preview img {
+
+    display: block;
+
+    width: 100%;
+
+}
+
+
+/* ================================================================
+   BATCH FILE LIST
+   ================================================================ */
+
+.batch-file-list {
+
+    display: flex;
+
     flex-direction: column;
-}
 
-.form-grid {
-    grid-template-columns: 1fr;
-}
+    gap: 5px;
 
-.form-group.full-width {
-    grid-column: auto;
-}
+    padding: 10px;
 
-.set-card {
-    grid-template-columns: 1fr;
-}
+    background:
+        var(--color-background-tertiary);
 
-.set-card-actions {
-    justify-content: flex-start;
-}
+    border:
+        1px solid var(--color-border);
 
-.manager-section {
-    padding: 15px;
-}
-
-.set-manager-title {
-    font-size: 27px;
-}
-```
+    border-radius:
+        var(--element-radius);
 
 }
 
-/* ============================================================
-REDUCED MOTION
-============================================================ */
 
-html.reduce-motion button {
-transition: none;
+.batch-file-item {
+
+    padding: 7px 9px;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 13px;
+
+    word-break: break-word;
+
+}
+
+
+.loading-message {
+
+    color:
+        var(--color-text-muted);
+
+}
+
+
+/* ================================================================
+   CARD OVERLAY
+   ================================================================ */
+
+.card-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        var(--color-overlay);
+
+}
+
+
+.overlay-content {
+
+    position: relative;
+
+    max-width: 90vw;
+
+    max-height: 90vh;
+
+}
+
+
+.overlay-content img {
+
+    display: block;
+
+    max-width: 90vw;
+
+    max-height: 85vh;
+
+    border-radius:
+        var(--profile-radius);
+
+}
+
+
+.overlay-close {
+
+    position: absolute;
+
+    top: -45px;
+
+    right: 0;
+
+    width: 36px;
+
+    height: 36px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    font-size: 25px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+}
+
+
+/* ================================================================
+   REDUCED MOTION
+
+   Uses the global accessibility preference.
+   ================================================================ */
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+
+    scroll-behavior: auto !important;
+
+    transition: none !important;
+
+    animation: none !important;
+
+}
+
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+
+@media (max-width: 600px) {
+
+    body {
+
+        padding: 10px;
+
+    }
+
+
+    .manager-section {
+
+        padding: 18px;
+
+    }
+
+
+    .section-heading {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .sets-list,
+    .cards-list {
+
+        grid-template-columns: 1fr;
+
+    }
+
 }
