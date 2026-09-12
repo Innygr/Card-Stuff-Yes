@@ -1,90 +1,823 @@
-33
-34
-35
-36
-37
-38
-39
-40
-41
-42
-43
-44
-45
-46
-47
-48
-49
-50
-51
-52
-53
-54
-55
-56
-57
-58
-59
-60
-61
-62
-63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
 <!DOCTYPE html>
-                    Display Name
-                    <input id="display-name" name="displayName" type="text" placeholder="Genesis" maxlength="100" required>
-                </label>
+<html lang="en">
 
-                <div class="two-column">
-                    <label>
+<head>
+
+    <!-- Basic page information -->
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Set Manager - Card Stuff Yes</title>
+
+    <!-- Global colors must load before page-specific CSS -->
+    <link
+        rel="stylesheet"
+        href="/colors.css"
+    >
+
+    <!-- Set Manager page styling -->
+    <link
+        rel="stylesheet"
+        href="/set-manager.css"
+    >
+
+    <!-- Set Manager functionality -->
+    <script
+        src="/set-manager.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <!-- ============================================================
+         PAGE HEADER
+
+         Provides navigation and identifies the Set Manager.
+         ============================================================ -->
+
+    <header class="manager-header">
+
+        <div class="header-content">
+
+            <a
+                class="back-link"
+                href="/homepage.html"
+            >
+                ← Back to Homepage
+            </a>
+
+            <div class="header-title">
+
+                <h1>Set Manager</h1>
+
+                <p>
+                    Manage Card Stuff Yes sets and cards
+                </p>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- ============================================================
+         ACCESS WARNING
+
+         This is shown if the server says the current user is not
+         allowed to use the Set Manager.
+         ============================================================ -->
+
+    <main class="manager-container">
+
+        <div
+            id="access-warning"
+            class="message-box error-message hidden"
+        >
+            You do not have permission to use the Set Manager.
+        </div>
+
+
+        <!-- ========================================================
+             SET CREATION / EDITING
+
+             Creates a new set or edits an existing set.
+             ======================================================== -->
+
+        <section class="manager-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Set Manager</h2>
+
+                    <p>
+                        Create and edit card sets.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="set-form"
+                class="manager-form"
+            >
+
+                <!-- Set ID -->
+                <div class="form-group">
+
+                    <label for="set-id">
+                        Set ID
+                    </label>
+
+                    <input
+                        id="set-id"
+                        name="setId"
+                        type="text"
+                        placeholder="S01"
+                        maxlength="10"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <small>
+                        Example: S01, S02, S03
+                    </small>
+
+                </div>
+
+
+                <!-- Display name -->
+                <div class="form-group">
+
+                    <label for="set-name">
+                        Display Name
+                    </label>
+
+                    <input
+                        id="set-name"
+                        name="displayName"
+                        type="text"
+                        placeholder="Genesis"
+                        maxlength="100"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Release date -->
+                <div class="form-group">
+
+                    <label for="release-date">
                         Release Date
-                        <input id="release-date" name="releaseDate" type="date" required>
                     </label>
 
-                    <label>
+                    <input
+                        id="release-date"
+                        name="releaseDate"
+                        type="text"
+                        placeholder="MM-DD-YYYY"
+                        maxlength="10"
+                        inputmode="numeric"
+                        required
+                    >
+
+                    <small>
+                        Pacific Time
+                    </small>
+
+                </div>
+
+
+                <!-- Release time -->
+                <div class="form-group">
+
+                    <label for="release-time">
                         Release Time
-                        <input id="release-time" name="releaseTime" type="time" value="00:00" required>
                     </label>
+
+                    <input
+                        id="release-time"
+                        name="releaseTime"
+                        type="time"
+                        required
+                    >
+
+                    <small>
+                        Pacific Time
+                    </small>
+
                 </div>
 
-                <label>
-                    Timezone
-                    <select id="time-zone" name="timeZone">
-                        <option value="America/Vancouver">Pacific Time</option>
-                    </select>
-                </label>
 
+                <!-- =================================================
+                     COVER ART UPLOAD
+
+                     A set's cover is NOT a card.
+
+                     For S01, the backend saves this as:
+                     S01-cover.png
+                     ================================================= -->
+
+                <div class="form-group">
+
+                    <label for="cover-art">
+                        Cover Art
+                    </label>
+
+                    <input
+                        id="cover-art"
+                        name="coverArt"
+                        type="file"
+                        accept="image/png"
+                    >
+
+                    <small>
+                        PNG only. The filename will automatically
+                        become S##-cover.png.
+                    </small>
+
+                    <div
+                        id="cover-preview"
+                        class="cover-preview hidden"
+                    >
+
+                        <img
+                            id="cover-preview-image"
+                            src=""
+                            alt="Set cover preview"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- Form buttons -->
                 <div class="form-actions">
-                    <button id="submit-button" class="button primary" type="submit">CREATE SET</button>
-                    <button id="cancel-button" class="button" type="button" hidden>CANCEL EDIT</button>
+
+                    <button
+                        id="set-submit-button"
+                        class="manager-button"
+                        type="submit"
+                    >
+                        CREATE SET
+                    </button>
+
+                    <button
+                        id="cancel-edit-button"
+                        class="manager-button secondary-button hidden"
+                        type="button"
+                    >
+                        CANCEL EDIT
+                    </button>
+
                 </div>
+
+
+                <!-- Set form status -->
+                <p
+                    id="set-form-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
             </form>
 
-            <p id="form-status" class="status" role="status" aria-live="polite"></p>
         </section>
 
-        <!-- Existing sets are loaded from the server. -->
-        <section class="panel">
-            <h2>SETS</h2>
-            <div id="sets-list">
-                <p class="muted">Loading sets...</p>
+
+        <!-- ========================================================
+             EXISTING SETS
+
+             Displays all sets the current manager can see.
+             ======================================================== -->
+
+        <section class="manager-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Sets</h2>
+
+                    <p>
+                        Manage existing sets.
+                    </p>
+
+                </div>
+
+                <button
+                    id="refresh-sets-button"
+                    class="manager-button secondary-button"
+                    type="button"
+                >
+                    REFRESH
+                </button>
+
             </div>
+
+
+            <div
+                id="sets-list"
+                class="sets-list"
+            >
+
+                <p class="loading-message">
+                    Loading sets...
+                </p>
+
+            </div>
+
         </section>
+
+
+        <!-- ========================================================
+             SINGLE CARD UPLOAD
+
+             Uploads one card and automatically assigns its next ID.
+             ======================================================== -->
+
+        <section class="manager-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Upload Card</h2>
+
+                    <p>
+                        Upload one card to a selected set.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="card-form"
+                class="manager-form"
+            >
+
+                <!-- Card image -->
+                <div class="form-group">
+
+                    <label for="card-image">
+                        Card Image
+                    </label>
+
+                    <input
+                        id="card-image"
+                        type="file"
+                        accept="image/png"
+                        required
+                    >
+
+                    <small>
+                        PNG only.
+                    </small>
+
+                </div>
+
+
+                <!-- Card name -->
+                <div class="form-group">
+
+                    <label for="card-name">
+                        Card Name
+                    </label>
+
+                    <input
+                        id="card-name"
+                        type="text"
+                        maxlength="100"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Card set -->
+                <div class="form-group">
+
+                    <label for="card-set">
+                        Specify Set
+                    </label>
+
+                    <select
+                        id="card-set"
+                        required
+                    >
+
+                        <option value="">
+                            Select a set
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Card stats -->
+                <div class="form-group">
+
+                    <label for="card-stats">
+                        Card Stats
+                    </label>
+
+                    <textarea
+                        id="card-stats"
+                        rows="5"
+                        placeholder='{"attack": 10, "defense": 5}'
+                    ></textarea>
+
+                    <small>
+                        Enter stats as JSON.
+                    </small>
+
+                </div>
+
+
+                <!-- Rarity -->
+                <div class="form-group">
+
+                    <label for="card-rarity">
+                        Card Rarity
+                    </label>
+
+                    <select id="card-rarity">
+
+                        <option value="Common">
+                            Common
+                        </option>
+
+                        <option value="Uncommon">
+                            Uncommon
+                        </option>
+
+                        <option value="Rare">
+                            Rare
+                        </option>
+
+                        <option value="Epic">
+                            Epic
+                        </option>
+
+                        <option value="Legendary">
+                            Legendary
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Power -->
+                <div class="form-group">
+
+                    <label for="card-power">
+                        Card Power
+                    </label>
+
+                    <input
+                        id="card-power"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="0"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Special event card -->
+                <div class="checkbox-group">
+
+                    <input
+                        id="special-event-card"
+                        type="checkbox"
+                    >
+
+                    <label for="special-event-card">
+                        isSpecialEventCard
+                    </label>
+
+                </div>
+
+                <small class="checkbox-help">
+                    Special event cards use a mission/event or
+                    Mod-granted unlock instead of the normal
+                    obtainment method.
+                </small>
+
+
+                <!-- Deck card limit -->
+                <div class="form-group">
+
+                    <label for="card-limit">
+                        Card Limit
+                    </label>
+
+                    <input
+                        id="card-limit"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="1"
+                        required
+                    >
+
+                    <small>
+                        Maximum number of copies of this card that
+                        can be placed in one deck.
+                    </small>
+
+                </div>
+
+
+                <button
+                    class="manager-button"
+                    type="submit"
+                >
+                    UPLOAD CARD
+                </button>
+
+
+                <p
+                    id="card-form-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- ========================================================
+             BATCH CARD UPLOAD
+
+             Uploads multiple PNG files at once.
+
+             The server assigns IDs automatically:
+             S01-01
+             S01-02
+             S01-03
+             etc.
+
+             These are still individual cards in cards.json.
+             ======================================================== -->
+
+        <section class="manager-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Batch Upload Cards</h2>
+
+                    <p>
+                        Upload an entire set of card images at once.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="batch-form"
+                class="manager-form"
+            >
+
+                <!-- Target set -->
+                <div class="form-group">
+
+                    <label for="batch-set">
+                        Specify Set
+                    </label>
+
+                    <select
+                        id="batch-set"
+                        required
+                    >
+
+                        <option value="">
+                            Select a set
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Multiple card images -->
+                <div class="form-group">
+
+                    <label for="batch-images">
+                        Card Files
+                    </label>
+
+                    <input
+                        id="batch-images"
+                        type="file"
+                        accept="image/png"
+                        multiple
+                        required
+                    >
+
+                    <small>
+                        Select all of the PNG card images you want
+                        to add to this set.
+                    </small>
+
+                </div>
+
+
+                <!-- Default metadata for the batch -->
+                <div class="form-group">
+
+                    <label for="batch-rarity">
+                        Card Rarity
+                    </label>
+
+                    <select id="batch-rarity">
+
+                        <option value="Common">
+                            Common
+                        </option>
+
+                        <option value="Uncommon">
+                            Uncommon
+                        </option>
+
+                        <option value="Rare">
+                            Rare
+                        </option>
+
+                        <option value="Epic">
+                            Epic
+                        </option>
+
+                        <option value="Legendary">
+                            Legendary
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="batch-power">
+                        Card Power
+                    </label>
+
+                    <input
+                        id="batch-power"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="0"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="checkbox-group">
+
+                    <input
+                        id="batch-special-event-card"
+                        type="checkbox"
+                    >
+
+                    <label for="batch-special-event-card">
+                        isSpecialEventCard
+                    </label>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="batch-card-limit">
+                        Card Limit
+                    </label>
+
+                    <input
+                        id="batch-card-limit"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="1"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Selected file list -->
+                <div
+                    id="batch-file-list"
+                    class="batch-file-list"
+                ></div>
+
+
+                <button
+                    class="manager-button"
+                    type="submit"
+                >
+                    UPLOAD ALL CARDS
+                </button>
+
+
+                <p
+                    id="batch-form-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- ========================================================
+             ADMIN CARD LIST
+
+             Allows managers to inspect cards already stored on the
+             server.
+             ======================================================== -->
+
+        <section class="manager-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Cards</h2>
+
+                    <p>
+                        Cards currently registered with the server.
+                    </p>
+
+                </div>
+
+                <button
+                    id="refresh-cards-button"
+                    class="manager-button secondary-button"
+                    type="button"
+                >
+                    REFRESH
+                </button>
+
+            </div>
+
+
+            <div
+                id="cards-list"
+                class="cards-list"
+            >
+
+                <p class="loading-message">
+                    Loading cards...
+                </p>
+
+            </div>
+
+        </section>
+
     </main>
 
-    <script src="/set-manager.js" defer></script>
+
+    <!-- ============================================================
+         CARD PREVIEW OVERLAY
+
+         Used to inspect an uploaded card.
+         ============================================================ -->
+
+    <div
+        id="card-overlay"
+        class="card-overlay"
+        aria-hidden="true"
+    >
+
+        <div class="overlay-content">
+
+            <button
+                id="close-overlay-button"
+                class="overlay-close"
+                type="button"
+                aria-label="Close card preview"
+            >
+                ×
+            </button>
+
+            <img
+                id="overlay-card-image"
+                src=""
+                alt="Card preview"
+            >
+
+        </div>
+
+    </div>
+
 </body>
+
 </html>
