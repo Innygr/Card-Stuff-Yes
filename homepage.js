@@ -1,3 +1,4 @@
+```javascript
 /*
  * ============================================================
  * Card Stuff Yes
@@ -6,6 +7,7 @@
  *
  * This file handles:
  *
+ * - Global loading screen
  * - Homepage navigation
  * - Server status
  * - Player counts
@@ -204,6 +206,60 @@ function applyAccessibilitySettings() {
         "reduce-flashing",
         reduceFlashing
     );
+
+}
+
+
+/* ============================================================
+   LOADING SCREEN
+   ============================================================ */
+
+/*
+ * Update the global loading screen's destination text.
+ *
+ * The loading.js file creates the LoadingScreen object.
+ *
+ * This helper checks that it exists before using it so the
+ * homepage still works if the loading script fails to load.
+ */
+
+function setLoadingDestination(
+    text
+) {
+
+    if (
+        window.LoadingScreen &&
+        typeof window.LoadingScreen.setDestination ===
+            "function"
+    ) {
+
+        window.LoadingScreen.setDestination(
+            text
+        );
+
+    }
+
+}
+
+
+/*
+ * Finish the global loading screen.
+ *
+ * This is called only after the homepage's initial information
+ * has been loaded.
+ */
+
+function finishLoadingScreen() {
+
+    if (
+        window.LoadingScreen &&
+        typeof window.LoadingScreen.finish ===
+            "function"
+    ) {
+
+        window.LoadingScreen.finish();
+
+    }
 
 }
 
@@ -912,7 +968,19 @@ async function initializeHomepage() {
 
 
     /*
+     * Tell the loading screen what is happening.
+     */
+
+    setLoadingDestination(
+        "Loading homepage"
+    );
+
+
+    /*
      * Load server and player information at the same time.
+     *
+     * Promise.all waits for both operations before the initial
+     * loading screen is removed.
      */
 
     await Promise.all([
@@ -942,6 +1010,15 @@ async function initializeHomepage() {
 
     startStatusRefresh();
 
+
+    /*
+     * The initial homepage data is ready.
+
+     * Remove the global loading screen.
+     */
+
+    finishLoadingScreen();
+
 }
 
 
@@ -950,3 +1027,4 @@ async function initializeHomepage() {
  */
 
 initializeHomepage();
+```
