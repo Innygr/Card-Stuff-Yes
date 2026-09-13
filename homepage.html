@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,6 +36,12 @@
         href="/colors.css"
     >
 
+    <!-- Global loading-screen styling. -->
+    <link
+        rel="stylesheet"
+        href="/loading.css"
+    >
+
     <!-- Homepage-specific styling. -->
     <link
         rel="stylesheet"
@@ -45,6 +52,124 @@
 
 
 <body>
+
+    <!-- ========================================================
+         GLOBAL LOADING SCREEN
+         ========================================================
+
+         This is displayed while the homepage performs its
+         initial loading work.
+
+         The animated dots are:
+
+             empty
+             .
+             ..
+             ...
+
+         The empty frame is intentionally invisible.
+
+         The screen is removed by homepage.js after the initial
+         homepage data has finished loading.
+         ======================================================== -->
+
+    <main
+        id="loading-screen"
+        class="loading-screen"
+        aria-live="polite"
+    >
+
+        <!-- Loading screen title. -->
+        <h1 class="loading-title">
+            Card Stuff Yes
+        </h1>
+
+
+        <!--
+            Animated loading dots.
+
+            JavaScript cycles:
+
+                ""
+                "."
+                ".."
+                "..."
+
+            The empty frame displays nothing.
+        -->
+        <div
+            id="loading-dots"
+            class="loading-dots"
+            aria-hidden="true"
+        ></div>
+
+
+        <!--
+            NegInny loading animation.
+
+            The image path can be changed once the final
+            location of NegInny.png is established.
+        -->
+        <img
+            id="loading-neginny"
+            class="loading-neginny"
+            src="/NegInny.png"
+            alt=""
+            draggable="false"
+        >
+
+
+        <!--
+            Progress bar.
+
+            Hidden because the homepage currently does not have
+            real measurable loading progress.
+
+            It can be enabled later for things such as large
+            asset downloads.
+        -->
+        <div
+            id="loading-progress-container"
+            class="loading-progress-container"
+            hidden
+        >
+
+            <div
+                class="loading-progress-track"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+            >
+
+                <div
+                    id="loading-progress"
+                    class="loading-progress"
+                ></div>
+
+            </div>
+
+
+            <div
+                id="loading-progress-text"
+                class="loading-progress-text"
+            >
+                0%
+            </div>
+
+        </div>
+
+
+        <!-- What the loader is currently loading. -->
+        <p
+            id="loading-destination"
+            class="loading-destination"
+        >
+            Loading homepage
+        </p>
+
+    </main>
+
 
     <!-- ========================================================
          HEADER
@@ -299,6 +424,20 @@
 
 
     <!-- ========================================================
+         LOADING SCREEN JAVASCRIPT
+         ========================================================
+
+         This is loaded before homepage.js so the homepage can
+         control the loading screen.
+         ======================================================== -->
+
+    <script
+        src="/loading.js"
+        defer
+    ></script>
+
+
+    <!-- ========================================================
          HOMEPAGE JAVASCRIPT
          ======================================================== -->
 
@@ -314,3 +453,4 @@
 </body>
 
 </html>
+```
