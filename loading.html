@@ -1,0 +1,182 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <!-- =========================================================
+         PAGE INFORMATION
+         ========================================================= -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Card Stuff Yes - Loading</title>
+
+
+    <!-- =========================================================
+         GLOBAL COLORS
+
+         colors.css contains the shared Card Stuff Yes colors.
+         ========================================================= -->
+
+    <link rel="stylesheet" href="/colors.css">
+
+
+    <!-- =========================================================
+         LOADING SCREEN STYLES
+         ========================================================= -->
+
+    <link rel="stylesheet" href="/loading.css">
+
+</head>
+
+
+<body>
+
+    <!-- =========================================================
+         LOADING SCREEN
+
+         This is the main loading screen.
+
+         The screen contains:
+
+         - Card Stuff Yes title
+         - Animated dots
+         - Spinning NegInny
+         - Optional progress bar
+         - Current destination
+         ========================================================= -->
+
+    <main
+        id="loading-screen"
+        class="loading-screen"
+        aria-live="polite"
+    >
+
+
+        <!-- =====================================================
+             TITLE
+             ===================================================== -->
+
+        <h1 class="loading-title">
+            Card Stuff Yes
+        </h1>
+
+
+        <!-- =====================================================
+             ANIMATED DOTS
+
+             JavaScript cycles this through:
+
+                 empty
+                 .
+                 ..
+                 ...
+
+             The empty frame is intentionally invisible.
+             ===================================================== -->
+
+        <div
+            id="loading-dots"
+            class="loading-dots"
+            aria-hidden="true"
+        ></div>
+
+
+        <!-- =====================================================
+             NEGINNY
+
+             NegInny continuously spins while loading.
+
+             Change the src if the final NegInny image is stored
+             somewhere else.
+             ===================================================== -->
+
+        <img
+            id="loading-neginny"
+            class="loading-neginny"
+            src="/NegInny.png"
+            alt=""
+            draggable="false"
+        >
+
+
+        <!-- =====================================================
+             PROGRESS BAR
+
+             This is hidden by default.
+
+             JavaScript only displays it when actual progress
+             information is available.
+             ===================================================== -->
+
+        <div
+            id="loading-progress-container"
+            class="loading-progress-container"
+            hidden
+        >
+
+            <div
+                class="loading-progress-track"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+            >
+
+                <div
+                    id="loading-progress"
+                    class="loading-progress"
+                ></div>
+
+            </div>
+
+            <div
+                id="loading-progress-text"
+                class="loading-progress-text"
+            >
+                0%
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             DESTINATION
+
+             Examples:
+
+                 Loading homepage
+                 Loading deck builder
+                 Loading profile
+                 Loading card game
+
+             JavaScript can change this automatically.
+             ===================================================== -->
+
+        <p
+            id="loading-destination"
+            class="loading-destination"
+        >
+            Loading
+        </p>
+
+
+    </main>
+
+
+    <!-- =========================================================
+         LOADING SCREEN JAVASCRIPT
+         ========================================================= -->
+
+    <script src="/loading.js" defer></script>
+
+</body>
+
+</html>
+```
