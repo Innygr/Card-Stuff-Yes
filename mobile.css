@@ -1,0 +1,768 @@
+```css
+/* ============================================================
+   CARD STUFF YES — MOBILE SYSTEM
+   ============================================================
+
+   This file provides the responsive/mobile layer for the
+   Card Stuff Yes website.
+
+   IMPORTANT:
+   - Desktop layouts remain usable.
+   - Mobile layouts adapt automatically.
+   - No separate mobile website is required.
+   - Touch controls are given comfortable sizes.
+   - Cards can be displayed on narrow phone screens.
+   - The system supports phones and tablets.
+
+   All colours come from colors.css.
+
+   ============================================================ */
+
+
+/* ============================================================
+   MOBILE VARIABLES
+   ============================================================ */
+
+:root {
+
+    --mobile-side-padding: 12px;
+
+    --mobile-touch-size: 44px;
+
+    --mobile-card-gap: 8px;
+
+    --mobile-border-radius: 8px;
+
+    --mobile-panel-padding: 12px;
+
+}
+
+
+/* ============================================================
+   BASE RESPONSIVE RULES
+   ============================================================ */
+
+html {
+
+    box-sizing: border-box;
+
+    width: 100%;
+
+    overflow-x: hidden;
+
+}
+
+
+*,
+*::before,
+*::after {
+
+    box-sizing: inherit;
+
+}
+
+
+body {
+
+    width: 100%;
+
+    min-width: 0;
+
+    overflow-x: hidden;
+
+}
+
+
+/*
+ * Prevent images from becoming wider than the screen.
+ */
+
+img {
+
+    max-width: 100%;
+
+}
+
+
+/* ============================================================
+   TOUCH TARGETS
+   ============================================================ */
+
+/*
+ * Buttons, links used as buttons, and interactive controls
+ * should be large enough to comfortably tap.
+ */
+
+button,
+input,
+select,
+textarea {
+
+    font: inherit;
+
+}
+
+
+/*
+ * Do not make every ordinary link huge.
+ *
+ * Elements explicitly marked as touch controls receive the
+ * larger touch target instead.
+ */
+
+.touch-control {
+
+    min-width:
+        var(--mobile-touch-size);
+
+    min-height:
+        var(--mobile-touch-size);
+
+}
+
+
+/* ============================================================
+   MOBILE CARD INTERACTION
+   ============================================================ */
+
+.card-item {
+
+    /*
+     * Disable browser gestures that can interfere with tapping
+     * cards.
+     */
+
+    touch-action:
+        manipulation;
+
+    -webkit-tap-highlight-color:
+        transparent;
+
+}
+
+
+.card-item:active {
+
+    transform:
+        scale(0.98);
+
+}
+
+
+/*
+ * Selected cards receive a visible state.
+ */
+
+.card-item.selected {
+
+    border-color:
+        var(--color-link-hover);
+
+    background:
+        var(--color-background-hover);
+
+}
+
+
+/* ============================================================
+   MOBILE CARD GRID
+   ============================================================ */
+
+.card-grid {
+
+    /*
+     * Cards should never force horizontal scrolling.
+     */
+
+    width: 100%;
+
+    min-width: 0;
+
+}
+
+
+@media (max-width: 700px) {
+
+    .card-grid {
+
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+        gap:
+            var(--mobile-card-gap);
+
+    }
+
+}
+
+
+@media (max-width: 500px) {
+
+    .card-grid {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+    }
+
+}
+
+
+@media (max-width: 330px) {
+
+    .card-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE CARD SIZE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    .card-item {
+
+        padding:
+            8px;
+
+        border-radius:
+            var(--mobile-border-radius);
+
+    }
+
+
+    .card-item img {
+
+        max-width:
+            100%;
+
+    }
+
+
+    .card-name {
+
+        font-size:
+            12px;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE PAGE CONTAINERS
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    .page-container,
+    .deck-builder,
+    .profile-container,
+    .game-container {
+
+        width:
+            calc(
+                100% -
+                (
+                    var(--mobile-side-padding) * 2
+                )
+            );
+
+        max-width:
+            none;
+
+        margin-left:
+            auto;
+
+        margin-right:
+            auto;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE HEADER
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    .deck-header,
+    .profile-navigation,
+    .game-header {
+
+        width:
+            calc(
+                100% -
+                (
+                    var(--mobile-side-padding) * 2
+                )
+            );
+
+    }
+
+
+    .header-title h1,
+    .profile-title {
+
+        font-size:
+            clamp(
+                26px,
+                8vw,
+                38px
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE FLEX LAYOUTS
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    .mobile-stack {
+
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+
+    }
+
+
+    .mobile-full-width {
+
+        width:
+            100%;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE GAME HAND
+   ============================================================ */
+
+/*
+ * The player's hand is one of the most important mobile
+ * components.
+ *
+ * Cards are allowed to become smaller instead of forcing the
+ * user to horizontally scroll the entire page.
+ */
+
+.game-hand {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(
+                80px,
+                1fr
+            )
+        );
+
+    gap:
+        var(--mobile-card-gap);
+
+    width: 100%;
+
+}
+
+
+@media (max-width: 500px) {
+
+    .game-hand {
+
+        grid-template-columns:
+            repeat(
+                4,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+    }
+
+}
+
+
+@media (max-width: 350px) {
+
+    .game-hand {
+
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE GAME ACTION BAR
+   ============================================================ */
+
+.game-actions {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .game-actions {
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+    }
+
+
+    .game-actions button {
+
+        width: 100%;
+
+        min-height:
+            var(--mobile-touch-size);
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE NAVIGATION
+   ============================================================ */
+
+.mobile-navigation {
+
+    display: none;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .mobile-navigation {
+
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: 8px;
+
+    }
+
+
+    .mobile-navigation button,
+    .mobile-navigation a {
+
+        min-height:
+            var(--mobile-touch-size);
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE PANELS
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    .mobile-panel {
+
+        padding:
+            var(--mobile-panel-padding);
+
+        border-radius:
+            var(--mobile-border-radius);
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE FORMS
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    input,
+    select,
+    textarea {
+
+        max-width:
+            100%;
+
+    }
+
+
+    .form-input {
+
+        min-height:
+            var(--mobile-touch-size);
+
+        font-size:
+            16px;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE OVERLAY
+   ============================================================ */
+
+.card-overlay-content {
+
+    max-width:
+        calc(
+            100vw -
+            20px
+        );
+
+    max-height:
+        calc(
+            100vh -
+            20px
+        );
+
+}
+
+
+@media (max-width: 600px) {
+
+    .card-overlay {
+
+        padding:
+            10px;
+
+    }
+
+
+    .card-overlay-content {
+
+        width:
+            auto;
+
+        max-width:
+            96vw;
+
+        max-height:
+            94vh;
+
+        padding:
+            8px;
+
+        border-radius:
+            var(--mobile-border-radius);
+
+    }
+
+
+    .card-overlay-content img {
+
+        max-width:
+            92vw;
+
+        max-height:
+            88vh;
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE LANDSCAPE GAME MODE
+   ============================================================ */
+
+/*
+ * Landscape phones have more horizontal space.
+ *
+ * This gives the game board more room without changing the
+ * normal portrait layout.
+ */
+
+@media (
+    max-width: 900px
+) and (
+    orientation: landscape
+) {
+
+    .game-hand {
+
+        grid-template-columns:
+            repeat(
+                6,
+                minmax(
+                    60px,
+                    1fr
+                )
+            );
+
+    }
+
+
+    .game-actions {
+
+        grid-template-columns:
+            repeat(
+                4,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE SAFE AREA
+   ============================================================ */
+
+/*
+ * Useful on phones with a home indicator/notch.
+ */
+
+@supports (
+    padding:
+        env(safe-area-inset-bottom)
+) {
+
+    .mobile-bottom-bar {
+
+        padding-bottom:
+            calc(
+                8px +
+                env(safe-area-inset-bottom)
+            );
+
+    }
+
+
+    .mobile-top-bar {
+
+        padding-top:
+            calc(
+                8px +
+                env(safe-area-inset-top)
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (
+    prefers-reduced-motion: reduce
+) {
+
+    *,
+    *::before,
+    *::after {
+
+        scroll-behavior:
+            auto !important;
+
+        transition:
+            none !important;
+
+        animation:
+            none !important;
+
+    }
+
+}
+
+
+/* ============================================================
+   VERY SMALL DEVICES
+   ============================================================ */
+
+@media (max-width: 320px) {
+
+    body {
+
+        font-size:
+            14px;
+
+    }
+
+
+    button {
+
+        padding:
+            9px
+            10px;
+
+    }
+
+
+    .game-actions {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+```
