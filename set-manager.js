@@ -1,947 +1,806 @@
-/* ================================================================
-   CARD STUFF YES - SET MANAGER JAVASCRIPT
+```javascript
+/*
+ * ============================================================
+ * Card Stuff Yes
+ * Set Manager JavaScript
+ * ============================================================
+ *
+ * This file controls the Set Manager page.
+ *
+ * The server remains authoritative.
+ *
+ * This file is responsible for:
+ *
+ * - Loading sets
+ * - Loading cards
+ * - Creating sets
+ * - Updating sets
+ * - Deleting sets
+ * - Uploading set covers
+ * - Creating cards
+ * - Updating cards
+ * - Deleting cards
+ * - Uploading card artwork
+ * - Managing multiple abilities
+ * - Managing resource requirements
+ * - Showing status messages
+ *
+ * The client NEVER decides whether an operation is allowed.
+ *
+ * The server checks Owner/Moderator permissions.
+ *
+ * ============================================================
+ */
 
-   This file controls:
 
-   - Set creation
-   - Set editing
-   - Set cover previews
-   - Single card uploads
-   - Batch card uploads
-   - Set/card loading
-   - Card previews
-   - Manager permissions
+/* ============================================================
+   API HELPERS
+   ============================================================ */
 
-   The server remains authoritative for all actual changes.
-   ================================================================ */
+/*
+ * Send a request to the server API.
+ *
+ * Keeping this in one function makes it easier to change the
+ * API behaviour later.
+ */
+async function apiRequest(
+    url,
+    options = {}
+) {
 
+    const response =
+        await fetch(
+            url,
+            {
+                credentials: "same-origin",
 
-/* ================================================================
-   API HELPER
-
-   Sends requests to the Card Stuff Yes backend and converts
-   responses into JavaScript objects.
-   ================================================================ */
-
-async function apiRequest(url, options = {}) {
-
-    const response = await fetch(url, {
-
-        credentials: "same-origin",
-
-        ...options
-
-    });
+                ...options
+            }
+        );
 
 
     let data = null;
 
     try {
 
-        data = await response.json();
+        data =
+            await response.json();
 
     } catch {
 
-        data = null;
+        /*
+         * Some requests may not return JSON.
+         */
 
+        data = null;
     }
 
 
     if (!response.ok) {
 
         const message =
-            data?.error ||
-            data?.message ||
-            `Request failed with status ${response.status}`;
+            data &&
+            data.error
+
+                ? data.error
+
+                : `Request failed (${response.status})`;
+
 
         throw new Error(message);
-
     }
 
 
     return data;
-
 }
 
 
-/* ================================================================
-   DOM ELEMENTS
+/*
+ * Convert a JavaScript value into JSON text.
+ *
+ * This is primarily used for displaying ability effects.
+ */
+function prettyJSON(value) {
 
-   Stores references to the page controls.
-   ================================================================ */
-
-const accessWarning =
-    document.getElementById("access-warning");
-
-
-const setForm =
-    document.getElementById("set-form");
-
-const setIdInput =
-    document.getElementById("set-id");
-
-const setNameInput =
-    document.getElementById("set-name");
-
-const releaseDateInput =
-    document.getElementById("release-date");
-
-const releaseTimeInput =
-    document.getElementById("release-time");
-
-const coverArtInput =
-    document.getElementById("cover-art");
-
-const coverPreview =
-    document.getElementById("cover-preview");
-
-const coverPreviewImage =
-    document.getElementById("cover-preview-image");
-
-const setSubmitButton =
-    document.getElementById("set-submit-button");
-
-const cancelEditButton =
-    document.getElementById("cancel-edit-button");
-
-const setFormStatus =
-    document.getElementById("set-form-status");
-
-const refreshSetsButton =
-    document.getElementById("refresh-sets-button");
-
-const setsList =
-    document.getElementById("sets-list");
-
-
-const cardForm =
-    document.getElementById("card-form");
-
-const cardImageInput =
-    document.getElementById("card-image");
-
-const cardNameInput =
-    document.getElementById("card-name");
-
-const cardSetSelect =
-    document.getElementById("card-set");
-
-const cardStatsInput =
-    document.getElementById("card-stats");
-
-const cardRarityInput =
-    document.getElementById("card-rarity");
-
-const cardPowerInput =
-    document.getElementById("card-power");
-
-const specialEventCardInput =
-    document.getElementById("special-event-card");
-
-const cardLimitInput =
-    document.getElementById("card-limit");
-
-const cardFormStatus =
-    document.getElementById("card-form-status");
-
-
-const batchForm =
-    document.getElementById("batch-form");
-
-const batchSetSelect =
-    document.getElementById("batch-set");
-
-const batchImagesInput =
-    document.getElementById("batch-images");
-
-const batchRarityInput =
-    document.getElementById("batch-rarity");
-
-const batchPowerInput =
-    document.getElementById("batch-power");
-
-const batchSpecialEventCardInput =
-    document.getElementById("batch-special-event-card");
-
-const batchCardLimitInput =
-    document.getElementById("batch-card-limit");
-
-const batchFileList =
-    document.getElementById("batch-file-list");
-
-const batchFormStatus =
-    document.getElementById("batch-form-status");
-
-
-const refreshCardsButton =
-    document.getElementById("refresh-cards-button");
-
-const cardsList =
-    document.getElementById("cards-list");
-
-
-const cardOverlay =
-    document.getElementById("card-overlay");
-
-const overlayCardImage =
-    document.getElementById("overlay-card-image");
-
-const closeOverlayButton =
-    document.getElementById("close-overlay-button");
-
-
-/* ================================================================
-   STATE
-
-   Keeps temporary UI state.
-
-   The server remains the source of truth.
-   ================================================================ */
-
-let sets = [];
-
-let cards = [];
-
-let editingSetId = null;
-
-
-/* ================================================================
-   HTML ESCAPING
-
-   Prevents metadata returned by the server from being inserted
-   into the page as executable HTML.
-   ================================================================ */
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-
+    return JSON.stringify(
+        value,
+        null,
+        4
+    );
 }
 
 
-/* ================================================================
-   DATE CONVERSION
+/* ============================================================
+   STATUS
+   ============================================================ */
 
-   The UI uses MM-DD-YYYY.
-
-   The server can continue storing dates in its normalized
-   YYYY-MM-DD representation.
-   ================================================================ */
-
-function displayDateToServerDate(value) {
-
-    const match =
-        /^(\d{2})-(\d{2})-(\d{4})$/.exec(
-            value.trim()
-        );
-
-
-    if (!match) {
-
-        throw new Error(
-            "Release date must use MM-DD-YYYY."
-        );
-
-    }
-
-
-    const month = Number(match[1]);
-
-    const day = Number(match[2]);
-
-    const year = Number(match[3]);
-
-
-    const date =
-        new Date(
-            Date.UTC(
-                year,
-                month - 1,
-                day
-            )
-        );
-
-
-    if (
-        date.getUTCFullYear() !== year ||
-        date.getUTCMonth() !== month - 1 ||
-        date.getUTCDate() !== day
-    ) {
-
-        throw new Error(
-            "Release date is not valid."
-        );
-
-    }
-
-
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-}
-
-
-/* ================================================================
-   SERVER DATE TO UI DATE
-   ================================================================ */
-
-function serverDateToDisplayDate(value) {
-
-    if (!value) {
-
-        return "";
-
-    }
-
-
-    const match =
-        /^(\d{4})-(\d{2})-(\d{2})$/.exec(
-            value
-        );
-
-
-    if (!match) {
-
-        return value;
-
-    }
-
-
-    return `${match[2]}-${match[3]}-${match[1]}`;
-
-}
-
-
-/* ================================================================
-   STATUS DISPLAY
-
-   Shows a message below a form.
-   ================================================================ */
-
-function setStatus(element, message, type = "") {
-
-    element.textContent = message;
-
-    element.classList.remove(
-        "success-message",
-        "error-message"
+const statusMessage =
+    document.getElementById(
+        "status-message"
     );
 
 
-    if (type === "success") {
+function setStatus(
+    message,
+    type = "info"
+) {
 
-        element.classList.add(
-            "success-message"
-        );
-
+    if (!statusMessage) {
+        return;
     }
 
 
-    if (type === "error") {
+    statusMessage.textContent =
+        message;
 
-        element.classList.add(
-            "error-message"
+
+    statusMessage.className =
+        "status-message";
+
+
+    if (type) {
+
+        statusMessage.classList.add(
+            type
         );
-
     }
-
 }
 
 
-/* ================================================================
-   SET SELECT OPTIONS
+/* ============================================================
+   DOM REFERENCES
+   ============================================================ */
 
-   Keeps both card upload forms synchronized with the currently
-   available sets.
-   ================================================================ */
-
-function populateSetSelects() {
-
-    const selects = [
-        cardSetSelect,
-        batchSetSelect
-    ];
+const setForm =
+    document.getElementById(
+        "set-form"
+    );
 
 
-    for (const select of selects) {
-
-        const currentValue =
-            select.value;
-
-
-        select.innerHTML =
-            '<option value="">Select a set</option>';
+const cardForm =
+    document.getElementById(
+        "card-form"
+    );
 
 
-        for (const set of sets) {
-
-            const option =
-                document.createElement("option");
-
-            option.value =
-                set.id;
-
-            option.textContent =
-                `${set.id} - ${set.displayName}`;
-
-            select.appendChild(option);
-
-        }
+const setsList =
+    document.getElementById(
+        "sets-list"
+    );
 
 
-        if (
-            sets.some(
-                set => set.id === currentValue
-            )
-        ) {
+const cardsList =
+    document.getElementById(
+        "cards-list"
+    );
 
-            select.value =
-                currentValue;
 
-        }
+const abilitiesList =
+    document.getElementById(
+        "abilities-list"
+    );
 
+
+const addAbilityButton =
+    document.getElementById(
+        "add-ability-button"
+    );
+
+
+const cancelSetButton =
+    document.getElementById(
+        "cancel-set-button"
+    );
+
+
+const cancelCardButton =
+    document.getElementById(
+        "cancel-card-button"
+    );
+
+
+/*
+ * The current item being edited.
+ *
+ * null means that the form is creating something new.
+ */
+let editingSetId = null;
+
+let editingCardId = null;
+
+
+/* ============================================================
+   SET FORM
+   ============================================================ */
+
+function resetSetForm() {
+
+    editingSetId =
+        null;
+
+
+    if (!setForm) {
+        return;
     }
 
-}
+
+    setForm.reset();
 
 
-/* ================================================================
-   COVER PREVIEW
+    /*
+     * These IDs are optional depending on the exact HTML.
+     * We only touch them when they exist.
+     */
 
-   Shows the selected set cover before uploading it.
-   ================================================================ */
-
-coverArtInput.addEventListener(
-    "change",
-    () => {
-
-        const file =
-            coverArtInput.files?.[0];
+    const submitButton =
+        document.getElementById(
+            "set-submit-button"
+        );
 
 
-        if (!file) {
+    if (submitButton) {
 
-            coverPreview.classList.add(
-                "hidden"
-            );
-
-            coverPreviewImage.src = "";
-
-            return;
-
-        }
+        submitButton.textContent =
+            "Create Set";
+    }
 
 
-        if (
-            file.type !==
-            "image/png"
-        ) {
-
-            setStatus(
-                setFormStatus,
-                "Cover art must be a PNG file.",
-                "error"
-            );
-
-            coverArtInput.value = "";
-
-            return;
-
-        }
+    const setFormTitle =
+        document.getElementById(
+            "set-form-title"
+        );
 
 
-        const objectURL =
-            URL.createObjectURL(file);
+    if (setFormTitle) {
+
+        setFormTitle.textContent =
+            "Create Set";
+    }
 
 
-        coverPreviewImage.src =
-            objectURL;
+    const coverPreview =
+        document.getElementById(
+            "set-cover-preview"
+        );
 
-        coverPreview.classList.remove(
+
+    if (coverPreview) {
+
+        coverPreview.removeAttribute(
+            "src"
+        );
+
+        coverPreview.classList.add(
             "hidden"
         );
-
-
-        coverPreviewImage.onload =
-            () => {
-
-                URL.revokeObjectURL(
-                    objectURL
-                );
-
-            };
-
     }
-);
+}
 
 
-/* ================================================================
-   LOAD SETS
+/*
+ * Read set metadata from the form.
+ */
+function getSetFormData() {
 
-   Gets the sets from the server.
+    const formData =
+        new FormData(
+            setForm
+        );
 
-   The backend determines which sets the current user is allowed
-   to see.
-   ================================================================ */
 
-async function loadSets() {
+    return {
+        id:
+            formData.get("id") ||
+            undefined,
 
-    setsList.innerHTML =
-        '<p class="loading-message">Loading sets...</p>';
+        displayName:
+            String(
+                formData.get(
+                    "displayName"
+                ) || ""
+            ).trim(),
+
+        releaseDate:
+            String(
+                formData.get(
+                    "releaseDate"
+                ) || ""
+            ).trim(),
+
+        releaseTime:
+            String(
+                formData.get(
+                    "releaseTime"
+                ) || ""
+            ).trim()
+    };
+}
+
+
+/*
+ * Create or update a set.
+ */
+async function submitSetForm(
+    event
+) {
+
+    event.preventDefault();
 
 
     try {
 
+        setStatus(
+            editingSetId
+                ? "Updating set..."
+                : "Creating set...",
+            "info"
+        );
+
+
         const data =
+            getSetFormData();
+
+
+        if (!data.displayName) {
+
+            throw new Error(
+                "A set display name is required."
+            );
+        }
+
+
+        if (!data.releaseDate) {
+
+            throw new Error(
+                "A release date is required."
+            );
+        }
+
+
+        if (!data.releaseTime) {
+
+            throw new Error(
+                "A release time is required."
+            );
+        }
+
+
+        const method =
+            editingSetId
+                ? "PUT"
+                : "POST";
+
+
+        const url =
+            editingSetId
+                ? `/api/admin/sets/${encodeURIComponent(editingSetId)}`
+                : "/api/admin/sets";
+
+
+        await apiRequest(
+            url,
+            {
+                method,
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(data)
+            }
+        );
+
+
+        /*
+         * Cover uploads are handled separately because the cover
+         * is a file rather than JSON.
+         */
+
+        const coverInput =
+            document.getElementById(
+                "set-cover"
+            );
+
+
+        if (
+            coverInput &&
+            coverInput.files &&
+            coverInput.files.length > 0
+        ) {
+
+            /*
+             * The set must exist before its cover can be uploaded.
+             */
+
+            const setId =
+                editingSetId ||
+                data.id;
+
+
+            if (setId) {
+
+                await uploadSetCover(
+                    setId,
+                    coverInput.files[0]
+                );
+            }
+        }
+
+
+        setStatus(
+            editingSetId
+                ? "Set updated successfully."
+                : "Set created successfully.",
+            "success"
+        );
+
+
+        resetSetForm();
+
+
+        await loadSets();
+
+    } catch (error) {
+
+        console.error(error);
+
+        setStatus(
+            error.message,
+            "error"
+        );
+    }
+}
+
+
+/* ============================================================
+   SET COVER
+   ============================================================ */
+
+async function uploadSetCover(
+    setId,
+    file
+) {
+
+    const formData =
+        new FormData();
+
+
+    formData.append(
+        "setId",
+        setId
+    );
+
+
+    formData.append(
+        "cover",
+        file
+    );
+
+
+    await apiRequest(
+        "/api/admin/sets/cover",
+        {
+            method: "POST",
+
+            body: formData
+        }
+    );
+}
+
+
+/* ============================================================
+   LOAD SETS
+   ============================================================ */
+
+async function loadSets() {
+
+    if (!setsList) {
+        return;
+    }
+
+
+    setsList.innerHTML =
+        `<p class="manager-list-item-meta">
+            Loading sets...
+        </p>`;
+
+
+    try {
+
+        const result =
             await apiRequest(
                 "/api/admin/sets"
             );
 
 
-        sets =
-            Array.isArray(data)
-                ? data
-                : Array.isArray(data.sets)
-                    ? data.sets
-                    : [];
+        const sets =
+            Array.isArray(result)
+                ? result
+                : result.sets || [];
 
 
-        renderSets();
-
-        populateSetSelects();
+        renderSets(
+            sets
+        );
 
     } catch (error) {
 
+        console.error(error);
+
         setsList.innerHTML =
-            `<p class="error-message">${escapeHTML(error.message)}</p>`;
-
+            `<p class="manager-list-item-meta">
+                Failed to load sets.
+            </p>`;
     }
-
 }
 
 
-/* ================================================================
-   RENDER SETS
-
-   Creates the visual list of sets.
-   ================================================================ */
-
-function renderSets() {
+/*
+ * Render the set list.
+ */
+function renderSets(
+    sets
+) {
 
     if (!sets.length) {
 
         setsList.innerHTML =
-            '<p class="loading-message">No sets have been created yet.</p>';
+            `<p class="manager-list-item-meta">
+                No sets have been created yet.
+            </p>`;
 
         return;
-
     }
 
 
-    setsList.innerHTML = "";
+    setsList.innerHTML =
+        "";
 
 
     for (const set of sets) {
 
         const item =
-            document.createElement("article");
+            document.createElement(
+                "div"
+            );
+
 
         item.className =
-            "set-item";
+            "manager-list-item";
 
 
-        const coverPath =
-            set.coverArt
-                ? `/set-covers/${encodeURIComponent(set.coverArt)}`
-                : "";
+        const info =
+            document.createElement(
+                "div"
+            );
 
 
-        if (coverPath) {
-
-            item.innerHTML +=
-                `
-                <img
-                    class="set-cover"
-                    src="${coverPath}"
-                    alt="${escapeHTML(set.displayName)} cover art"
-                >
-                `;
-
-        } else {
-
-            item.innerHTML +=
-                `
-                <div class="set-cover-placeholder">
-                    No Cover Art
-                </div>
-                `;
-
-        }
+        info.className =
+            "manager-list-item-info";
 
 
-        item.innerHTML +=
-            `
-            <div class="set-info">
-
-                <h3>
-                    ${escapeHTML(set.displayName)}
-                </h3>
-
-                <div class="set-id">
-                    ${escapeHTML(set.id)}
-                </div>
-
-                <div class="set-release">
-                    Release:
-                    ${escapeHTML(
-                        serverDateToDisplayDate(
-                            set.releaseDate
-                        )
-                    )}
-                    at
-                    ${escapeHTML(
-                        set.releaseTime || ""
-                    )}
-                    Pacific Time
-                </div>
-
-                <div class="set-actions">
-
-                    <button
-                        class="manager-button secondary-button edit-set-button"
-                        type="button"
-                        data-set-id="${escapeHTML(set.id)}"
-                    >
-                        EDIT
-                    </button>
-
-                    <button
-                        class="manager-button delete-set-button"
-                        type="button"
-                        data-set-id="${escapeHTML(set.id)}"
-                    >
-                        DELETE
-                    </button>
-
-                </div>
-
-            </div>
-            `;
+        const title =
+            document.createElement(
+                "p"
+            );
 
 
-        setsList.appendChild(item);
+        title.className =
+            "manager-list-item-title";
 
+
+        title.textContent =
+            `${set.id || ""} — ${set.displayName || "Unnamed Set"}`;
+
+
+        const meta =
+            document.createElement(
+                "p"
+            );
+
+
+        meta.className =
+            "manager-list-item-meta";
+
+
+        meta.textContent =
+            `Release: ${set.releaseDate || "?"} ${set.releaseTime || ""}`;
+
+
+        info.appendChild(
+            title
+        );
+
+
+        info.appendChild(
+            meta
+        );
+
+
+        const actions =
+            document.createElement(
+                "div"
+            );
+
+
+        actions.className =
+            "manager-list-item-actions";
+
+
+        const editButton =
+            document.createElement(
+                "button"
+            );
+
+
+        editButton.textContent =
+            "Edit";
+
+
+        editButton.addEventListener(
+            "click",
+            () => editSet(set)
+        );
+
+
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
+
+
+        deleteButton.textContent =
+            "Delete";
+
+
+        deleteButton.className =
+            "button-danger";
+
+
+        deleteButton.addEventListener(
+            "click",
+            () => deleteSet(set.id)
+        );
+
+
+        actions.appendChild(
+            editButton
+        );
+
+
+        actions.appendChild(
+            deleteButton
+        );
+
+
+        item.appendChild(
+            info
+        );
+
+
+        item.appendChild(
+            actions
+        );
+
+
+        setsList.appendChild(
+            item
+        );
     }
-
-
-    document
-        .querySelectorAll(".edit-set-button")
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        startEditingSet(
-                            button.dataset.setId
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-    document
-        .querySelectorAll(".delete-set-button")
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        deleteSet(
-                            button.dataset.setId
-                        );
-
-                    }
-                );
-
-            }
-        );
-
 }
 
 
-/* ================================================================
-   RESET SET FORM
-   ================================================================ */
+/* ============================================================
+   EDIT SET
+   ============================================================ */
 
-function resetSetForm() {
-
-    editingSetId = null;
-
-    setForm.reset();
-
-    setSubmitButton.textContent =
-        "CREATE SET";
-
-    cancelEditButton.classList.add(
-        "hidden"
-    );
-
-    coverPreview.classList.add(
-        "hidden"
-    );
-
-    coverPreviewImage.src = "";
-
-    setStatus(
-        setFormStatus,
-        ""
-    );
-
-}
-
-
-/* ================================================================
-   START SET EDITING
-
-   Loads an existing set into the form.
-   ================================================================ */
-
-function startEditingSet(setId) {
-
-    const set =
-        sets.find(
-            item => item.id === setId
-        );
-
-
-    if (!set) {
-
-        return;
-
-    }
-
+function editSet(
+    set
+) {
 
     editingSetId =
         set.id;
 
 
-    setIdInput.value =
-        set.id;
-
-    setNameInput.value =
-        set.displayName || "";
-
-    releaseDateInput.value =
-        serverDateToDisplayDate(
-            set.releaseDate
-        );
-
-    releaseTimeInput.value =
-        set.releaseTime || "";
+    const fields = {
+        id: set.id,
+        displayName: set.displayName,
+        releaseDate: set.releaseDate,
+        releaseTime: set.releaseTime
+    };
 
 
-    setSubmitButton.textContent =
-        "SAVE SET";
+    for (
+        const [
+            name,
+            value
+        ] of Object.entries(fields)
+    ) {
 
-    cancelEditButton.classList.remove(
-        "hidden"
-    );
+        const field =
+            setForm.elements[name];
 
 
-    if (set.coverArt) {
+        if (field) {
 
-        coverPreviewImage.src =
-            `/set-covers/${encodeURIComponent(set.coverArt)}`;
-
-        coverPreview.classList.remove(
-            "hidden"
-        );
-
+            field.value =
+                value || "";
+        }
     }
 
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    const submitButton =
+        document.getElementById(
+            "set-submit-button"
+        );
 
+
+    if (submitButton) {
+
+        submitButton.textContent =
+            "Update Set";
+    }
+
+
+    const setFormTitle =
+        document.getElementById(
+            "set-form-title"
+        );
+
+
+    if (setFormTitle) {
+
+        setFormTitle.textContent =
+            "Edit Set";
+    }
+
+
+    setForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
 }
 
 
-/* ================================================================
-   SET FORM SUBMISSION
-
-   Uses the backend's multipart endpoint so the cover PNG can be
-   sent together with the set metadata.
-   ================================================================ */
-
-setForm.addEventListener(
-    "submit",
-    async event => {
-
-        event.preventDefault();
-
-
-        try {
-
-            const releaseDate =
-                displayDateToServerDate(
-                    releaseDateInput.value
-                );
-
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "setId",
-                setIdInput.value.trim()
-            );
-
-            formData.append(
-                "displayName",
-                setNameInput.value.trim()
-            );
-
-            formData.append(
-                "releaseDate",
-                releaseDate
-            );
-
-            formData.append(
-                "releaseTime",
-                releaseTimeInput.value
-            );
-
-
-            if (
-                coverArtInput.files &&
-                coverArtInput.files[0]
-            ) {
-
-                formData.append(
-                    "coverArt",
-                    coverArtInput.files[0]
-                );
-
-            }
-
-
-            const url =
-                editingSetId
-                    ? `/api/admin/sets/${encodeURIComponent(editingSetId)}`
-                    : "/api/admin/sets";
-
-
-            const method =
-                editingSetId
-                    ? "PUT"
-                    : "POST";
-
-
-            setStatus(
-                setFormStatus,
-                editingSetId
-                    ? "Saving set..."
-                    : "Creating set..."
-            );
-
-
-            await apiRequest(
-                url,
-                {
-                    method,
-                    body: formData
-                }
-            );
-
-
-            setStatus(
-                setFormStatus,
-                editingSetId
-                    ? "Set saved successfully."
-                    : "Set created successfully.",
-                "success"
-            );
-
-
-            resetSetForm();
-
-            await loadSets();
-
-        } catch (error) {
-
-            setStatus(
-                setFormStatus,
-                error.message,
-                "error"
-            );
-
-        }
-
-    }
-);
-
-
-/* ================================================================
-   CANCEL EDITING
-   ================================================================ */
-
-cancelEditButton.addEventListener(
-    "click",
-    resetSetForm
-);
-
-
-/* ================================================================
+/* ============================================================
    DELETE SET
+   ============================================================ */
 
-   The backend should reject deletion when the set still contains
-   cards.
-   ================================================================ */
+async function deleteSet(
+    setId
+) {
 
-async function deleteSet(setId) {
-
-    const set =
-        sets.find(
-            item => item.id === setId
-        );
-
-
-    if (!set) {
-
+    if (!setId) {
         return;
-
     }
 
 
-    const confirmed =
-        window.confirm(
-            `Delete set ${set.id} - ${set.displayName}?`
-        );
+    /*
+     * The server will also enforce deletion rules.
+     *
+     * In particular, a set containing cards should not be deleted
+     * unless the server allows it.
+     */
 
-
-    if (!confirmed) {
+    if (
+        !window.confirm(
+            `Delete set ${setId}?`
+        )
+    ) {
 
         return;
-
     }
 
 
     try {
+
+        setStatus(
+            "Deleting set...",
+            "info"
+        );
+
 
         await apiRequest(
             `/api/admin/sets/${encodeURIComponent(setId)}`,
@@ -951,738 +810,1609 @@ async function deleteSet(setId) {
         );
 
 
+        setStatus(
+            "Set deleted successfully.",
+            "success"
+        );
+
+
+        if (
+            editingSetId === setId
+        ) {
+
+            resetSetForm();
+        }
+
+
         await loadSets();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        setStatus(
+            error.message,
+            "error"
+        );
+    }
+}
+
+
+/* ============================================================
+   CARD FORM
+   ============================================================ */
+
+function resetCardForm() {
+
+    editingCardId =
+        null;
+
+
+    if (!cardForm) {
+        return;
+    }
+
+
+    cardForm.reset();
+
+
+    /*
+     * Remove all dynamically created abilities.
+     */
+
+    if (abilitiesList) {
+
+        abilitiesList.innerHTML =
+            "";
+    }
+
+
+    /*
+     * Every new card starts with one ability editor.
+     */
+
+    addAbilityEditor();
+
+
+    const submitButton =
+        document.getElementById(
+            "card-submit-button"
+        );
+
+
+    if (submitButton) {
+
+        submitButton.textContent =
+            "Create Card";
+    }
+
+
+    const cardFormTitle =
+        document.getElementById(
+            "card-form-title"
+        );
+
+
+    if (cardFormTitle) {
+
+        cardFormTitle.textContent =
+            "Create Card";
+    }
+
+
+    const artworkPreview =
+        document.getElementById(
+            "card-artwork-preview"
+        );
+
+
+    if (artworkPreview) {
+
+        artworkPreview.removeAttribute(
+            "src"
+        );
+
+        artworkPreview.classList.add(
+            "hidden"
+        );
+    }
+}
+
+
+/*
+ * Convert a resource editor into a plain object.
+ */
+function readAbilityEditor(
+    editor
+) {
+
+    const nameInput =
+        editor.querySelector(
+            ".ability-name"
+        );
+
+
+    const resourceRows =
+        editor.querySelectorAll(
+            ".resource-row"
+        );
+
+
+    const requiredResources = {};
+
+
+    for (
+        const row of resourceRows
+    ) {
+
+        const resourceNameInput =
+            row.querySelector(
+                ".resource-name"
+            );
+
+
+        const amountInput =
+            row.querySelector(
+                ".resource-amount"
+            );
+
+
+        const resourceName =
+            String(
+                resourceNameInput?.value ||
+                ""
+            ).trim();
+
+
+        const amount =
+            Number(
+                amountInput?.value || 0
+            );
+
+
+        if (
+            resourceName &&
+            Number.isFinite(amount) &&
+            amount > 0
+        ) {
+
+            requiredResources[
+                resourceName
+            ] =
+                amount;
+        }
+    }
+
+
+    const effectsInput =
+        editor.querySelector(
+            ".effects-json"
+        );
+
+
+    let effects = [];
+
+
+    if (effectsInput) {
+
+        const text =
+            effectsInput.value.trim();
+
+
+        if (text) {
+
+            try {
+
+                effects =
+                    JSON.parse(text);
+
+            } catch {
+
+                throw new Error(
+                    `Invalid effects JSON in ability "${nameInput?.value || "Unnamed Ability"}".`
+                );
+            }
+        }
+    }
+
+
+    return {
+        id:
+            editor.dataset.abilityId ||
+            `ability-${Date.now()}-${Math.random()
+                .toString(36)
+                .slice(2, 7)}`,
+
+        name:
+            String(
+                nameInput?.value ||
+                ""
+            ).trim(),
+
+        requiredResources,
+
+        effects
+    };
+}
+
+
+/*
+ * Read every ability from the card form.
+ */
+function readAbilities() {
+
+    if (!abilitiesList) {
+        return [];
+    }
+
+
+    const editors =
+        abilitiesList.querySelectorAll(
+            ".ability-editor"
+        );
+
+
+    return Array.from(
+        editors,
+        readAbilityEditor
+    );
+}
+
+
+/*
+ * Read card metadata.
+ */
+function getCardFormData() {
+
+    const formData =
+        new FormData(
+            cardForm
+        );
+
+
+    const hp =
+        Number(
+            formData.get("hp")
+        );
+
+
+    const power =
+        Number(
+            formData.get("power")
+        );
+
+
+    const cardLimit =
+        Number(
+            formData.get("cardLimit")
+        );
+
+
+    return {
+        id:
+            formData.get("id") ||
+            undefined,
+
+        name:
+            String(
+                formData.get("name") ||
+                ""
+            ).trim(),
+
+        setId:
+            String(
+                formData.get("setId") ||
+                ""
+            ).trim(),
+
+        rarity:
+            String(
+                formData.get("rarity") ||
+                ""
+            ).trim(),
+
+        hp:
+            Number.isFinite(hp)
+                ? hp
+                : 0,
+
+        power:
+            Number.isFinite(power)
+                ? power
+                : 0,
+
+        cardLimit:
+            Number.isFinite(cardLimit)
+                ? cardLimit
+                : 4,
+
+        isSpecialEventCard:
+            formData.get(
+                "isSpecialEventCard"
+            ) === "on",
+
+        abilities:
+            readAbilities()
+    };
+}
+
+
+/* ============================================================
+   ABILITY EDITOR
+   ============================================================ */
+
+function addAbilityEditor(
+    ability = null
+) {
+
+    if (!abilitiesList) {
+        return;
+    }
+
+
+    const editor =
+        document.createElement(
+            "div"
+        );
+
+
+    editor.className =
+        "ability-editor";
+
+
+    editor.dataset.abilityId =
+        ability?.id ||
+        `ability-${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2, 7)}`;
+
+
+    const header =
+        document.createElement(
+            "div"
+        );
+
+
+    header.className =
+        "ability-header";
+
+
+    const title =
+        document.createElement(
+            "h3"
+        );
+
+
+    title.className =
+        "ability-title";
+
+
+    title.textContent =
+        "Ability";
+
+
+    const removeButton =
+        document.createElement(
+            "button"
+        );
+
+
+    removeButton.type =
+        "button";
+
+
+    removeButton.className =
+        "ability-remove button-danger";
+
+
+    removeButton.textContent =
+        "Remove Ability";
+
+
+    removeButton.addEventListener(
+        "click",
+        () => {
+
+            editor.remove();
+
+        }
+    );
+
+
+    header.appendChild(
+        title
+    );
+
+
+    header.appendChild(
+        removeButton
+    );
+
+
+    editor.appendChild(
+        header
+    );
+
+
+    /*
+     * Ability name.
+     */
+
+    const nameGroup =
+        document.createElement(
+            "div"
+        );
+
+
+    nameGroup.className =
+        "form-group";
+
+
+    const nameLabel =
+        document.createElement(
+            "label"
+        );
+
+
+    nameLabel.className =
+        "form-label";
+
+
+    nameLabel.textContent =
+        "Ability Name";
+
+
+    const nameInput =
+        document.createElement(
+            "input"
+        );
+
+
+    nameInput.type =
+        "text";
+
+
+    nameInput.className =
+        "ability-name";
+
+
+    nameInput.placeholder =
+        "Example: Quick Strike";
+
+
+    nameInput.value =
+        ability?.name ||
+        "";
+
+
+    nameGroup.appendChild(
+        nameLabel
+    );
+
+
+    nameGroup.appendChild(
+        nameInput
+    );
+
+
+    editor.appendChild(
+        nameGroup
+    );
+
+
+    /*
+     * Resource requirements.
+     *
+     * Resources belong to the individual ability rather than
+     * the entire card.
+     */
+
+    const resourceGroup =
+        document.createElement(
+            "div"
+        );
+
+
+    resourceGroup.className =
+        "form-group";
+
+
+    resourceGroup.style.marginTop =
+        "16px";
+
+
+    const resourceLabel =
+        document.createElement(
+            "label"
+        );
+
+
+    resourceLabel.className =
+        "form-label";
+
+
+    resourceLabel.textContent =
+        "Required Resources";
+
+
+    const resourceList =
+        document.createElement(
+            "div"
+        );
+
+
+    resourceList.className =
+        "resource-list";
+
+
+    const addResourceButton =
+        document.createElement(
+            "button"
+        );
+
+
+    addResourceButton.type =
+        "button";
+
+
+    addResourceButton.className =
+        "button-secondary";
+
+
+    addResourceButton.textContent =
+        "Add Resource Requirement";
+
+
+    addResourceButton.addEventListener(
+        "click",
+        () => {
+
+            addResourceRow(
+                resourceList
+            );
+
+        }
+    );
+
+
+    resourceGroup.appendChild(
+        resourceLabel
+    );
+
+
+    resourceGroup.appendChild(
+        resourceList
+    );
+
+
+    resourceGroup.appendChild(
+        addResourceButton
+    );
+
+
+    editor.appendChild(
+        resourceGroup
+    );
+
+
+    /*
+     * Restore existing resources when editing a card.
+     */
+
+    const resources =
+        ability?.requiredResources ||
+        {};
+
+
+    for (
+        const [
+            resourceName,
+            amount
+        ] of Object.entries(resources)
+    ) {
+
+        addResourceRow(
+            resourceList,
+            resourceName,
+            amount
+        );
+    }
+
+
+    /*
+     * Effects JSON.
+     */
+
+    const effectsGroup =
+        document.createElement(
+            "div"
+        );
+
+
+    effectsGroup.className =
+        "form-group";
+
+
+    effectsGroup.style.marginTop =
+        "16px";
+
+
+    const effectsLabel =
+        document.createElement(
+            "label"
+        );
+
+
+    effectsLabel.className =
+        "form-label";
+
+
+    effectsLabel.textContent =
+        "Effects JSON";
+
+
+    const effectsHelp =
+        document.createElement(
+            "p"
+        );
+
+
+    effectsHelp.className =
+        "form-help";
+
+
+    effectsHelp.textContent =
+        "The server/game rules interpret these effects.";
+
+
+    const effectsInput =
+        document.createElement(
+            "textarea"
+        );
+
+
+    effectsInput.className =
+        "effects-json";
+
+
+    effectsInput.value =
+        prettyJSON(
+            ability?.effects ||
+            []
+        );
+
+
+    effectsGroup.appendChild(
+        effectsLabel
+    );
+
+
+    effectsGroup.appendChild(
+        effectsHelp
+    );
+
+
+    effectsGroup.appendChild(
+        effectsInput
+    );
+
+
+    editor.appendChild(
+        effectsGroup
+    );
+
+
+    abilitiesList.appendChild(
+        editor
+    );
+}
+
+
+/*
+ * Add one resource requirement row.
+ */
+function addResourceRow(
+    resourceList,
+    resourceName = "",
+    amount = 1
+) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+
+    row.className =
+        "resource-row";
+
+
+    const nameInput =
+        document.createElement(
+            "input"
+        );
+
+
+    nameInput.type =
+        "text";
+
+
+    nameInput.className =
+        "resource-name";
+
+
+    nameInput.placeholder =
+        "Resource name";
+
+
+    nameInput.value =
+        resourceName;
+
+
+    const amountInput =
+        document.createElement(
+            "input"
+        );
+
+
+    amountInput.type =
+        "number";
+
+
+    amountInput.className =
+        "resource-amount";
+
+
+    amountInput.min =
+        "1";
+
+
+    amountInput.step =
+        "1";
+
+
+    amountInput.value =
+        amount;
+
+
+    const removeButton =
+        document.createElement(
+            "button"
+        );
+
+
+    removeButton.type =
+        "button";
+
+
+    removeButton.className =
+        "resource-remove button-danger";
+
+
+    removeButton.textContent =
+        "Remove";
+
+
+    removeButton.addEventListener(
+        "click",
+        () => {
+
+            row.remove();
+
+        }
+    );
+
+
+    row.appendChild(
+        nameInput
+    );
+
+
+    row.appendChild(
+        amountInput
+    );
+
+
+    row.appendChild(
+        removeButton
+    );
+
+
+    resourceList.appendChild(
+        row
+    );
+}
+
+
+/* ============================================================
+   CARD SUBMISSION
+   ============================================================ */
+
+async function submitCardForm(
+    event
+) {
+
+    event.preventDefault();
+
+
+    try {
+
+        setStatus(
+            editingCardId
+                ? "Updating card..."
+                : "Creating card...",
+            "info"
+        );
+
+
+        const data =
+            getCardFormData();
+
+
+        if (!data.name) {
+
+            throw new Error(
+                "A card name is required."
+            );
+        }
+
+
+        if (!data.setId) {
+
+            throw new Error(
+                "A set must be selected."
+            );
+        }
+
+
+        if (!data.rarity) {
+
+            throw new Error(
+                "A card rarity is required."
+            );
+        }
+
+
+        if (!data.abilities.length) {
+
+            throw new Error(
+                "A card must have at least one ability."
+            );
+        }
+
+
+        for (
+            const ability
+            of data.abilities
+        ) {
+
+            if (!ability.name) {
+
+                throw new Error(
+                    "Every ability must have a name."
+                );
+            }
+        }
+
+
+        const method =
+            editingCardId
+                ? "PUT"
+                : "POST";
+
+
+        const url =
+            editingCardId
+                ? `/api/admin/cards/${encodeURIComponent(editingCardId)}`
+                : "/api/admin/cards";
+
+
+        const result =
+            await apiRequest(
+                url,
+                {
+                    method,
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(data)
+                }
+            );
+
+
+        /*
+         * Card artwork is uploaded after the metadata exists.
+         */
+
+        const artworkInput =
+            document.getElementById(
+                "card-artwork"
+            );
+
+
+        const createdCardId =
+            editingCardId ||
+            result?.card?.id ||
+            result?.id ||
+            data.id;
+
+
+        if (
+            artworkInput &&
+            artworkInput.files &&
+            artworkInput.files.length > 0 &&
+            createdCardId
+        ) {
+
+            await uploadCardArtwork(
+                createdCardId,
+                artworkInput.files[0]
+            );
+        }
+
+
+        setStatus(
+            editingCardId
+                ? "Card updated successfully."
+                : "Card created successfully.",
+            "success"
+        );
+
+
+        resetCardForm();
+
 
         await loadCards();
 
     } catch (error) {
 
-        window.alert(
-            error.message
+        console.error(error);
+
+        setStatus(
+            error.message,
+            "error"
         );
-
     }
-
 }
 
 
-/* ================================================================
-   SINGLE CARD FORM
+/* ============================================================
+   CARD ARTWORK
+   ============================================================ */
 
-   Uploads one card.
+async function uploadCardArtwork(
+    cardId,
+    file
+) {
 
-   The server automatically assigns the next card ID for the
-   selected set.
-   ================================================================ */
-
-cardForm.addEventListener(
-    "submit",
-    async event => {
-
-        event.preventDefault();
+    const formData =
+        new FormData();
 
 
-        const image =
-            cardImageInput.files?.[0];
+    formData.append(
+        "cardId",
+        cardId
+    );
 
 
-        if (!image) {
+    formData.append(
+        "artwork",
+        file
+    );
 
-            setStatus(
-                cardFormStatus,
-                "Select a PNG card image.",
-                "error"
-            );
 
-            return;
+    await apiRequest(
+        "/api/admin/cards/upload",
+        {
+            method: "POST",
 
+            body: formData
         }
+    );
+}
 
 
-        if (
-            image.type !==
-            "image/png"
-        ) {
-
-            setStatus(
-                cardFormStatus,
-                "Card images must be PNG files.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            let stats = {};
-
-
-            if (
-                cardStatsInput.value.trim()
-            ) {
-
-                stats =
-                    JSON.parse(
-                        cardStatsInput.value
-                    );
-
-            }
-
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "image",
-                image
-            );
-
-            formData.append(
-                "name",
-                cardNameInput.value.trim()
-            );
-
-            formData.append(
-                "set",
-                cardSetSelect.value
-            );
-
-            formData.append(
-                "stats",
-                JSON.stringify(stats)
-            );
-
-            formData.append(
-                "rarity",
-                cardRarityInput.value
-            );
-
-            formData.append(
-                "power",
-                cardPowerInput.value
-            );
-
-            formData.append(
-                "isSpecialEventCard",
-                specialEventCardInput.checked
-                    ? "true"
-                    : "false"
-            );
-
-            formData.append(
-                "cardLimit",
-                cardLimitInput.value
-            );
-
-
-            setStatus(
-                cardFormStatus,
-                "Uploading card..."
-            );
-
-
-            const result =
-                await apiRequest(
-                    "/api/admin/cards/upload",
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
-
-
-            setStatus(
-                cardFormStatus,
-                `Card ${result.card?.id || "uploaded"} successfully.`,
-                "success"
-            );
-
-
-            cardForm.reset();
-
-            cardPowerInput.value =
-                "0";
-
-            cardLimitInput.value =
-                "1";
-
-
-            await loadCards();
-
-        } catch (error) {
-
-            setStatus(
-                cardFormStatus,
-                error.message,
-                "error"
-            );
-
-        }
-
-    }
-);
-
-
-/* ================================================================
-   BATCH FILE DISPLAY
-
-   Shows all selected files before uploading them.
-   ================================================================ */
-
-batchImagesInput.addEventListener(
-    "change",
-    () => {
-
-        batchFileList.innerHTML = "";
-
-
-        const files =
-            Array.from(
-                batchImagesInput.files || []
-            );
-
-
-        if (!files.length) {
-
-            return;
-
-        }
-
-
-        for (const file of files) {
-
-            const item =
-                document.createElement("div");
-
-            item.className =
-                "batch-file-item";
-
-            item.textContent =
-                file.name;
-
-            batchFileList.appendChild(
-                item
-            );
-
-        }
-
-    }
-);
-
-
-/* ================================================================
-   BATCH CARD UPLOAD
-
-   Every selected image becomes a separate card.
-
-   The server assigns the IDs in the selected set.
-   ================================================================ */
-
-batchForm.addEventListener(
-    "submit",
-    async event => {
-
-        event.preventDefault();
-
-
-        const files =
-            Array.from(
-                batchImagesInput.files || []
-            );
-
-
-        if (!files.length) {
-
-            setStatus(
-                batchFormStatus,
-                "Select at least one PNG card image.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        const invalidFile =
-            files.find(
-                file =>
-                    file.type !==
-                    "image/png"
-            );
-
-
-        if (invalidFile) {
-
-            setStatus(
-                batchFormStatus,
-                `${invalidFile.name} is not a PNG file.`,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "set",
-                batchSetSelect.value
-            );
-
-            formData.append(
-                "rarity",
-                batchRarityInput.value
-            );
-
-            formData.append(
-                "power",
-                batchPowerInput.value
-            );
-
-            formData.append(
-                "isSpecialEventCard",
-                batchSpecialEventCardInput.checked
-                    ? "true"
-                    : "false"
-            );
-
-            formData.append(
-                "cardLimit",
-                batchCardLimitInput.value
-            );
-
-
-            for (const file of files) {
-
-                formData.append(
-                    "images",
-                    file
-                );
-
-            }
-
-
-            setStatus(
-                batchFormStatus,
-                `Uploading ${files.length} card${files.length === 1 ? "" : "s"}...`
-            );
-
-
-            const result =
-                await apiRequest(
-                    "/api/admin/cards/batch-upload",
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
-
-
-            const uploaded =
-                Array.isArray(result.cards)
-                    ? result.cards
-                    : [];
-
-
-            setStatus(
-                batchFormStatus,
-                `Uploaded ${uploaded.length} card${uploaded.length === 1 ? "" : "s"} successfully.`,
-                "success"
-            );
-
-
-            batchForm.reset();
-
-            batchFileList.innerHTML =
-                "";
-
-
-            batchPowerInput.value =
-                "0";
-
-            batchCardLimitInput.value =
-                "1";
-
-
-            await loadCards();
-
-        } catch (error) {
-
-            setStatus(
-                batchFormStatus,
-                error.message,
-                "error"
-            );
-
-        }
-
-    }
-);
-
-
-/* ================================================================
+/* ============================================================
    LOAD CARDS
-   ================================================================ */
+   ============================================================ */
 
 async function loadCards() {
 
+    if (!cardsList) {
+        return;
+    }
+
+
     cardsList.innerHTML =
-        '<p class="loading-message">Loading cards...</p>';
+        `<p class="manager-list-item-meta">
+            Loading cards...
+        </p>`;
 
 
     try {
 
-        const data =
+        const result =
             await apiRequest(
                 "/api/admin/cards"
             );
 
 
-        cards =
-            Array.isArray(data)
-                ? data
-                : Array.isArray(data.cards)
-                    ? data.cards
-                    : [];
+        const cards =
+            Array.isArray(result)
+                ? result
+                : result.cards || [];
 
 
-        renderCards();
+        renderCards(
+            cards
+        );
 
     } catch (error) {
 
+        console.error(error);
+
         cardsList.innerHTML =
-            `<p class="error-message">${escapeHTML(error.message)}</p>`;
-
+            `<p class="manager-list-item-meta">
+                Failed to load cards.
+            </p>`;
     }
-
 }
 
 
-/* ================================================================
-   RENDER CARDS
-   ================================================================ */
-
-function renderCards() {
+/*
+ * Render card list.
+ */
+function renderCards(
+    cards
+) {
 
     if (!cards.length) {
 
         cardsList.innerHTML =
-            '<p class="loading-message">No cards have been uploaded yet.</p>';
+            `<p class="manager-list-item-meta">
+                No cards have been created yet.
+            </p>`;
 
         return;
-
     }
 
 
-    cardsList.innerHTML = "";
+    cardsList.innerHTML =
+        "";
 
 
-    for (const card of cards) {
+    for (
+        const card
+        of cards
+    ) {
 
         const item =
-            document.createElement("article");
+            document.createElement(
+                "div"
+            );
+
 
         item.className =
-            "card-item";
+            "manager-list-item";
 
 
-        const imagePath =
-            card.image ||
-            `/card-images/${encodeURIComponent(card.id)}.png`;
+        const info =
+            document.createElement(
+                "div"
+            );
 
 
-        item.innerHTML =
-            `
-            <img
-                class="card-image"
-                src="${imagePath}"
-                alt="${escapeHTML(card.name || card.id)}"
-                data-card-image="${imagePath}"
-            >
-
-            <div class="card-info">
-
-                <h3>
-                    ${escapeHTML(
-                        card.name || card.id
-                    )}
-                </h3>
-
-                <p>
-                    ID:
-                    ${escapeHTML(card.id)}
-                </p>
-
-                <p>
-                    Set:
-                    ${escapeHTML(card.set || "")}
-                </p>
-
-                <p>
-                    Rarity:
-                    ${escapeHTML(card.rarity || "")}
-                </p>
-
-                <p>
-                    Power:
-                    ${escapeHTML(card.power ?? "")}
-                </p>
-
-                <p>
-                    Deck Limit:
-                    ${escapeHTML(card.cardLimit ?? "")}
-                </p>
-
-                ${
-                    card.isSpecialEventCard
-                        ? `
-                        <span class="special-card-label">
-                            SPECIAL EVENT CARD
-                        </span>
-                        `
-                        : ""
-                }
-
-            </div>
-            `;
+        info.className =
+            "manager-list-item-info";
 
 
-        cardsList.appendChild(item);
+        const title =
+            document.createElement(
+                "p"
+            );
 
-    }
+
+        title.className =
+            "manager-list-item-title";
 
 
-    cardsList
-        .querySelectorAll(".card-image")
-        .forEach(
-            image => {
+        title.textContent =
+            `${card.id || ""} — ${card.name || "Unnamed Card"}`;
 
-                image.addEventListener(
-                    "click",
-                    () => {
 
-                        openCardOverlay(
-                            image.dataset.cardImage
-                        );
+        const meta =
+            document.createElement(
+                "p"
+            );
 
-                    }
-                );
 
-            }
+        meta.className =
+            "manager-list-item-meta";
+
+
+        meta.textContent =
+            `Set: ${card.setId || "?"} | Rarity: ${card.rarity || "?"} | HP: ${card.hp ?? 0} | Power: ${card.power ?? 0}`;
+
+
+        info.appendChild(
+            title
         );
 
+
+        info.appendChild(
+            meta
+        );
+
+
+        const actions =
+            document.createElement(
+                "div"
+            );
+
+
+        actions.className =
+            "manager-list-item-actions";
+
+
+        const editButton =
+            document.createElement(
+                "button"
+            );
+
+
+        editButton.textContent =
+            "Edit";
+
+
+        editButton.addEventListener(
+            "click",
+            () => editCard(card)
+        );
+
+
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
+
+
+        deleteButton.textContent =
+            "Delete";
+
+
+        deleteButton.className =
+            "button-danger";
+
+
+        deleteButton.addEventListener(
+            "click",
+            () => deleteCard(card.id)
+        );
+
+
+        actions.appendChild(
+            editButton
+        );
+
+
+        actions.appendChild(
+            deleteButton
+        );
+
+
+        item.appendChild(
+            info
+        );
+
+
+        item.appendChild(
+            actions
+        );
+
+
+        cardsList.appendChild(
+            item
+        );
+    }
 }
 
 
-/* ================================================================
-   CARD IMAGE OVERLAY
-   ================================================================ */
+/* ============================================================
+   EDIT CARD
+   ============================================================ */
 
-function openCardOverlay(imagePath) {
+function editCard(
+    card
+) {
 
-    overlayCardImage.src =
-        imagePath;
-
-    cardOverlay.classList.remove(
-        "hidden"
-    );
-
-    cardOverlay.setAttribute(
-        "aria-hidden",
-        "false"
-    );
-
-}
+    editingCardId =
+        card.id;
 
 
-/* ================================================================
-   CLOSE CARD OVERLAY
-   ================================================================ */
-
-function closeCardOverlay() {
-
-    cardOverlay.classList.add(
-        "hidden"
-    );
-
-    cardOverlay.setAttribute(
-        "aria-hidden",
-        "true"
-    );
-
-    overlayCardImage.src = "";
-
-}
+    const fields = {
+        id: card.id,
+        name: card.name,
+        setId: card.setId,
+        rarity: card.rarity,
+        hp: card.hp,
+        power: card.power,
+        cardLimit: card.cardLimit
+    };
 
 
-closeOverlayButton.addEventListener(
-    "click",
-    closeCardOverlay
-);
+    for (
+        const [
+            name,
+            value
+        ] of Object.entries(fields)
+    ) {
+
+        const field =
+            cardForm.elements[name];
 
 
-cardOverlay.addEventListener(
-    "click",
-    event => {
+        if (field) {
 
-        if (
-            event.target ===
-            cardOverlay
+            field.value =
+                value ?? "";
+        }
+    }
+
+
+    const specialEventCheckbox =
+        cardForm.elements[
+            "isSpecialEventCard"
+        ];
+
+
+    if (specialEventCheckbox) {
+
+        specialEventCheckbox.checked =
+            Boolean(
+                card.isSpecialEventCard
+            );
+    }
+
+
+    /*
+     * Replace the existing ability editors.
+     */
+
+    if (abilitiesList) {
+
+        abilitiesList.innerHTML =
+            "";
+
+
+        const abilities =
+            Array.isArray(
+                card.abilities
+            )
+                ? card.abilities
+                : [];
+
+
+        for (
+            const ability
+            of abilities
         ) {
 
-            closeCardOverlay();
-
+            addAbilityEditor(
+                ability
+            );
         }
 
-    }
-);
 
+        if (!abilities.length) {
 
-/* ================================================================
-   KEYBOARD ACCESS
-
-   Escape closes the card preview.
-   ================================================================ */
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key ===
-            "Escape"
-        ) {
-
-            closeCardOverlay();
-
+            addAbilityEditor();
         }
-
     }
-);
 
 
-/* ================================================================
-   REFRESH BUTTONS
-   ================================================================ */
-
-refreshSetsButton.addEventListener(
-    "click",
-    loadSets
-);
+    const submitButton =
+        document.getElementById(
+            "card-submit-button"
+        );
 
 
-refreshCardsButton.addEventListener(
-    "click",
-    loadCards
-);
+    if (submitButton) {
+
+        submitButton.textContent =
+            "Update Card";
+    }
 
 
-/* ================================================================
-   PERMISSION CHECK
+    const cardFormTitle =
+        document.getElementById(
+            "card-form-title"
+        );
 
-   The backend decides whether the user is actually allowed to use
-   this page.
 
-   Owner and Mod access are expected.
-   ================================================================ */
+    if (cardFormTitle) {
 
-async function checkAccess() {
+        cardFormTitle.textContent =
+            "Edit Card";
+    }
+
+
+    cardForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+
+/* ============================================================
+   DELETE CARD
+   ============================================================ */
+
+async function deleteCard(
+    cardId
+) {
+
+    if (!cardId) {
+        return;
+    }
+
+
+    if (
+        !window.confirm(
+            `Delete card ${cardId}?`
+        )
+    ) {
+
+        return;
+    }
+
 
     try {
 
-        const data =
-            await apiRequest(
-                "/api/me"
-            );
+        setStatus(
+            "Deleting card...",
+            "info"
+        );
 
 
-        const player =
-            data.player ||
-            data;
+        await apiRequest(
+            `/api/admin/cards/${encodeURIComponent(cardId)}`,
+            {
+                method: "DELETE"
+            }
+        );
 
 
-        const allowed =
-            player &&
-            (
-                player.rank === "Owner" ||
-                player.rank === "Mod" ||
-                player.rank === "Moderator"
-            );
+        setStatus(
+            "Card deleted successfully.",
+            "success"
+        );
 
 
-        if (!allowed) {
+        if (
+            editingCardId === cardId
+        ) {
 
-            accessWarning.classList.remove(
-                "hidden"
-            );
-
-            setForm.classList.add(
-                "hidden"
-            );
-
-            return false;
-
+            resetCardForm();
         }
 
 
-        accessWarning.classList.add(
-            "hidden"
+        await loadCards();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        setStatus(
+            error.message,
+            "error"
         );
-
-        return true;
-
-    } catch {
-
-        accessWarning.classList.remove(
-            "hidden"
-        );
-
-        return false;
-
     }
-
 }
 
 
-/* ================================================================
-   INITIALIZATION
+/* ============================================================
+   FORM EVENTS
+   ============================================================ */
 
-   Loads everything when the page is ready.
-   ================================================================ */
+if (setForm) {
+
+    setForm.addEventListener(
+        "submit",
+        submitSetForm
+    );
+}
+
+
+if (cardForm) {
+
+    cardForm.addEventListener(
+        "submit",
+        submitCardForm
+    );
+}
+
+
+if (addAbilityButton) {
+
+    addAbilityButton.addEventListener(
+        "click",
+        () => addAbilityEditor()
+    );
+}
+
+
+if (cancelSetButton) {
+
+    cancelSetButton.addEventListener(
+        "click",
+        resetSetForm
+    );
+}
+
+
+if (cancelCardButton) {
+
+    cancelCardButton.addEventListener(
+        "click",
+        resetCardForm
+    );
+}
+
+
+/* ============================================================
+   FILE PREVIEWS
+   ============================================================ */
+
+function setupImagePreview(
+    inputId,
+    previewId
+) {
+
+    const input =
+        document.getElementById(
+            inputId
+        );
+
+
+    const preview =
+        document.getElementById(
+            previewId
+        );
+
+
+    if (
+        !input ||
+        !preview
+    ) {
+
+        return;
+    }
+
+
+    input.addEventListener(
+        "change",
+        () => {
+
+            const file =
+                input.files?.[0];
+
+
+            if (!file) {
+
+                preview.removeAttribute(
+                    "src"
+                );
+
+                preview.classList.add(
+                    "hidden"
+                );
+
+                return;
+            }
+
+
+            /*
+             * Only create previews for image files.
+             */
+
+            if (
+                !file.type.startsWith(
+                    "image/"
+                )
+            ) {
+
+                preview.removeAttribute(
+                    "src"
+                );
+
+                preview.classList.add(
+                    "hidden"
+                );
+
+                return;
+            }
+
+
+            const objectURL =
+                URL.createObjectURL(
+                    file
+                );
+
+
+            preview.src =
+                objectURL;
+
+
+            preview.classList.remove(
+                "hidden"
+            );
+
+
+            /*
+             * Release the temporary object URL once the image
+             * has loaded.
+             */
+
+            preview.onload =
+                () => {
+
+                    URL.revokeObjectURL(
+                        objectURL
+                    );
+
+                };
+        }
+    );
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
 
 async function initializeSetManager() {
 
-    const allowed =
-        await checkAccess();
+    /*
+     * Make sure the ability editor starts in a useful state.
+     */
 
+    if (
+        abilitiesList &&
+        abilitiesList.children.length === 0
+    ) {
 
-    if (!allowed) {
-
-        return;
-
+        addAbilityEditor();
     }
 
 
-    await loadSets();
+    setupImagePreview(
+        "set-cover",
+        "set-cover-preview"
+    );
 
-    await loadCards();
 
+    setupImagePreview(
+        "card-artwork",
+        "card-artwork-preview"
+    );
+
+
+    /*
+     * Load existing data.
+     */
+
+    await Promise.all([
+        loadSets(),
+        loadCards()
+    ]);
 }
 
 
-/* ================================================================
-   START
-   ================================================================ */
-
 initializeSetManager();
+```
