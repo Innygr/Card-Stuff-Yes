@@ -1,0 +1,431 @@
+/*
+ * ============================================================
+ * Card Stuff Yes
+ * Settings Styles
+ * ============================================================
+ *
+ * All colours come from colors.css.
+ *
+ * ============================================================
+ */
+
+
+html {
+    box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        var(--color-background);
+
+    color:
+        var(--color-text);
+
+}
+
+
+.settings-header {
+
+    width:
+        min(
+            calc(100% - 32px),
+            900px
+        );
+
+    margin:
+        0 auto;
+
+    padding:
+        24px
+        0
+        20px;
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+
+}
+
+
+.back-link {
+
+    display: inline-block;
+
+    margin-bottom: 20px;
+
+    color:
+        var(--color-link);
+
+    text-decoration: none;
+
+    transition:
+        color
+        var(--global-transition-speed)
+        ease;
+
+}
+
+
+.back-link:hover {
+
+    color:
+        var(--color-link-hover);
+
+}
+
+
+.settings-header h1 {
+
+    margin: 0;
+
+    font-size:
+        clamp(
+            30px,
+            7vw,
+            46px
+        );
+
+}
+
+
+.settings-header p {
+
+    margin:
+        8px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
+}
+
+
+.settings-container {
+
+    width:
+        min(
+            calc(100% - 32px),
+            900px
+        );
+
+    margin:
+        0 auto;
+
+    padding:
+        30px
+        0
+        60px;
+
+}
+
+
+.settings-section {
+
+    margin-top: 30px;
+
+    padding-top: 25px;
+
+    border-top:
+        1px solid
+        var(--color-border);
+
+}
+
+
+.section-heading {
+
+    margin-bottom: 18px;
+
+}
+
+
+.section-heading h2 {
+
+    margin: 0;
+
+    font-size: 22px;
+
+}
+
+
+.section-heading p {
+
+    margin:
+        6px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+
+}
+
+
+.setting-row {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(180px, 1fr)
+        minmax(180px, 280px);
+
+    align-items: center;
+
+    gap: 20px;
+
+    min-height: 54px;
+
+    padding:
+        8px
+        12px;
+
+    border-radius: 6px;
+
+    transition:
+        background
+        var(--global-transition-speed)
+        ease;
+
+}
+
+
+.setting-row:hover {
+
+    background:
+        var(--color-background-secondary);
+
+}
+
+
+.setting-row span {
+
+    color:
+        var(--color-text);
+
+}
+
+
+.setting-row select,
+.setting-row input[type="range"] {
+
+    width: 100%;
+
+}
+
+
+select {
+
+    padding:
+        9px
+        10px;
+
+    border:
+        1px solid
+        var(--color-input-border);
+
+    border-radius: 6px;
+
+    background:
+        var(--color-input);
+
+    color:
+        var(--color-input-text);
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+}
+
+
+select:focus {
+
+    outline: 2px solid
+        var(--color-link);
+
+    outline-offset: 1px;
+
+}
+
+
+input[type="checkbox"] {
+
+    width: 20px;
+
+    height: 20px;
+
+    justify-self: end;
+
+    accent-color:
+        var(--color-link);
+
+}
+
+
+input[type="range"] {
+
+    accent-color:
+        var(--color-link);
+
+    cursor: pointer;
+
+}
+
+
+button {
+
+    padding:
+        10px
+        16px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 6px;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background
+        var(--global-transition-speed)
+        ease,
+
+        border-color
+        var(--global-transition-speed)
+        ease;
+
+}
+
+
+button:hover {
+
+    background:
+        var(--color-button-hover);
+
+    border-color:
+        var(--color-link);
+
+}
+
+
+button:active {
+
+    transform:
+        translateY(1px);
+
+}
+
+
+.reset-buttons {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+}
+
+
+.settings-status {
+
+    min-height: 22px;
+
+    margin:
+        20px 0 0;
+
+    color:
+        var(--color-text-secondary);
+
+}
+
+
+@media (max-width: 600px) {
+
+    .settings-header,
+    .settings-container {
+
+        width:
+            calc(100% - 20px);
+
+    }
+
+
+    .settings-header {
+
+        padding-top: 16px;
+
+    }
+
+
+    .setting-row {
+
+        grid-template-columns: 1fr;
+
+        gap: 8px;
+
+        padding:
+            12px;
+
+    }
+
+
+    .setting-row select,
+    .setting-row input[type="range"] {
+
+        width: 100%;
+
+    }
+
+
+    input[type="checkbox"] {
+
+        justify-self: start;
+
+    }
+
+
+    .reset-buttons {
+
+        flex-direction: column;
+
+    }
+
+
+    .reset-buttons button {
+
+        width: 100%;
+
+    }
+
+}
