@@ -3,511 +3,448 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Card Stuff Yes</title>
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <style>
 
-<title>Card Stuff Yes</title>
+        /* =========================================================
+           BASIC PAGE
+           ========================================================= */
 
+        * {
+            box-sizing: border-box;
+        }
 
-<style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100%;
 
-/* =========================================================
-   BASIC PAGE
-   ========================================================= */
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
 
-* {
-    box-sizing: border-box;
-}
+            background: #050509;
+            color: white;
+        }
 
-html,
-body {
 
-    margin: 0;
-    padding: 0;
+        /* =========================================================
+           ANIMATED BACKGROUND
+           ========================================================= */
 
-    width: 100%;
-    min-height: 100%;
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
 
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+            background:
+                radial-gradient(
+                    circle at 20% 20%,
+                    rgba(100, 0, 255, 0.25),
+                    transparent 35%
+                ),
 
-    background: #050509;
+                radial-gradient(
+                    circle at 80% 70%,
+                    rgba(255, 0, 150, 0.20),
+                    transparent 35%
+                ),
 
-    color: white;
+                radial-gradient(
+                    circle at 50% 100%,
+                    rgba(0, 150, 255, 0.15),
+                    transparent 40%
+                ),
 
-}
+                #050509;
+        }
 
 
-/* =========================================================
-   ANIMATED BACKGROUND
-   ========================================================= */
+        /* =========================================================
+           MOVING GRID
+           ========================================================= */
 
-body {
+        body::before {
+            content: "";
 
-    min-height: 100vh;
+            position: fixed;
+            inset: 0;
 
-    overflow-x: hidden;
+            z-index: 0;
+            pointer-events: none;
 
-    background:
+            background-image:
+                linear-gradient(
+                    rgba(255,255,255,0.035) 1px,
+                    transparent 1px
+                ),
 
-        radial-gradient(
-            circle at 20% 20%,
-            rgba(100, 0, 255, 0.25),
-            transparent 35%
-        ),
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.035) 1px,
+                    transparent 1px
+                );
 
-        radial-gradient(
-            circle at 80% 70%,
-            rgba(255, 0, 150, 0.20),
-            transparent 35%
-        ),
+            background-size: 50px 50px;
 
-        radial-gradient(
-            circle at 50% 100%,
-            rgba(0, 150, 255, 0.15),
-            transparent 40%
-        ),
+            mask-image:
+                linear-gradient(
+                    to bottom,
+                    black,
+                    transparent
+                );
+        }
 
-        #050509;
 
-}
+        /* =========================================================
+           MAIN CONTAINER
+           ========================================================= */
 
+        .container {
+            position: relative;
 
-/* =========================================================
-   MOVING GRID
-   ========================================================= */
+            z-index: 2;
 
-body::before {
+            width: min(
+                900px,
+                calc(100% - 40px)
+            );
 
-    content: "";
+            margin: 0 auto;
 
-    position: fixed;
+            padding: 80px 0;
+        }
 
-    inset: 0;
 
-    z-index: 0;
+        /* =========================================================
+           TITLE
+           ========================================================= */
 
-    pointer-events: none;
+        h1 {
+            margin: 0;
 
-    background-image:
+            text-align: center;
 
-        linear-gradient(
-            rgba(255,255,255,0.035) 1px,
-            transparent 1px
-        ),
+            font-size: clamp(
+                50px,
+                10vw,
+                110px
+            );
 
-        linear-gradient(
-            90deg,
-            rgba(255,255,255,0.035) 1px,
-            transparent 1px
-        );
+            font-weight: 900;
 
-    background-size: 50px 50px;
+            letter-spacing: -5px;
 
-    mask-image:
-        linear-gradient(
-            to bottom,
-            black,
-            transparent
-        );
+            text-transform: uppercase;
 
-}
+            background:
+                linear-gradient(
+                    90deg,
+                    #ff00cc,
+                    #8a2be2,
+                    #00c8ff,
+                    #ff00cc
+                );
 
+            background-size: 300% 100%;
 
-/* =========================================================
-   MAIN CONTAINER
-   ========================================================= */
+            -webkit-background-clip: text;
+            background-clip: text;
 
-.container {
+            -webkit-text-fill-color: transparent;
 
-    position: relative;
+            animation:
+                titleRainbow 6s linear infinite;
 
-    z-index: 2;
+            filter:
+                drop-shadow(
+                    0 0 20px
+                    rgba(180, 0, 255, 0.5)
+                );
+        }
 
-    width: min(
-        900px,
-        calc(100% - 40px)
-    );
 
-    margin: 0 auto;
+        @keyframes titleRainbow {
 
-    padding: 80px 0;
+            0% {
+                background-position: 0% 50%;
+            }
 
-}
+            50% {
+                background-position: 100% 50%;
+            }
 
+            100% {
+                background-position: 0% 50%;
+            }
 
-/* =========================================================
-   TITLE
-   ========================================================= */
+        }
 
-h1 {
 
-    margin: 0;
+        /* =========================================================
+           SUBTITLE
+           ========================================================= */
 
-    text-align: center;
+        .subtitle {
+            margin-top: 10px;
+            margin-bottom: 60px;
 
-    font-size: clamp(
-        50px,
-        10vw,
-        110px
-    );
+            text-align: center;
 
-    font-weight: 900;
+            color: #aaa;
 
-    letter-spacing: -5px;
+            font-size: 18px;
 
-    text-transform: uppercase;
+            letter-spacing: 4px;
 
-    background:
+            text-transform: uppercase;
+        }
 
-        linear-gradient(
-            90deg,
-            #ff00cc,
-            #8a2be2,
-            #00c8ff,
-            #ff00cc
-        );
 
-    background-size: 300% 100%;
+        /* =========================================================
+           CARD GRID
+           ========================================================= */
 
-    -webkit-background-clip: text;
+        .cards {
+            display: grid;
 
-    background-clip: text;
+            grid-template-columns:
+                repeat(
+                    3,
+                    1fr
+                );
 
-    -webkit-text-fill-color: transparent;
+            gap: 25px;
+        }
 
-    animation:
-        titleRainbow 6s linear infinite;
 
-    filter:
-        drop-shadow(
-            0 0 20px
-            rgba(180, 0, 255, 0.5)
-        );
+        /* =========================================================
+           CARD
+           ========================================================= */
 
-}
+        .card {
+            position: relative;
 
+            min-height: 300px;
 
-@keyframes titleRainbow {
+            padding: 30px;
 
-    0% {
-        background-position: 0% 50%;
-    }
+            display: flex;
 
-    50% {
-        background-position: 100% 50%;
-    }
+            flex-direction: column;
 
-    100% {
-        background-position: 0% 50%;
-    }
+            justify-content: space-between;
 
-}
+            overflow: hidden;
 
+            text-decoration: none;
 
-/* =========================================================
-   SUBTITLE
-   ========================================================= */
+            color: white;
 
-.subtitle {
+            border: 1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.15
+                );
 
-    margin-top: 10px;
+            border-radius: 18px;
 
-    margin-bottom: 60px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.10),
+                    rgba(255,255,255,0.025)
+                );
 
-    text-align: center;
+            backdrop-filter: blur(15px);
 
-    color: #aaa;
+            box-shadow:
+                0 20px 50px
+                rgba(0,0,0,0.4);
 
-    font-size: 18px;
+            transition:
+                transform 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+        }
 
-    letter-spacing: 4px;
 
-    text-transform: uppercase;
+        /* =========================================================
+           CARD SHINE
+           ========================================================= */
 
-}
+        .card::before {
+            content: "";
 
+            position: absolute;
 
-/* =========================================================
-   CARD GRID
-   ========================================================= */
+            width: 250px;
+            height: 250px;
 
-.cards {
+            top: -120px;
+            right: -100px;
 
-    display: grid;
+            border-radius: 50%;
 
-    grid-template-columns:
-        repeat(
-            3,
-            1fr
-        );
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,0.18),
+                    transparent 70%
+                );
 
-    gap: 25px;
+            transition:
+                transform 0.4s ease;
+        }
 
-}
 
+        .card:hover::before {
+            transform: scale(1.5);
+        }
 
-/* =========================================================
-   CARD
-   ========================================================= */
 
-.card {
+        .card:hover {
+            transform:
+                translateY(-12px)
+                rotateX(3deg);
 
-    position: relative;
+            border-color:
+                rgba(
+                    255,
+                    0,
+                    220,
+                    0.7
+                );
 
-    min-height: 300px;
+            box-shadow:
+                0 30px 80px
+                rgba(160,0,255,0.25),
 
-    padding: 30px;
+                0 0 30px
+                rgba(255,0,200,0.15);
+        }
 
-    display: flex;
 
-    flex-direction: column;
+        /* =========================================================
+           CARD ICON
+           ========================================================= */
 
-    justify-content: space-between;
+        .card-icon {
+            font-size: 55px;
 
-    overflow: hidden;
+            filter:
+                drop-shadow(
+                    0 0 15px
+                    rgba(255,0,255,0.6)
+                );
+        }
 
-    text-decoration: none;
 
-    color: white;
+        /* =========================================================
+           CARD TEXT
+           ========================================================= */
 
-    border: 1px solid
-        rgba(
-            255,
-            255,
-            255,
-            0.15
-        );
+        .card h2 {
+            margin:
+                20px
+                0
+                10px;
 
-    border-radius: 18px;
+            font-size: 28px;
+        }
 
-    background:
 
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,0.10),
-            rgba(255,255,255,0.025)
-        );
+        .card p {
+            margin: 0;
 
-    backdrop-filter:
-        blur(15px);
+            color: #aaa;
 
-    box-shadow:
+            line-height: 1.5;
+        }
 
-        0 20px 50px
-        rgba(0,0,0,0.4);
 
-    transition:
+        /* =========================================================
+           CARD BUTTON
+           ========================================================= */
 
-        transform 0.3s ease,
+        .card-button {
+            display: inline-block;
 
-        border-color 0.3s ease,
+            margin-top: 25px;
 
-        box-shadow 0.3s ease;
+            padding:
+                12px
+                18px;
 
-}
+            width: fit-content;
 
+            border-radius: 8px;
 
-/* =========================================================
-   CARD SHINE
-   ========================================================= */
+            background:
+                linear-gradient(
+                    90deg,
+                    #7b00ff,
+                    #ff00bb
+                );
 
-.card::before {
+            font-weight: bold;
 
-    content: "";
+            color: white;
 
-    position: absolute;
+            box-shadow:
+                0 0 20px
+                rgba(180,0,255,0.25);
+        }
 
-    width: 250px;
 
-    height: 250px;
+        /* =========================================================
+           FOOTER
+           ========================================================= */
 
-    top: -120px;
+        footer {
+            margin-top: 70px;
 
-    right: -100px;
+            text-align: center;
 
-    border-radius: 50%;
+            color: #555;
 
-    background:
+            font-size: 14px;
+        }
 
-        radial-gradient(
-            circle,
-            rgba(255,255,255,0.18),
-            transparent 70%
-        );
 
-    transition:
-        transform 0.4s ease;
+        /* =========================================================
+           MOBILE
+           ========================================================= */
 
-}
+        @media (max-width: 700px) {
 
+            .cards {
+                grid-template-columns: 1fr;
+            }
 
-.card:hover::before {
+            .container {
+                padding-top: 50px;
+            }
 
-    transform:
-        scale(1.5);
+            h1 {
+                letter-spacing: -2px;
+            }
 
-}
+        }
 
-
-.card:hover {
-
-    transform:
-        translateY(-12px)
-        rotateX(3deg);
-
-    border-color:
-        rgba(
-            255,
-            0,
-            220,
-            0.7
-        );
-
-    box-shadow:
-
-        0 30px 80px
-        rgba(160,0,255,0.25),
-
-        0 0 30px
-        rgba(255,0,200,0.15);
-
-}
-
-
-/* =========================================================
-   CARD ICON
-   ========================================================= */
-
-.card-icon {
-
-    font-size: 55px;
-
-    filter:
-        drop-shadow(
-            0 0 15px
-            rgba(255,0,255,0.6)
-        );
-
-}
-
-
-/* =========================================================
-   CARD TEXT
-   ========================================================= */
-
-.card h2 {
-
-    margin:
-        20px
-        0
-        10px;
-
-    font-size: 28px;
-
-}
-
-
-.card p {
-
-    margin: 0;
-
-    color: #aaa;
-
-    line-height: 1.5;
-
-}
-
-
-/* =========================================================
-   CARD BUTTON
-   ========================================================= */
-
-.card-button {
-
-    display: inline-block;
-
-    margin-top: 25px;
-
-    padding:
-        12px
-        18px;
-
-    width: fit-content;
-
-    border-radius: 8px;
-
-    background:
-
-        linear-gradient(
-            90deg,
-            #7b00ff,
-            #ff00bb
-        );
-
-    font-weight: bold;
-
-    color: white;
-
-    box-shadow:
-
-        0 0 20px
-        rgba(180,0,255,0.25);
-
-}
-
-
-/* =========================================================
-   FOOTER
-   ========================================================= */
-
-footer {
-
-    margin-top: 70px;
-
-    text-align: center;
-
-    color: #555;
-
-    font-size: 14px;
-
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 700px) {
-
-    .cards {
-
-        grid-template-columns:
-            1fr;
-
-    }
-
-    .container {
-
-        padding-top: 50px;
-
-    }
-
-    h1 {
-
-        letter-spacing: -2px;
-
-    }
-
-}
-
-</style>
+    </style>
 
 </head>
 
@@ -515,154 +452,154 @@ footer {
 <body>
 
 
-<div class="container">
+    <div class="container">
 
 
-    <!-- =====================================================
-         TITLE
-         ===================================================== -->
+        <!-- =====================================================
+             TITLE
+             ===================================================== -->
 
-    <h1>
-        Card Stuff Yes
-    </h1>
+        <h1>
+            Card Stuff Yes
+        </h1>
 
 
-    <div class="subtitle">
-        The Card Stuff™
+        <div class="subtitle">
+            The Card Stuff™
+        </div>
+
+
+        <!-- =====================================================
+             CARDS
+             ===================================================== -->
+
+        <div class="cards">
+
+
+            <!-- =================================================
+                 GITHUB
+                 ================================================= -->
+
+            <a
+                class="card"
+                href="https://github.com/Innygr/Card-Stuff-Yes/tree/Server"
+            >
+
+                <div>
+
+                    <div class="card-icon">
+                        💻
+                    </div>
+
+                    <h2>
+                        GitHub
+                    </h2>
+
+                    <p>
+                        Look at the code,
+                        projects, and other
+                        questionable decisions.
+                    </p>
+
+                </div>
+
+
+                <div class="card-button">
+                    View Code →
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 MAIN WEBSITE
+                 ================================================= -->
+
+            <a
+                class="card"
+                href="https://cardstuffyes.ca"
+            >
+
+                <div>
+
+                    <div class="card-icon">
+                        🃏
+                    </div>
+
+                    <h2>
+                        Website
+                    </h2>
+
+                    <p>
+                        Enter the actual
+                        Card Stuff Yes website.
+                    </p>
+
+                </div>
+
+
+                <div class="card-button">
+                    Enter →
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 INDEV HOMEPAGE
+                 ================================================= -->
+
+            <a
+                class="card"
+                href="https://innygr.github.io/Card-Stuff-Yes/Server/homepage.html"
+            >
+
+                <div>
+
+                    <div class="card-icon">
+                        ⚙️
+                    </div>
+
+                    <h2>
+                        Indev
+                    </h2>
+
+                    <p>
+                        Open the development
+                        homepage and see what
+                        is currently being built.
+                    </p>
+
+                </div>
+
+
+                <div class="card-button">
+                    Open Homepage →
+                </div>
+
+            </a>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             FOOTER
+             ===================================================== -->
+
+        <footer>
+
+            CARD STUFF YES © 2026
+
+            <br>
+            <br>
+
+            Made with questionable amounts of HTML
+
+        </footer>
+
+
     </div>
-
-
-    <!-- =====================================================
-         CARDS
-         ===================================================== -->
-
-    <div class="cards">
-
-
-        <!-- =================================================
-             GITHUB
-             ================================================= -->
-
-        <a
-            class="card"
-            href="https://github.com/Innygr/Card-Stuff-Yes/tree/Server"
-        >
-
-            <div>
-
-                <div class="card-icon">
-                    💻
-                </div>
-
-                <h2>
-                    GitHub
-                </h2>
-
-                <p>
-                    Look at the code,
-                    projects, and other
-                    questionable decisions.
-                </p>
-
-            </div>
-
-
-            <div class="card-button">
-                View Code →
-            </div>
-
-        </a>
-
-
-        <!-- =================================================
-             WEBSITE
-             ================================================= -->
-
-        <a
-            class="card"
-            href="https://cardstuffyes.ca"
-        >
-
-            <div>
-
-                <div class="card-icon">
-                    🃏
-                </div>
-
-                <h2>
-                    Website
-                </h2>
-
-                <p>
-                    Enter the actual Card
-                    Stuff Yes website.
-                </p>
-
-            </div>
-
-
-            <div class="card-button">
-                Enter →
-            </div>
-
-        </a>
-
-
-        <!-- =================================================
-             INDEV HOMEPAGE
-             ================================================= -->
-
-        <a
-            class="card"
-            href="Server/homepage.html"
-        >
-
-            <div>
-
-                <div class="card-icon">
-                    ⚙️
-                </div>
-
-                <h2>
-                    Indev
-                </h2>
-
-                <p>
-                    Open the development
-                    homepage and see what
-                    is currently being built.
-                </p>
-
-            </div>
-
-
-            <div class="card-button">
-                Open Homepage →
-            </div>
-
-        </a>
-
-
-    </div>
-
-
-    <!-- =====================================================
-         FOOTER
-         ===================================================== -->
-
-    <footer>
-
-        CARD STUFF YES © 2026
-
-        <br>
-        <br>
-
-        Made with questionable amounts of HTML
-
-    </footer>
-
-
-</div>
 
 
 </body>
