@@ -3,7 +3,7 @@ name: Deploy test site
 on:
   push:
     branches:
-      - main
+      - Server
 
   workflow_dispatch:
 
