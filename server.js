@@ -2,77 +2,29 @@
    CARD STUFF YES — SERVER
    ============================================================
 
-   This file runs the Card Stuff Yes multiplayer server.
+   Server foundation.
 
-   Main responsibilities:
-   - Serve the website.
-   - Manage player accounts.
-   - Manage login sessions.
-   - Store player data in SQLite.
-   - Manage badges.
-   - Manage unlocked cards.
-   - Manage player decks.
-   - Track online players.
-   - Track matchmaking queues.
-   - Track players currently in battles.
-   - Manage monthly ELO seasons.
-   - Provide the homepage API.
-   - Provide the leaderboard API.
-
-   The server is authoritative for player data such as:
-   - Username
-   - Rank
-   - ELO
+   Responsibilities currently implemented:
+   - Serve website files
+   - Player accounts
+   - Password hashing
+   - Login sessions
+   - Player lookup
    - Badges
    - Unlocked cards
-   - Deck ownership
+   - Player decks
+   - Basic server status
+   - Profile API
+   - Secure static-file serving
 
-   Client-side JavaScript must NOT be trusted to change these values.
+   Card-library / Set Manager rules are intentionally kept
+   separate and will be added during #3.
    ============================================================ */
 
-
-/* ============================================================
-   MODULE IMPORTS
-   ============================================================ */
-
-/*
- * Node's built-in HTTP module.
- *
- * This is used to create the web server without requiring
- * Express or another web framework.
- */
 const http = require("http");
-
-
-/*
- * Node's filesystem module.
- *
- * Used for reading website files and assets from disk.
- */
 const fs = require("fs");
-
-
-/*
- * Node's path module.
- *
- * Used to safely construct filesystem paths.
- */
 const path = require("path");
-
-
-/*
- * Node's crypto module.
- *
- * Used for password hashing and secure session tokens.
- */
 const crypto = require("crypto");
-
-
-/*
- * SQLite database library.
- *
- * Card Stuff Yes uses SQLite for persistent player data.
- */
 const Database = require("better-sqlite3");
 
 
@@ -80,30 +32,15 @@ const Database = require("better-sqlite3");
    CONFIGURATION
    ============================================================ */
 
-/*
- * Load the server configuration from config.json.
- *
- * The configuration file contains values such as:
- *
- * {
- *     "host": "127.0.0.1",
- *     "port": 6565,
- *     "maxPlayersPerGame": 4
- * }
- */
 const CONFIG_PATH =
-    path.resolve(__dirname, "config.json");
+    path.resolve(
+        __dirname,
+        "config.json"
+    );
 
 
-let config;
+let config = {};
 
-
-/*
- * Attempt to load config.json.
- *
- * If it cannot be read, sensible defaults are used so the server
- * can still start.
- */
 try {
 
     config =
@@ -117,69 +54,40 @@ try {
 } catch (error) {
 
     console.warn(
-        "Could not load config.json. Using default configuration."
+        "Could not load config.json. Using defaults."
     );
 
-
-    config = {};
 }
 
 
-/*
- * Server hostname/interface.
- *
- * 127.0.0.1 means the server only listens locally, which is useful
- * when Cloudflare Tunnel or another reverse proxy is being used.
- */
 const HOST =
     typeof config.host === "string"
         ? config.host
         : "127.0.0.1";
 
 
-/*
- * Server port.
- */
 const PORT =
     Number.isInteger(config.port)
         ? config.port
         : 6565;
 
 
-/*
- * Maximum number of players in one game.
- *
- * This is currently configuration groundwork for matchmaking.
- */
 const MAX_PLAYERS_PER_GAME =
-    Number.isInteger(config.maxPlayersPerGame)
+    Number.isInteger(
+        config.maxPlayersPerGame
+    )
         ? config.maxPlayersPerGame
         : 4;
 
 
 /* ============================================================
-   FILESYSTEM PATHS
+   PATHS
    ============================================================ */
 
-/*
- * The directory containing this server.js file is also the root
- * of the website files on the Server branch.
- */
 const WEBSITE_DIRECTORY =
     path.resolve(__dirname);
 
 
-/*
- * General website assets are stored in /assets.
- *
- * Examples:
- *
- * assets/
- * ├── badges/
- * │   ├── owner.png
- * │   └── moderator.png
- * └── ...
- */
 const ASSETS_DIRECTORY =
     path.resolve(
         __dirname,
@@ -187,12 +95,6 @@ const ASSETS_DIRECTORY =
     );
 
 
-/*
- * SQLite database containing player information.
- *
- * This file is intentionally local to the server and should NOT
- * be committed to GitHub.
- */
 const DATABASE_PATH =
     path.resolve(
         __dirname,
@@ -201,50 +103,29 @@ const DATABASE_PATH =
 
 
 /* ============================================================
-   DATABASE INITIALIZATION
+   DATABASE
    ============================================================ */
 
-/*
- * Open the SQLite database.
- *
- * better-sqlite3 automatically creates the file if it does not
- * already exist.
- */
 const db =
     new Database(
         DATABASE_PATH
     );
 
 
-/*
- * WAL mode allows SQLite to handle reads and writes efficiently
- * while the server is running.
- */
-db.pragma("journal_mode = WAL");
+db.pragma(
+    "journal_mode = WAL"
+);
 
 
-/*
- * Enable SQLite foreign-key enforcement.
- *
- * Without this, foreign-key definitions would not automatically
- * enforce relationships between tables.
- */
-db.pragma("foreign_keys = ON");
+db.pragma(
+    "foreign_keys = ON"
+);
 
 
 /* ============================================================
-   DATABASE TABLES
+   PLAYER TABLE
    ============================================================ */
 
-/*
- * Main player table.
- *
- * ELO is stored directly on the player because it represents the
- * player's CURRENT seasonal rating.
- *
- * Previous seasonal ratings are preserved separately in
- * season_results.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS players (
         id INTEGER PRIMARY KEY,
@@ -259,33 +140,21 @@ db.exec(`
 
 
 /* ============================================================
-   PLAYER TABLE MIGRATION
+   PLAYER MIGRATION
    ============================================================ */
 
-/*
- * Older Card Stuff Yes databases were created before ELO existed.
- *
- * Check whether the elo column already exists.
- */
 const playerColumns =
     db.prepare(
         "PRAGMA table_info(players)"
     ).all();
 
 
-const hasEloColumn =
-    playerColumns.some(
+if (
+    !playerColumns.some(
         column =>
             column.name === "elo"
-    );
-
-
-/*
- * Add ELO to an older database if necessary.
- *
- * Existing players start at 1000 ELO.
- */
-if (!hasEloColumn) {
+    )
+) {
 
     db.exec(`
         ALTER TABLE players
@@ -295,21 +164,34 @@ if (!hasEloColumn) {
 }
 
 
+if (
+    !playerColumns.some(
+        column =>
+            column.name ===
+            "mustChangePassword"
+    )
+) {
+
+    db.exec(`
+        ALTER TABLE players
+        ADD COLUMN mustChangePassword
+        INTEGER NOT NULL DEFAULT 0
+    `);
+
+}
+
+
 /* ============================================================
-   LOGIN SESSIONS
+   SESSIONS
    ============================================================ */
 
-/*
- * Stores authentication sessions.
- *
- * The token itself is stored as a hash rather than storing the
- * raw session token in the database.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
         tokenHash TEXT PRIMARY KEY,
         playerId INTEGER NOT NULL,
         createdAt TEXT NOT NULL,
+        expiresAt TEXT NOT NULL,
+
         FOREIGN KEY (playerId)
             REFERENCES players(id)
             ON DELETE CASCADE
@@ -321,17 +203,6 @@ db.exec(`
    BADGES
    ============================================================ */
 
-/*
- * Stores definitions for special player badges.
- *
- * Rank badges such as Owner and Mod are handled automatically
- * from the player's rank.
- *
- * This table is intended for additional badges, such as:
- * - Tournament winner
- * - Event participant
- * - Other special achievements
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS badges (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -341,23 +212,20 @@ db.exec(`
 `);
 
 
-/* ============================================================
-   PLAYER BADGES
-   ============================================================ */
-
-/*
- * Connects players to special badges.
- *
- * A player can have multiple badges.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS player_badges (
         playerId INTEGER NOT NULL,
         badgeId INTEGER NOT NULL,
-        PRIMARY KEY (playerId, badgeId),
+
+        PRIMARY KEY (
+            playerId,
+            badgeId
+        ),
+
         FOREIGN KEY (playerId)
             REFERENCES players(id)
             ON DELETE CASCADE,
+
         FOREIGN KEY (badgeId)
             REFERENCES badges(id)
             ON DELETE CASCADE
@@ -369,16 +237,16 @@ db.exec(`
    UNLOCKED CARDS
    ============================================================ */
 
-/*
- * Stores which cards each player owns/unlocked.
- *
- * Card ownership is checked by the server when a deck is saved.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS player_unlocked_cards (
         playerId INTEGER NOT NULL,
         cardId TEXT NOT NULL,
-        PRIMARY KEY (playerId, cardId),
+
+        PRIMARY KEY (
+            playerId,
+            cardId
+        ),
+
         FOREIGN KEY (playerId)
             REFERENCES players(id)
             ON DELETE CASCADE
@@ -387,19 +255,14 @@ db.exec(`
 
 
 /* ============================================================
-   PLAYER DECKS
+   PLAYER DECK
    ============================================================ */
 
-/*
- * Stores each player's currently saved deck.
- *
- * The deck itself is represented as a list of card IDs in the
- * database.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS player_deck (
         playerId INTEGER PRIMARY KEY,
-        cards TEXT NOT NULL,
+        cards TEXT NOT NULL DEFAULT '[]',
+
         FOREIGN KEY (playerId)
             REFERENCES players(id)
             ON DELETE CASCADE
@@ -411,16 +274,6 @@ db.exec(`
    SEASONS
    ============================================================ */
 
-/*
- * Every month has its own ELO season.
- *
- * The season ID uses UTC year-month format:
- *
- *     2026-09
- *
- * This avoids ambiguity caused by different players being in
- * different time zones.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS seasons (
         id TEXT PRIMARY KEY,
@@ -430,27 +283,22 @@ db.exec(`
 `);
 
 
-/* ============================================================
-   HISTORICAL SEASON RESULTS
-   ============================================================ */
-
-/*
- * When a season ends, every player's final ELO and leaderboard
- * position is copied here.
- *
- * This means resetting current ELO does NOT erase previous
- * monthly results.
- */
 db.exec(`
     CREATE TABLE IF NOT EXISTS season_results (
         seasonId TEXT NOT NULL,
         playerId INTEGER NOT NULL,
         finalElo INTEGER NOT NULL,
         finalRank INTEGER NOT NULL,
-        PRIMARY KEY (seasonId, playerId),
+
+        PRIMARY KEY (
+            seasonId,
+            playerId
+        ),
+
         FOREIGN KEY (seasonId)
             REFERENCES seasons(id)
             ON DELETE CASCADE,
+
         FOREIGN KEY (playerId)
             REFERENCES players(id)
             ON DELETE CASCADE
@@ -459,53 +307,32 @@ db.exec(`
 
 
 /* ============================================================
-   PASSWORD HASHING SETTINGS
+   PASSWORD SETTINGS
    ============================================================ */
 
-/*
- * Passwords are hashed using Node's scrypt implementation.
- *
- * Passwords are never stored as plaintext.
- */
 const PASSWORD_HASH_BYTES = 64;
-
-
-/*
- * Number of random bytes used for password salts.
- */
 const PASSWORD_SALT_BYTES = 16;
-
-
-/*
- * Number of random bytes used for session tokens.
- *
- * 32 bytes provides a large amount of randomness for sessions.
- */
 const SESSION_TOKEN_BYTES = 32;
+
+const SESSION_LENGTH_MS =
+    7 * 24 * 60 * 60 * 1000;
 
 
 /* ============================================================
    PASSWORD HASHING
    ============================================================ */
 
-/*
- * Hash a password using scrypt.
- *
- * The resulting string contains:
- *
- *     scrypt:salt:hash
- *
- * so the salt can be recovered later when verifying the password.
- */
 function hashPassword(password) {
 
     if (
         typeof password !== "string" ||
         password.length === 0
     ) {
+
         throw new Error(
             "Password must be a non-empty string."
         );
+
     }
 
 
@@ -535,9 +362,6 @@ function hashPassword(password) {
    PASSWORD VERIFICATION
    ============================================================ */
 
-/*
- * Verify a plaintext password against a stored password hash.
- */
 function verifyPassword(
     password,
     storedHash
@@ -547,7 +371,9 @@ function verifyPassword(
         typeof password !== "string" ||
         typeof storedHash !== "string"
     ) {
+
         return false;
+
     }
 
 
@@ -559,7 +385,9 @@ function verifyPassword(
         parts.length !== 3 ||
         parts[0] !== "scrypt"
     ) {
+
         return false;
+
     }
 
 
@@ -591,7 +419,9 @@ function verifyPassword(
             actualHash.length !==
             expectedHash.length
         ) {
+
             return false;
+
         }
 
 
@@ -600,23 +430,19 @@ function verifyPassword(
             expectedHash
         );
 
-    } catch (error) {
+    } catch {
 
         return false;
+
     }
+
 }
 
 
 /* ============================================================
-   SESSION TOKEN CREATION
+   SESSION TOKENS
    ============================================================ */
 
-/*
- * Generate a cryptographically random session token.
- *
- * The raw token is sent to the browser.
- * Only its SHA-256 hash is stored in SQLite.
- */
 function createSessionToken() {
 
     return crypto
@@ -624,110 +450,157 @@ function createSessionToken() {
             SESSION_TOKEN_BYTES
         )
         .toString("hex");
+
 }
 
 
-/* ============================================================
-   SESSION TOKEN HASHING
-   ============================================================ */
-
-/*
- * Hash a session token before putting it in the database.
- */
 function hashSessionToken(token) {
 
     return crypto
         .createHash("sha256")
         .update(token)
         .digest("hex");
+
+}
+
+
+function createSession(playerId) {
+
+    const token =
+        createSessionToken();
+
+
+    const tokenHash =
+        hashSessionToken(
+            token
+        );
+
+
+    const createdAt =
+        new Date();
+
+
+    const expiresAt =
+        new Date(
+            createdAt.getTime() +
+            SESSION_LENGTH_MS
+        );
+
+
+    db.prepare(`
+        INSERT INTO sessions
+        (
+            tokenHash,
+            playerId,
+            createdAt,
+            expiresAt
+        )
+        VALUES (?, ?, ?, ?)
+    `).run(
+        tokenHash,
+        playerId,
+        createdAt.toISOString(),
+        expiresAt.toISOString()
+    );
+
+
+    return {
+        token,
+        expiresAt
+    };
+
 }
 
 
 /* ============================================================
-   CURRENT TIME
+   TIME
    ============================================================ */
 
-/*
- * Return the current time as an ISO 8601 string.
- *
- * Using ISO timestamps keeps database timestamps consistent and
- * easy to sort.
- */
 function nowISO() {
 
     return new Date().toISOString();
+
 }
 
 
 /* ============================================================
-   PLAYER LOOKUP — USERNAME
+   PLAYER LOOKUPS
    ============================================================ */
 
-/*
- * Get a complete player record by username.
- */
-function getPlayerByUsername(username) {
+function getPlayerByUsername(
+    username
+) {
 
-    return db
-        .prepare(`
+    return db.prepare(`
+        SELECT
+            id,
+            username,
+            passwordHash,
+            rank,
+            elo,
+            createdAt,
+            mustChangePassword
+        FROM players
+        WHERE username = ?
+    `).get(username);
+
+}
+
+
+function getPlayerById(
+    playerId
+) {
+
+    return db.prepare(`
+        SELECT
+            id,
+            username,
+            passwordHash,
+            rank,
+            elo,
+            createdAt,
+            mustChangePassword
+        FROM players
+        WHERE id = ?
+    `).get(playerId);
+
+}
+
+
+/* ============================================================
+   PLAYER ID
+   ============================================================ */
+
+function getNextPlayerId() {
+
+    const row =
+        db.prepare(`
             SELECT
-                id,
-                username,
-                passwordHash,
-                rank,
-                elo,
-                createdAt,
-                mustChangePassword
+                COALESCE(
+                    MAX(id),
+                    0
+                ) + 1 AS nextId
             FROM players
-            WHERE username = ?
-        `)
-        .get(username);
+        `).get();
+
+
+    return row.nextId;
+
 }
 
 
 /* ============================================================
-   PLAYER LOOKUP — ID
+   BADGES
    ============================================================ */
 
-/*
- * Get a complete player record by numeric player ID.
- */
-function getPlayerById(playerId) {
-
-    return db
-        .prepare(`
-            SELECT
-                id,
-                username,
-                passwordHash,
-                rank,
-                elo,
-                createdAt,
-                mustChangePassword
-            FROM players
-            WHERE id = ?
-        `)
-        .get(playerId);
-}
-
-
-/* ============================================================
-   BADGE LOOKUP
-   ============================================================ */
-
-/*
- * Return the badges that a player has.
- *
- * Owner and Moderator rank badges are automatically included
- * based on the player's rank.
- *
- * Additional achievement/special badges are then added from
- * player_badges.
- */
-function getPlayerBadges(playerId) {
+function getPlayerBadges(
+    playerId
+) {
 
     const player =
-        getPlayerById(playerId);
+        getPlayerById(
+            playerId
+        );
 
 
     if (!player) {
@@ -738,47 +611,39 @@ function getPlayerBadges(playerId) {
     const badges = [];
 
 
-    /* --------------------------------------------------------
-       OWNER RANK BADGE
-       -------------------------------------------------------- */
+    const normalizedRank =
+        player.rank.toLowerCase();
+
 
     if (
-        player.rank.toLowerCase() ===
+        normalizedRank ===
         "owner"
     ) {
 
         badges.push({
             name: "Owner",
-            image: "/assets/badges/owner.png",
+            image:
+                "./assets/badges/owner.png",
             type: "rank"
         });
 
     }
 
 
-    /* --------------------------------------------------------
-       MODERATOR RANK BADGE
-       -------------------------------------------------------- */
-
     if (
-        player.rank.toLowerCase() ===
-            "mod" ||
-        player.rank.toLowerCase() ===
-            "moderator"
+        normalizedRank === "mod" ||
+        normalizedRank === "moderator"
     ) {
 
         badges.push({
             name: "Moderator",
-            image: "/assets/badges/moderator.png",
+            image:
+                "./assets/badges/moderator.png",
             type: "rank"
         });
 
     }
 
-
-    /* --------------------------------------------------------
-       SPECIAL / ACHIEVEMENT BADGES
-       -------------------------------------------------------- */
 
     const specialBadges =
         db.prepare(`
@@ -788,7 +653,8 @@ function getPlayerBadges(playerId) {
                 badges.imagePath
             FROM player_badges
             INNER JOIN badges
-                ON badges.id = player_badges.badgeId
+                ON badges.id =
+                   player_badges.badgeId
             WHERE player_badges.playerId = ?
             ORDER BY badges.id ASC
         `).all(playerId);
@@ -809,17 +675,17 @@ function getPlayerBadges(playerId) {
 
 
     return badges;
+
 }
 
 
 /* ============================================================
-   UNLOCKED CARD LOOKUP
+   UNLOCKED CARDS
    ============================================================ */
 
-/*
- * Get every card currently unlocked by a player.
- */
-function getUnlockedCards(playerId) {
+function getUnlockedCards(
+    playerId
+) {
 
     const rows =
         db.prepare(`
@@ -833,19 +699,40 @@ function getUnlockedCards(playerId) {
     return rows.map(
         row => row.cardId
     );
+
+}
+
+
+function playerHasCard(
+    playerId,
+    cardId
+) {
+
+    const row =
+        db.prepare(`
+            SELECT 1
+            FROM player_unlocked_cards
+            WHERE playerId = ?
+              AND cardId = ?
+            LIMIT 1
+        `).get(
+            playerId,
+            cardId
+        );
+
+
+    return Boolean(row);
+
 }
 
 
 /* ============================================================
-   PLAYER DECK LOOKUP
+   DECK
    ============================================================ */
 
-/*
- * Get the player's saved deck.
- *
- * The cards are stored as JSON in SQLite.
- */
-function getPlayerDeck(playerId) {
+function getPlayerDeck(
+    playerId
+) {
 
     const row =
         db.prepare(`
@@ -863,20 +750,137 @@ function getPlayerDeck(playerId) {
     try {
 
         const cards =
-            JSON.parse(row.cards);
+            JSON.parse(
+                row.cards
+            );
 
 
-        if (!Array.isArray(cards)) {
-            return [];
+        return Array.isArray(cards)
+            ? cards
+            : [];
+
+    } catch {
+
+        return [];
+
+    }
+
+}
+
+
+/* ============================================================
+   DECK VALIDATION
+   ============================================================ */
+
+function validateDeck(
+    playerId,
+    cards
+) {
+
+    if (!Array.isArray(cards)) {
+
+        return {
+            valid: false,
+            error:
+                "Deck must be an array."
+        };
+
+    }
+
+
+    /* --------------------------------------------------------
+       ACTUAL BASE DECK RULE
+       -------------------------------------------------------- */
+
+    if (cards.length !== 60) {
+
+        return {
+            valid: false,
+            error:
+                "Deck must contain exactly 60 cards."
+        };
+
+    }
+
+
+    const copies =
+        new Map();
+
+
+    for (
+        const cardId of cards
+    ) {
+
+        if (
+            typeof cardId !== "string" ||
+            !cardId.trim()
+        ) {
+
+            return {
+                valid: false,
+                error:
+                    "Every deck card must have a valid card ID."
+            };
+
         }
 
 
-        return cards;
+        if (
+            cardId.length > 128
+        ) {
 
-    } catch (error) {
+            return {
+                valid: false,
+                error:
+                    "A card ID is too long."
+            };
 
-        return [];
+        }
+
+
+        const count =
+            (copies.get(cardId) || 0) + 1;
+
+
+        if (count > 4) {
+
+            return {
+                valid: false,
+                error:
+                    `Card "${cardId}" cannot appear more than 4 times.`
+            };
+
+        }
+
+
+        copies.set(
+            cardId,
+            count
+        );
+
+
+        if (
+            !playerHasCard(
+                playerId,
+                cardId
+            )
+        ) {
+
+            return {
+                valid: false,
+                error:
+                    `You have not unlocked card "${cardId}".`
+            };
+
+        }
+
     }
+
+
+    return {
+        valid: true
+    };
+
 }
 
 
@@ -884,13 +888,9 @@ function getPlayerDeck(playerId) {
    PUBLIC PLAYER DATA
    ============================================================ */
 
-/*
- * Convert a private database player record into data safe to send
- * to the browser.
- *
- * The password hash is deliberately NOT included.
- */
-function publicPlayer(player) {
+function publicPlayer(
+    player
+) {
 
     if (!player) {
         return null;
@@ -903,26 +903,38 @@ function publicPlayer(player) {
         rank: player.rank,
         elo: player.elo,
         createdAt: player.createdAt,
+
         mustChangePassword:
             Boolean(
                 player.mustChangePassword
             ),
+
         badges:
             getPlayerBadges(
                 player.id
             ),
+
         unlockedCards:
             getUnlockedCards(
                 player.id
             ),
+
         deck:
             getPlayerDeck(
                 player.id
             )
     };
-}// ============================================================
 
-function getSessionIdFromCookies(req) {
+}
+
+
+/* ============================================================
+   COOKIES
+   ============================================================ */
+
+function getSessionTokenFromCookies(
+    req
+) {
 
     const cookieHeader =
         req.headers.cookie;
@@ -942,7 +954,9 @@ function getSessionIdFromCookies(req) {
             );
 
 
-    for (const cookie of cookies) {
+    for (
+        const cookie of cookies
+    ) {
 
         const separator =
             cookie.indexOf("=");
@@ -966,70 +980,75 @@ function getSessionIdFromCookies(req) {
             );
 
 
-        if (name === "sessionId") {
+        if (
+            name !== "sessionId"
+        ) {
 
-            try {
+            continue;
 
-                return decodeURIComponent(
-                    value
-                );
-
-            } catch {
-
-                return null;
-            }
         }
+
+
+        try {
+
+            return decodeURIComponent(
+                value
+            );
+
+        } catch {
+
+            return null;
+
+        }
+
     }
 
 
     return null;
+
 }
 
 
-// ============================================================
-// GET PLAYER FROM SESSION
-// ============================================================
-//
-// Turns:
-//
-//     session cookie
-//
-// into:
-//
-//     player database record
-//
-// ============================================================
+/* ============================================================
+   SESSION LOOKUP
+   ============================================================ */
 
-function getPlayerFromSession(req) {
+function getPlayerFromSession(
+    req
+) {
 
-    const sessionId =
-        getSessionIdFromCookies(req);
+    const token =
+        getSessionTokenFromCookies(
+            req
+        );
 
 
-    if (!sessionId) {
+    if (!token) {
         return null;
     }
+
+
+    const tokenHash =
+        hashSessionToken(
+            token
+        );
 
 
     const session =
         db.prepare(`
             SELECT
-                sessionId,
+                tokenHash,
                 playerId,
                 createdAt,
                 expiresAt
             FROM sessions
-            WHERE sessionId = ?
-        `).get(sessionId);
+            WHERE tokenHash = ?
+        `).get(tokenHash);
 
 
     if (!session) {
         return null;
     }
-
-
-    const now =
-        new Date();
 
 
     const expiresAt =
@@ -1038,25 +1057,23 @@ function getPlayerFromSession(req) {
         );
 
 
-    // --------------------------------------------------------
-    // DELETE EXPIRED SESSION
-    // --------------------------------------------------------
-
-    if (expiresAt <= now) {
+    if (
+        Number.isNaN(
+            expiresAt.getTime()
+        ) ||
+        expiresAt <= new Date()
+    ) {
 
         db.prepare(`
             DELETE FROM sessions
-            WHERE sessionId = ?
-        `).run(sessionId);
+            WHERE tokenHash = ?
+        `).run(tokenHash);
 
 
         return null;
+
     }
 
-
-    // --------------------------------------------------------
-    // FIND PLAYER
-    // --------------------------------------------------------
 
     const player =
         getPlayerById(
@@ -1068,53 +1085,52 @@ function getPlayerFromSession(req) {
 
         db.prepare(`
             DELETE FROM sessions
-            WHERE sessionId = ?
-        `).run(sessionId);
+            WHERE tokenHash = ?
+        `).run(tokenHash);
 
 
         return null;
+
     }
 
 
     return player;
+
 }
 
 
-// ============================================================
-// DESTROY CURRENT SESSION
-// ============================================================
-//
-// Used when the player logs out.
-//
-// ============================================================
+/* ============================================================
+   SESSION DESTRUCTION
+   ============================================================ */
 
-function destroySession(req) {
+function destroySession(
+    req
+) {
 
-    const sessionId =
-        getSessionIdFromCookies(req);
+    const token =
+        getSessionTokenFromCookies(
+            req
+        );
 
 
-    if (!sessionId) {
+    if (!token) {
         return;
     }
 
 
+    const tokenHash =
+        hashSessionToken(
+            token
+        );
+
+
     db.prepare(`
         DELETE FROM sessions
-        WHERE sessionId = ?
-    `).run(sessionId);
+        WHERE tokenHash = ?
+    `).run(tokenHash);
+
 }
 
-
-// ============================================================
-// DESTROY ALL PLAYER SESSIONS
-// ============================================================
-//
-// Used after changing a password.
-//
-// This forces the account to sign in again everywhere.
-//
-// ============================================================
 
 function destroyAllPlayerSessions(
     playerId
@@ -1124,16 +1140,13 @@ function destroyAllPlayerSessions(
         DELETE FROM sessions
         WHERE playerId = ?
     `).run(playerId);
+
 }
 
 
-// ============================================================
-// CLEAN EXPIRED SESSIONS
-// ============================================================
-//
-// Removes old sessions from SQLite every hour.
-//
-// ============================================================
+/* ============================================================
+   SESSION CLEANUP
+   ============================================================ */
 
 function cleanExpiredSessions() {
 
@@ -1141,8 +1154,9 @@ function cleanExpiredSessions() {
         DELETE FROM sessions
         WHERE expiresAt <= ?
     `).run(
-        new Date().toISOString()
+        nowISO()
     );
+
 }
 
 
@@ -1152,14 +1166,9 @@ setInterval(
 );
 
 
-// ============================================================
-// HTTP RESPONSE FUNCTIONS
-// ============================================================
-//
-// sendJSON = JSON API response
-// sendText = plain text response
-//
-// ============================================================
+/* ============================================================
+   RESPONSES
+   ============================================================ */
 
 function sendJSON(
     res,
@@ -1171,7 +1180,7 @@ function sendJSON(
         statusCode,
         {
             "Content-Type":
-                "application/json",
+                "application/json; charset=utf-8",
 
             "Cache-Control":
                 "no-store"
@@ -1182,6 +1191,7 @@ function sendJSON(
     res.end(
         JSON.stringify(data)
     );
+
 }
 
 
@@ -1195,56 +1205,19 @@ function sendText(
         statusCode,
         {
             "Content-Type":
-                "text/plain"
+                "text/plain; charset=utf-8"
         }
     );
 
 
     res.end(text);
+
 }
 
 
-
-// ============================================================
-// STATIC FILE SERVING
-// ============================================================
-//
-// Serves the website's public files, including:
-//
-//     /colors.css
-//     /profile.css
-//     /profile.js
-//
-// It also serves files inside:
-//
-//     /assets/
-//
-// Only explicitly allowed website files and files inside the
-// assets directory can be served.
-//
-// Path resolution is checked so a URL cannot escape the
-// intended website/assets directories.
-//
-// ============================================================
-
-const WEBSITE_DIRECTORY =
-    path.resolve(__dirname);
-
-
-const ASSETS_DIRECTORY =
-    path.resolve(
-        __dirname,
-        "assets"
-    );
-
-
-// ============================================================
-// MIME TYPES
-// ============================================================
-//
-// Tells the browser what kind of file it received.
-//
-// ============================================================
+/* ============================================================
+   MIME TYPES
+   ============================================================ */
 
 const MIME_TYPES = {
 
@@ -1284,16 +1257,33 @@ const MIME_TYPES = {
 };
 
 
-// ============================================================
-// SERVE STATIC FILE
-// ============================================================
-//
-// Returns true when the request was handled.
-//
-// Returns false when the request is not a static file request,
-// allowing the API routes below to handle it.
-//
-// ============================================================
+/* ============================================================
+   STATIC WEBSITE FILES
+   ============================================================ */
+
+const ALLOWED_WEBSITE_FILES =
+    new Set([
+
+        "/index.html",
+
+        "/colors.css",
+
+        "/profile.html",
+        "/profile.css",
+        "/profile.js",
+
+        "/cardgame.html",
+        "/cardgame.css",
+        "/cardgame.js",
+
+        "/test.html"
+
+    ]);
+
+
+/* ============================================================
+   STATIC FILE SERVING
+   ============================================================ */
 
 function serveStaticFile(
     req,
@@ -1310,17 +1300,8 @@ function serveStaticFile(
     }
 
 
-    // --------------------------------------------------------
-    // GET ONLY THE URL PATH
-    // --------------------------------------------------------
-    //
-    // This removes query strings such as:
-    //
-    //     /profile.css?v=2
-    //
-    // --------------------------------------------------------
-
     let pathname;
+
 
     try {
 
@@ -1330,28 +1311,6 @@ function serveStaticFile(
                 "http://localhost"
             ).pathname;
 
-    } catch {
-
-        sendText(
-            res,
-            400,
-            "Invalid file path."
-        );
-
-        return true;
-
-    }
-
-
-    // --------------------------------------------------------
-    // DECODE URL
-    // --------------------------------------------------------
-    //
-    // Decode URL-encoded characters before checking the path.
-    //
-    // --------------------------------------------------------
-
-    try {
 
         pathname =
             decodeURIComponent(
@@ -1366,6 +1325,7 @@ function serveStaticFile(
             "Invalid file path."
         );
 
+
         return true;
 
     }
@@ -1374,34 +1334,8 @@ function serveStaticFile(
     let filePath = null;
 
 
-    // ========================================================
-    // WEBSITE FILES
-    // ========================================================
-    //
-    // Only these direct website files are exposed.
-    //
-    // This prevents arbitrary server files such as players.db
-    // from being requested through the browser.
-    //
-    // ========================================================
-
-    const allowedWebsiteFiles = new Set([
-
-        "/colors.css",
-        "/profile.css",
-        "/profile.js",
-
-        "/cardgame.css",
-        "/cardgame.js",
-        "/cardgame.html",
-
-        "/test.html"
-
-    ]);
-
-
     if (
-        allowedWebsiteFiles.has(
+        ALLOWED_WEBSITE_FILES.has(
             pathname
         )
     ) {
@@ -1412,22 +1346,7 @@ function serveStaticFile(
                 pathname.substring(1)
             );
 
-    }
-
-
-    // ========================================================
-    // ASSETS
-    // ========================================================
-    //
-    // Files under /assets/ are allowed.
-    //
-    // Example:
-    //
-    //     /assets/badges/owner.png
-    //
-    // ========================================================
-
-    else if (
+    } else if (
         pathname.startsWith(
             "/assets/"
         )
@@ -1446,14 +1365,6 @@ function serveStaticFile(
             );
 
 
-        // ----------------------------------------------------
-        // PATH TRAVERSAL PROTECTION
-        // ----------------------------------------------------
-        //
-        // The resolved file must remain inside ./assets.
-        //
-        // ----------------------------------------------------
-
         const assetsPrefix =
             ASSETS_DIRECTORY +
             path.sep;
@@ -1471,27 +1382,17 @@ function serveStaticFile(
                 "Forbidden."
             );
 
+
             return true;
 
         }
 
-    }
-
-
-    // --------------------------------------------------------
-    // NOT A STATIC FILE
-    // --------------------------------------------------------
-
-    else {
+    } else {
 
         return false;
 
     }
 
-
-    // ========================================================
-    // FILE EXTENSION
-    // ========================================================
 
     const extension =
         path.extname(
@@ -1500,7 +1401,9 @@ function serveStaticFile(
 
 
     const contentType =
-        MIME_TYPES[extension];
+        MIME_TYPES[
+            extension
+        ];
 
 
     if (!contentType) {
@@ -1511,14 +1414,11 @@ function serveStaticFile(
             "Unsupported file type."
         );
 
+
         return true;
 
     }
 
-
-    // ========================================================
-    // READ FILE
-    // ========================================================
 
     fs.readFile(
         filePath,
@@ -1544,6 +1444,7 @@ function serveStaticFile(
                         error
                     );
 
+
                     sendText(
                         res,
                         500,
@@ -1552,14 +1453,11 @@ function serveStaticFile(
 
                 }
 
+
                 return;
 
             }
 
-
-            // ------------------------------------------------
-            // RESPONSE HEADERS
-            // ------------------------------------------------
 
             res.writeHead(
                 200,
@@ -1573,16 +1471,9 @@ function serveStaticFile(
             );
 
 
-            // ------------------------------------------------
-            // HEAD REQUEST
-            // ------------------------------------------------
-            //
-            // HEAD returns the headers without the file body.
-            //
-            // ------------------------------------------------
-
             if (
-                req.method === "HEAD"
+                req.method ===
+                "HEAD"
             ) {
 
                 res.end();
@@ -1603,17 +1494,13 @@ function serveStaticFile(
 }
 
 
-// ============================================================
-// READ JSON BODY
-// ============================================================
-//
-// Reads POST request data.
-//
-// A size limit prevents enormous requests.
-//
-// ============================================================
+/* ============================================================
+   JSON BODY
+   ============================================================ */
 
-function readJSON(req) {
+function readJSON(
+    req
+) {
 
     return new Promise(
         (resolve, reject) => {
@@ -1641,7 +1528,9 @@ function readJSON(req) {
 
 
                         req.destroy();
+
                     }
+
                 }
             );
 
@@ -1655,13 +1544,16 @@ function readJSON(req) {
                         resolve({});
 
                         return;
+
                     }
 
 
                     try {
 
                         resolve(
-                            JSON.parse(body)
+                            JSON.parse(
+                                body
+                            )
                         );
 
                     } catch {
@@ -1671,7 +1563,9 @@ function readJSON(req) {
                                 "Invalid JSON."
                             )
                         );
+
                     }
+
                 }
             );
 
@@ -1680,196 +1574,63 @@ function readJSON(req) {
                 "error",
                 reject
             );
+
         }
     );
-}
-
-
-// ============================================================
-// DECK VALIDATION
-// ============================================================
-//
-// Checks whether a requested deck is valid.
-//
-// Rules currently:
-//
-// - Deck must be an array
-// - Each card ID must be a string
-// - Card IDs must not be empty
-// - Every card must be unlocked
-// - Slots are generated by the server
-//
-// We will add actual deck-size/card-copy rules when
-// the card-game rules are finalized.
-//
-// ============================================================
-
-function validateDeck(
-    playerId,
-    cards
-) {
-
-    if (!Array.isArray(cards)) {
-
-        return {
-            valid: false,
-            error: "Deck must be an array."
-        };
-    }
-
-
-    // Current temporary maximum.
-    //
-    // We can change this when the actual game rules
-    // define the deck size.
-
-    if (cards.length > 100) {
-
-        return {
-            valid: false,
-            error: "Deck cannot contain more than 100 cards."
-        };
-    }
-
-
-    for (const cardId of cards) {
-
-        if (
-            typeof cardId !== "string" ||
-            !cardId.trim()
-        ) {
-
-            return {
-                valid: false,
-                error: "Every deck card must have a valid card ID."
-            };
-        }
-
-
-        if (
-            cardId.length > 128
-        ) {
-
-            return {
-                valid: false,
-                error: "A card ID is too long."
-            };
-        }
-
-
-        // ----------------------------------------------------
-        // IMPORTANT:
-        //
-        // The server checks ownership.
-        //
-        // The client cannot simply submit a card it
-        // doesn't own.
-        // ----------------------------------------------------
-
-        if (
-            !playerHasCard(
-                playerId,
-                cardId
-            )
-        ) {
-
-            return {
-                valid: false,
-
-                error:
-                    `You have not unlocked card "${cardId}".`
-            };
-        }
-    }
-
-
-    return {
-        valid: true
-    };
-}    };
 
 }
 
 
-// ============================================================
-// SERVER
-// ============================================================
+/* ============================================================
+   SERVER
+   ============================================================ */
 
 const server =
     http.createServer(
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
 
             try {
 
-                // ====================================================
-                // ROOT PAGE
-                // ====================================================
-                //
-                // Currently loads test.html.
-                //
-                // Later this can become the actual game homepage.
-                //
-                // ====================================================
-
-                if (
-                    req.url === "/" &&
-                    req.method === "GET"
-                ) {
-
-                    fs.readFile(
-                        "./test.html",
-                        (err, data) => {
-
-                            if (err) {
-
-                                sendText(
-                                    res,
-                                    500,
-                                    "Could not load test page."
-                                );
-
-                                return;
-                            }
-
-
-                            res.writeHead(
-                                200,
-                                {
-                                    "Content-Type":
-                                        "text/html"
-                                }
-                            );
-
-
-                            res.end(data);
-
-                        }
+                const url =
+                    new URL(
+                        req.url,
+                        `http://${HOST}:${PORT}`
                     );
 
 
-                    return;
-                }
+                const pathname =
+                    url.pathname;
 
 
-                // ====================================================
-                // PROFILE PAGE
-                // ====================================================
-                //
-                // The profile page uses /api/me to determine
-                // who is signed in.
-                //
-                // ====================================================
+                /* =================================================
+                   PROFILE
+                   ================================================= */
 
                 if (
-                    req.url === "/profile" &&
+                    (
+                        pathname ===
+                        "/profile" ||
+                        pathname ===
+                        "/profile.html"
+                    ) &&
                     req.method === "GET"
                 ) {
 
-                    fs.readFile(
-                        "./profile.html",
-                        (err, data) => {
+                    const filePath =
+                        path.resolve(
+                            WEBSITE_DIRECTORY,
+                            "profile.html"
+                        );
 
-                            if (err) {
+
+                    fs.readFile(
+                        filePath,
+                        (error, data) => {
+
+                            if (error) {
 
                                 sendText(
                                     res,
@@ -1877,7 +1638,9 @@ const server =
                                     "Could not load profile page."
                                 );
 
+
                                 return;
+
                             }
 
 
@@ -1885,7 +1648,7 @@ const server =
                                 200,
                                 {
                                     "Content-Type":
-                                        "text/html"
+                                        "text/html; charset=utf-8"
                                 }
                             );
 
@@ -1897,24 +1660,67 @@ const server =
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // STATIC WEBSITE FILES
-                // ====================================================
-                //
-                // Serves the CSS, JavaScript, and public assets used
-                // by the website.
-                //
-                // Examples:
-                //
-                //     /colors.css
-                //     /profile.css
-                //     /profile.js
-                //     /assets/badges/owner.png
-                //
-                // ====================================================
+                /* =================================================
+                   ROOT
+                   ================================================= */
+
+                if (
+                    pathname === "/" &&
+                    req.method === "GET"
+                ) {
+
+                    const filePath =
+                        path.resolve(
+                            WEBSITE_DIRECTORY,
+                            "index.html"
+                        );
+
+
+                    fs.readFile(
+                        filePath,
+                        (error, data) => {
+
+                            if (error) {
+
+                                sendText(
+                                    res,
+                                    500,
+                                    "Could not load homepage."
+                                );
+
+
+                                return;
+
+                            }
+
+
+                            res.writeHead(
+                                200,
+                                {
+                                    "Content-Type":
+                                        "text/html; charset=utf-8"
+                                }
+                            );
+
+
+                            res.end(data);
+
+                        }
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* =================================================
+                   STATIC FILES
+                   ================================================= */
 
                 if (
                     serveStaticFile(
@@ -1924,15 +1730,17 @@ const server =
                 ) {
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // SERVER STATUS
-                // ====================================================
+                /* =================================================
+                   STATUS
+                   ================================================= */
 
                 if (
-                    req.url === "/api/status" &&
+                    pathname ===
+                        "/api/status" &&
                     req.method === "GET"
                 ) {
 
@@ -1941,70 +1749,23 @@ const server =
                         200,
                         {
                             online: true,
-                            game: "Card Stuff Yes"
+                            game:
+                                "Card Stuff Yes"
                         }
                     );
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // PLAYER LIST
-                // ====================================================
-                //
-                // Returns basic public information about
-                // every player.
-                //
-                // Password hashes are never included.
-                //
-                // ====================================================
+                /* =================================================
+                   REGISTER
+                   ================================================= */
 
                 if (
-                    req.url === "/api/players" &&
-                    req.method === "GET"
-                ) {
-
-                    const players =
-                        db.prepare(`
-                            SELECT
-                                id,
-                                username,
-                                rank,
-                                createdAt,
-                                mustChangePassword
-                            FROM players
-                            ORDER BY id ASC
-                        `).all();
-
-
-                    const safePlayers =
-                        players.map(
-                            publicPlayer
-                        );
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-                            players:
-                                safePlayers
-                        }
-                    );
-
-
-                    return;
-                }
-
-
-                // ====================================================
-                // REGISTER
-                // ====================================================
-
-                if (
-                    req.url ===
+                    pathname ===
                         "/api/auth/register" &&
                     req.method === "POST"
                 ) {
@@ -2015,7 +1776,9 @@ const server =
                     try {
 
                         body =
-                            await readJSON(req);
+                            await readJSON(
+                                req
+                            );
 
                     } catch (error) {
 
@@ -2030,6 +1793,7 @@ const server =
 
 
                         return;
+
                     }
 
 
@@ -2063,28 +1827,12 @@ const server =
 
 
                         return;
+
                     }
 
 
                     if (
-                        username.length < 3
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Username must be at least 3 characters."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    if (
+                        username.length < 3 ||
                         username.length > 32
                     ) {
 
@@ -2093,12 +1841,13 @@ const server =
                             400,
                             {
                                 error:
-                                    "Username must be 32 characters or less."
+                                    "Username must be between 3 and 32 characters."
                             }
                         );
 
 
                         return;
+
                     }
 
 
@@ -2117,51 +1866,33 @@ const server =
 
 
                         return;
+
                     }
 
 
-                    // ------------------------------------------------
-                    // USERNAME UNIQUENESS
-                    // ------------------------------------------------
-
-                    const existing =
+                    if (
                         getPlayerByUsername(
                             username
-                        );
-
-
-                    if (existing) {
+                        )
+                    ) {
 
                         sendJSON(
                             res,
                             409,
                             {
                                 error:
-                                    "Username already exists. Please sign in."
+                                    "Username already exists."
                             }
                         );
 
 
                         return;
+
                     }
 
 
-                    // ------------------------------------------------
-                    // CREATE PLAYER
-                    // ------------------------------------------------
-
-                    const id =
+                    const playerId =
                         getNextPlayerId();
-
-
-                    const passwordHash =
-                        hashPassword(
-                            password
-                        );
-
-
-                    const createdAt =
-                        new Date().toISOString();
 
 
                     db.prepare(`
@@ -2171,22 +1902,22 @@ const server =
                             username,
                             passwordHash,
                             rank,
+                            elo,
                             createdAt,
                             mustChangePassword
                         )
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                     `).run(
-                        id,
+                        playerId,
                         username,
-                        passwordHash,
+                        hashPassword(
+                            password
+                        ),
                         "Player",
-                        createdAt,
+                        1000,
+                        nowISO(),
                         0
                     );
-
-
-                    const player =
-                        getPlayerById(id);
 
 
                     sendJSON(
@@ -2198,22 +1929,25 @@ const server =
 
                             player:
                                 publicPlayer(
-                                    player
+                                    getPlayerById(
+                                        playerId
+                                    )
                                 )
                         }
                     );
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // LOGIN
-                // ====================================================
+                /* =================================================
+                   LOGIN
+                   ================================================= */
 
                 if (
-                    req.url ===
+                    pathname ===
                         "/api/auth/login" &&
                     req.method === "POST"
                 ) {
@@ -2224,7 +1958,9 @@ const server =
                     try {
 
                         body =
-                            await readJSON(req);
+                            await readJSON(
+                                req
+                            );
 
                     } catch (error) {
 
@@ -2239,6 +1975,7 @@ const server =
 
 
                         return;
+
                     }
 
 
@@ -2256,55 +1993,19 @@ const server =
                             : "";
 
 
-                    if (
-                        !username ||
-                        !password
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Username and password are required."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
                     const player =
                         getPlayerByUsername(
                             username
                         );
 
 
-                    if (!player) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "Invalid username or password."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-                    const valid =
-                        checkPassword(
+                    if (
+                        !player ||
+                        !verifyPassword(
                             password,
                             player.passwordHash
-                        );
-
-
-                    if (!valid) {
+                        )
+                    ) {
 
                         sendJSON(
                             res,
@@ -2317,12 +2018,9 @@ const server =
 
 
                         return;
+
                     }
 
-
-                    // ------------------------------------------------
-                    // CREATE SESSION
-                    // ------------------------------------------------
 
                     const session =
                         createSession(
@@ -2330,28 +2028,19 @@ const server =
                         );
 
 
-                    // ------------------------------------------------
-                    // SESSION COOKIE
-                    // ------------------------------------------------
-                    //
-                    // HttpOnly:
-                    // JavaScript cannot directly read the cookie.
-                    //
-                    // Secure:
-                    // Cookie is sent over HTTPS.
-                    //
-                    // SameSite=Lax:
-                    // Helps protect against unwanted cross-site
-                    // requests.
-                    //
-                    // Max-Age:
-                    // Seven-day session.
-                    //
-                    // ------------------------------------------------
-
                     res.setHeader(
                         "Set-Cookie",
-                        `sessionId=${encodeURIComponent(session.sessionId)}; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_LENGTH_MS / 1000}; Path=/`
+                        [
+                            `sessionId=${encodeURIComponent(session.token)}`,
+                            "HttpOnly",
+                            "Secure",
+                            "SameSite=Lax",
+                            `Max-Age=${Math.floor(
+                                SESSION_LENGTH_MS /
+                                1000
+                            )}`,
+                            "Path=/"
+                        ].join("; ")
                     );
 
 
@@ -2375,23 +2064,17 @@ const server =
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // CURRENT USER
-                // ====================================================
-                //
-                // GET /api/me
-                //
-                // Returns the currently signed-in player.
-                //
-                // This is what profile.html uses.
-                //
-                // ====================================================
+                /* =================================================
+                   CURRENT PLAYER
+                   ================================================= */
 
                 if (
-                    req.url === "/api/me" &&
+                    pathname ===
+                        "/api/me" &&
                     req.method === "GET"
                 ) {
 
@@ -2414,6 +2097,7 @@ const server =
 
 
                         return;
+
                     }
 
 
@@ -2430,21 +2114,17 @@ const server =
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // CURRENT USER - CARDS
-                // ====================================================
-                //
-                // GET /api/me/cards
-                //
-                // Returns only the player's unlocked cards.
-                //
-                // ====================================================
+                /* =================================================
+                   CURRENT PLAYER CARDS
+                   ================================================= */
 
                 if (
-                    req.url === "/api/me/cards" &&
+                    pathname ===
+                        "/api/me/cards" &&
                     req.method === "GET"
                 ) {
 
@@ -2467,6 +2147,7 @@ const server =
 
 
                         return;
+
                     }
 
 
@@ -2483,21 +2164,17 @@ const server =
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // CURRENT USER - DECK
-                // ====================================================
-                //
-                // GET /api/me/deck
-                //
-                // Returns the player's current deck.
-                //
-                // ====================================================
+                /* =================================================
+                   CURRENT PLAYER DECK — GET
+                   ================================================= */
 
                 if (
-                    req.url === "/api/me/deck" &&
+                    pathname ===
+                        "/api/me/deck" &&
                     req.method === "GET"
                 ) {
 
@@ -2520,6 +2197,7 @@ const server =
 
 
                         return;
+
                     }
 
 
@@ -2536,31 +2214,17 @@ const server =
 
 
                     return;
+
                 }
 
 
-                // ====================================================
-                // SAVE CURRENT USER DECK
-                // ====================================================
-                //
-                // POST /api/me/deck
-                //
-                // Body:
-                //
-                // {
-                //     "cards": [
-                //         "card_one",
-                //         "card_two",
-                //         "card_three"
-                //     ]
-                // }
-                //
-                // The server checks every card before saving it.
-                //
-                // ====================================================
+                /* =================================================
+                   CURRENT PLAYER DECK — SAVE
+                   ================================================= */
 
                 if (
-                    req.url === "/api/me/deck" &&
+                    pathname ===
+                        "/api/me/deck" &&
                     req.method === "POST"
                 ) {
 
@@ -2583,12 +2247,19 @@ const server =
 
 
                         return;
+
                     }
 
 
-                    let body;                    try {
+                    let body;
+
+
+                    try {
+
                         body =
-                            await readJSON(req);
+                            await readJSON(
+                                req
+                            );
 
                     } catch (error) {
 
@@ -2603,8 +2274,8 @@ const server =
 
 
                         return;
-                    }
 
+                    }
 
 
                     const validation =
@@ -2614,7 +2285,9 @@ const server =
                         );
 
 
-                    if (!validation.valid) {
+                    if (
+                        !validation.valid
+                    ) {
 
                         sendJSON(
                             res,
@@ -2627,66 +2300,26 @@ const server =
 
 
                         return;
+
                     }
 
 
-
-                    const cards =
-                        body.cards;
-
-
-
-                    // ------------------------------------------------
-                    // TRANSACTION
-                    // ------------------------------------------------
-                    //
-                    // Delete the old deck and replace it with
-                    // the newly validated deck as one operation.
-                    //
-                    // ------------------------------------------------
-
-                    const saveDeck =
-                        db.transaction(
-                            () => {
-
-                                db.prepare(`
-                                    DELETE FROM player_deck
-                                    WHERE playerId = ?
-                                `).run(
-                                    player.id
-                                );
-
-
-                                const insert =
-                                    db.prepare(`
-                                        INSERT INTO player_deck
-                                        (
-                                            playerId,
-                                            slot,
-                                            cardId
-                                        )
-                                        VALUES (?, ?, ?)
-                                    `);
-
-
-                                for (
-                                    let i = 0;
-                                    i < cards.length;
-                                    i++
-                                ) {
-
-                                    insert.run(
-                                        player.id,
-                                        i,
-                                        cards[i]
-                                    );
-                                }
-                            }
-                        );
-
-
-                    saveDeck();
-
+                    db.prepare(`
+                        INSERT INTO player_deck
+                        (
+                            playerId,
+                            cards
+                        )
+                        VALUES (?, ?)
+                        ON CONFLICT(playerId)
+                        DO UPDATE SET
+                            cards = excluded.cards
+                    `).run(
+                        player.id,
+                        JSON.stringify(
+                            body.cards
+                        )
+                    );
 
 
                     sendJSON(
@@ -2705,270 +2338,35 @@ const server =
 
 
                     return;
+
                 }
 
 
-
-                // ====================================================
-                // CHANGE PASSWORD
-                // ====================================================
+                /* =================================================
+                   LOGOUT
+                   ================================================= */
 
                 if (
-                    req.url ===
-                        "/api/auth/change-password" &&
-                    req.method === "POST"
-                ) {
-
-                    // ------------------------------------------------
-                    // PLAYER MUST BE SIGNED IN
-                    // ------------------------------------------------
-
-                    const player =
-                        getPlayerFromSession(
-                            req
-                        );
-
-
-                    if (!player) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "You must be signed in to change your password."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    let body;
-
-
-
-                    try {
-
-                        body =
-                            await readJSON(req);
-
-                    } catch (error) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    error.message
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    const currentPassword =
-                        typeof body.currentPassword ===
-                        "string"
-                            ? body.currentPassword
-                            : "";
-
-
-                    const newPassword =
-                        typeof body.newPassword ===
-                        "string"
-                            ? body.newPassword
-                            : "";
-
-
-
-                    if (
-                        !currentPassword ||
-                        !newPassword
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "Current password and new password are required."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    // ------------------------------------------------
-                    // VERIFY CURRENT PASSWORD
-                    // ------------------------------------------------
-
-                    const valid =
-                        checkPassword(
-                            currentPassword,
-                            player.passwordHash
-                        );
-
-
-                    if (!valid) {
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                error:
-                                    "Current password is incorrect."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    if (
-                        newPassword.length < 6
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "New password must be at least 6 characters."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    if (
-                        newPassword.length > 256
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "New password is too long."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    // ------------------------------------------------
-                    // PREVENT TEMPORARY PASSWORD
-                    // ------------------------------------------------
-
-                    if (
-                        newPassword ===
-                        TEMPORARY_OWNER_PASSWORD
-                    ) {
-
-                        sendJSON(
-                            res,
-                            400,
-                            {
-                                error:
-                                    "You must choose a different password."
-                            }
-                        );
-
-
-                        return;
-                    }
-
-
-
-                    const newPasswordHash =
-                        hashPassword(
-                            newPassword
-                        );
-
-
-
-                    // ------------------------------------------------
-                    // UPDATE PASSWORD
-                    // ------------------------------------------------
-
-                    db.prepare(`
-                        UPDATE players
-                        SET
-                            passwordHash = ?,
-                            mustChangePassword = 0
-                        WHERE id = ?
-                    `).run(
-                        newPasswordHash,
-                        player.id
-                    );
-
-
-
-                    // ------------------------------------------------
-                    // LOG OUT EVERYWHERE
-                    // ------------------------------------------------
-                    //
-                    // Every existing session becomes invalid.
-                    //
-                    // The user will need to sign in again.
-                    //
-                    // ------------------------------------------------
-
-                    destroyAllPlayerSessions(
-                        player.id
-                    );
-
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-                            message:
-                                "Password changed successfully. Please sign in again."
-                        }
-                    );
-
-
-                    return;
-                }
-
-
-
-                // ====================================================
-                // LOGOUT
-                // ====================================================
-
-                if (
-                    req.url ===
+                    pathname ===
                         "/api/auth/logout" &&
                     req.method === "POST"
                 ) {
 
-                    destroySession(req);
+                    destroySession(
+                        req
+                    );
 
 
-                    // Delete the browser's cookie.
                     res.setHeader(
                         "Set-Cookie",
-                        "sessionId=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/"
+                        [
+                            "sessionId=",
+                            "HttpOnly",
+                            "Secure",
+                            "SameSite=Lax",
+                            "Max-Age=0",
+                            "Path=/"
+                        ].join("; ")
                     );
 
 
@@ -2983,13 +2381,54 @@ const server =
 
 
                     return;
+
                 }
 
 
+                /* =================================================
+                   PLAYERS
+                   ================================================= */
 
-                // ====================================================
-                // 404
-                // ====================================================
+                if (
+                    pathname ===
+                        "/api/players" &&
+                    req.method === "GET"
+                ) {
+
+                    const players =
+                        db.prepare(`
+                            SELECT
+                                id,
+                                username,
+                                rank,
+                                elo,
+                                createdAt,
+                                mustChangePassword
+                            FROM players
+                            ORDER BY id ASC
+                        `).all();
+
+
+                    sendJSON(
+                        res,
+                        200,
+                        {
+                            players:
+                                players.map(
+                                    publicPlayer
+                                )
+                        }
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* =================================================
+                   404
+                   ================================================= */
 
                 sendJSON(
                     res,
@@ -3000,14 +2439,17 @@ const server =
                     }
                 );
 
-
             } catch (error) {
 
-                console.error(error);
+                console.error(
+                    "Server error:",
+                    error
+                );
 
 
-
-                if (!res.headersSent) {
+                if (
+                    !res.headersSent
+                ) {
 
                     sendJSON(
                         res,
@@ -3017,68 +2459,42 @@ const server =
                                 "Internal server error."
                         }
                     );
+
                 }
+
             }
+
         }
     );
 
 
-
-// ============================================================
-// START SERVER
-// ============================================================
-//
-// Uses the host and port from config.json.
-//
-// ============================================================
+/* ============================================================
+   START
+   ============================================================ */
 
 server.listen(
-    config.port,
-    config.host,
+    PORT,
+    HOST,
     () => {
 
         console.log(
-            `Card Stuff Yes server running at http://${config.host}:${config.port}`
+            `Card Stuff Yes server running at http://${HOST}:${PORT}`
         );
 
 
         console.log(
-            "SQLite database: players.db"
+            `Website directory: ${WEBSITE_DIRECTORY}`
         );
 
 
         console.log(
-            "Player data tables loaded:"
+            `Database: ${DATABASE_PATH}`
         );
 
 
         console.log(
-            "  - players"
+            `Max players per game: ${MAX_PLAYERS_PER_GAME}`
         );
 
-
-        console.log(
-            "  - sessions"
-        );
-
-
-        console.log(
-            "  - badges"
-        );
-
-
-        console.log(
-            "  - player_badges"
-        );
-
-
-        console.log(
-            "  - player_unlocked_cards"
-        );
-
-
-        console.log(
-            "  - player_deck"
-        );
     }
 );
