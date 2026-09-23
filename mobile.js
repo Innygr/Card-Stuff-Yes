@@ -1,385 +1,288 @@
-```js id="27531"
 /* ============================================================
-   CARD STUFF YES — MOBILE SYSTEM
-   ============================================================
-
-   This file provides JavaScript support for mobile devices.
-
-   It handles:
-
-   - Detecting touch devices
-   - Adding mobile classes
-   - Card tap selection
-   - Preventing accidental double-tap zoom on game controls
-   - Screen/orientation information
-   - Safe mobile viewport handling
-
-   The actual game rules are NOT handled here.
-
-   ============================================================ */
-
-
-/* ============================================================
-   MOBILE SYSTEM
-   ============================================================ */
+CARD STUFF YES — MOBILE SYSTEM
+============================================================ */
 
 window.CardStuffYesMobile = {
 
+init: function () {
 
-    /* ========================================================
-       INITIALIZE
-       ======================================================== */
+    this.detectDevice();
 
-    init() {
+    this.setupViewport();
 
-        this.detectDevice();
+    this.setupCardTouch();
 
-        this.setupViewport();
+    this.setupTouchControls();
 
-        this.setupCardTouch();
-
-        this.setupTouchControls();
-
-        this.setupOrientation();
-
-    },
+    this.setupOrientation();
+},
 
 
-    /* ========================================================
-       DEVICE DETECTION
-       ======================================================== */
+/* ========================================================
+   DEVICE DETECTION
+   ======================================================== */
 
-    detectDevice() {
+detectDevice: function () {
 
-        const touchDevice =
-            (
-                "ontouchstart" in window
-            ) ||
-            (
-                navigator.maxTouchPoints > 0
-            );
+    var touchDevice =
+        ("ontouchstart" in window) ||
+        (navigator.maxTouchPoints > 0);
 
+    document.documentElement.classList.toggle(
+        "touch-device",
+        touchDevice
+    );
 
-        document.documentElement
-            .classList
-            .toggle(
-                "touch-device",
-                touchDevice
-            );
+    document.documentElement.classList.toggle(
+        "desktop-device",
+        !touchDevice
+    );
 
-
-        document.documentElement
-            .classList
-            .toggle(
-                "desktop-device",
-                !touchDevice
-            );
+    return touchDevice;
+},
 
 
-        /*
-         * This is intentionally only a UI hint.
-         *
-         * The server must NEVER trust this value for gameplay,
-         * permissions, or security.
-         */
+/* ========================================================
+   VIEWPORT
+   ======================================================== */
 
-        return touchDevice;
+setupViewport: function () {
 
-    },
+    function updateViewport() {
 
+        var height =
+            window.visualViewport
+                ? window.visualViewport.height
+                : window.innerHeight;
 
-    /* ========================================================
-       VIEWPORT SETUP
-       ======================================================== */
+        document.documentElement.style.setProperty(
+            "--viewport-height",
+            String(height) + "px"
+        );
+    }
 
-    setupViewport() {
+    updateViewport();
 
-        /*
-         * Update a CSS variable whenever the viewport changes.
-         *
-         * This helps mobile layouts account for browser UI
-         * changing the visible viewport height.
-         */
+    window.addEventListener(
+        "resize",
+        updateViewport
+    );
 
-        const updateViewport =
-            () => {
+    if (window.visualViewport) {
 
-                const height =
-                    window.visualViewport
-                        ? window.visualViewport.height
-                        : window.innerHeight;
-
-
-                document.documentElement
-                    .style
-                    .setProperty(
-                        "--viewport-height",
-                        `${height}px`
-                    );
-
-            };
-
-
-        updateViewport();
-
-
-        window.addEventListener(
+        window.visualViewport.addEventListener(
             "resize",
             updateViewport
         );
-
-
-        if (
-            window.visualViewport
-        ) {
-
-            window.visualViewport
-                .addEventListener(
-                    "resize",
-                    updateViewport
-                );
-
-        }
-
-    },
-
-
-    /* ========================================================
-       CARD TOUCH SUPPORT
-       ======================================================== */
-
-    setupCardTouch() {
-
-        document.addEventListener(
-            "click",
-            event => {
-
-                const card =
-                    event.target.closest(
-                        ".card-item"
-                    );
-
-
-                if (!card) {
-
-                    return;
-
-                }
-
-
-                /*
-                 * A card can opt out of automatic selection by
-                 * adding:
-                 *
-                 *     data-no-mobile-select
-                 */
-
-                if (
-                    card.hasAttribute(
-                        "data-no-mobile-select"
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                /*
-                 * If the page already has a click handler for
-                 * the card, this class simply provides a visual
-                 * selected state.
-                 *
-                 * The actual action remains controlled by the
-                 * page/game JavaScript.
-                 */
-
-                card.classList.toggle(
-                    "selected"
-                );
-
-            }
-        );
-
-    },
-
-
-    /* ========================================================
-       TOUCH CONTROLS
-       ======================================================== */
-
-    setupTouchControls() {
-
-        /*
-         * Prevent accidental double-tap zoom on controls that
-         * are explicitly marked as touch controls.
-         *
-         * Normal page zoom remains available.
-         */
-
-        let lastTouchTime =
-            0;
-
-
-        document.addEventListener(
-            "touchend",
-            event => {
-
-                const control =
-                    event.target.closest(
-                        ".touch-control"
-                    );
-
-
-                if (!control) {
-
-                    return;
-
-                }
-
-
-                const now =
-                    Date.now();
-
-
-                if (
-                    now -
-                    lastTouchTime <
-                    300
-                ) {
-
-                    event.preventDefault();
-
-                }
-
-
-                lastTouchTime =
-                    now;
-
-            },
-            {
-                passive: false
-            }
-        );
-
-    },
-
-
-    /* ========================================================
-       ORIENTATION
-       ======================================================== */
-
-    setupOrientation() {
-
-        const updateOrientation =
-            () => {
-
-                const landscape =
-                    window.matchMedia(
-                        "(orientation: landscape)"
-                    ).matches;
-
-
-                document.documentElement
-                    .classList
-                    .toggle(
-                        "landscape",
-                        landscape
-                    );
-
-
-                document.documentElement
-                    .classList
-                    .toggle(
-                        "portrait",
-                        !landscape
-                    );
-
-            };
-
-
-        updateOrientation();
-
-
-        window.addEventListener(
-            "resize",
-            updateOrientation
-        );
-
-
-        window.addEventListener(
-            "orientationchange",
-            updateOrientation
-        );
-
-    },
-
-
-    /* ========================================================
-       IS TOUCH DEVICE
-       ======================================================== */
-
-    isTouchDevice() {
-
-        return (
-            "ontouchstart" in window
-        ) ||
-        (
-            navigator.maxTouchPoints > 0
-        );
-
-    },
-
-
-    /* ========================================================
-       IS MOBILE-SIZED
-       ======================================================== */
-
-    isMobileSized() {
-
-        return (
-            window.innerWidth <= 700
-        );
-
-    },
-
-
-    /* ========================================================
-       GET VIEWPORT SIZE
-       ======================================================== */
-
-    getViewport() {
-
-        return {
-
-            width:
-                window.innerWidth,
-
-            height:
-                window.innerHeight,
-
-            visualHeight:
-                window.visualViewport
-                    ? window.visualViewport.height
-                    : window.innerHeight
-
-        };
-
     }
+},
+
+
+/* ========================================================
+   CARD TOUCH
+   ======================================================== */
+
+setupCardTouch: function () {
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            var target =
+                event.target;
+
+            if (
+                !target ||
+                typeof target.closest !==
+                "function"
+            ) {
+                return;
+            }
+
+            var card =
+                target.closest(".card-item");
+
+            if (!card) {
+                return;
+            }
+
+            if (
+                card.hasAttribute(
+                    "data-no-mobile-select"
+                )
+            ) {
+                return;
+            }
+
+            card.classList.toggle(
+                "selected"
+            );
+        }
+    );
+},
+
+
+/* ========================================================
+   TOUCH CONTROLS
+   ======================================================== */
+
+setupTouchControls: function () {
+
+    var lastTouchTime = 0;
+
+    document.addEventListener(
+        "touchend",
+        function (event) {
+
+            var target =
+                event.target;
+
+            if (
+                !target ||
+                typeof target.closest !==
+                "function"
+            ) {
+                return;
+            }
+
+            var control =
+                target.closest(".touch-control");
+
+            if (!control) {
+                return;
+            }
+
+            var now =
+                Date.now();
+
+            if (
+                now - lastTouchTime <
+                300
+            ) {
+                event.preventDefault();
+            }
+
+            lastTouchTime =
+                now;
+        },
+        {
+            passive: false
+        }
+    );
+},
+
+
+/* ========================================================
+   ORIENTATION
+   ======================================================== */
+
+setupOrientation: function () {
+
+    function updateOrientation() {
+
+        var landscape =
+            window.matchMedia(
+                "(orientation: landscape)"
+            ).matches;
+
+        document.documentElement.classList.toggle(
+            "landscape",
+            landscape
+        );
+
+        document.documentElement.classList.toggle(
+            "portrait",
+            !landscape
+        );
+    }
+
+    updateOrientation();
+
+    window.addEventListener(
+        "resize",
+        updateOrientation
+    );
+
+    window.addEventListener(
+        "orientationchange",
+        updateOrientation
+    );
+},
+
+
+/* ========================================================
+   TOUCH DEVICE
+   ======================================================== */
+
+isTouchDevice: function () {
+
+    return (
+        ("ontouchstart" in window) ||
+        (navigator.maxTouchPoints > 0)
+    );
+},
+
+
+/* ========================================================
+   MOBILE SIZE
+   ======================================================== */
+
+isMobileSized: function () {
+
+    return (
+        window.innerWidth <= 700
+    );
+},
+
+
+/* ========================================================
+   VIEWPORT SIZE
+   ======================================================== */
+
+getViewport: function () {
+
+    return {
+
+        width:
+            window.innerWidth,
+
+        height:
+            window.innerHeight,
+
+        visualHeight:
+            window.visualViewport
+                ? window.visualViewport.height
+                : window.innerHeight
+    };
+}
 
 };
 
-
 /* ============================================================
-   AUTOMATIC INITIALIZATION
-   ============================================================ */
+AUTOMATIC INITIALIZATION
+============================================================ */
+
+function initializeMobileSystem() {
+
+window.CardStuffYesMobile.init();
+
+}
+
+if (
+document.readyState ===
+"loading"
+) {
 
 document.addEventListener(
     "DOMContentLoaded",
-    () => {
-
-        window.CardStuffYesMobile.init();
-
+    initializeMobileSystem,
+    {
+        once: true
     }
 );
-```
+
+} else {
+
+initializeMobileSystem();
+
+}
