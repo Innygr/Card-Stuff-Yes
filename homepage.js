@@ -1,1030 +1,1070 @@
-```javascript
 /*
  * ============================================================
- * Card Stuff Yes
- * Homepage JavaScript
- * ============================================================
- *
- * This file handles:
- *
- * - Global loading screen
- * - Homepage navigation
- * - Server status
- * - Player counts
- * - Signed-in player information
- * - ELO display
- * - Homepage accessibility settings
- * - Automatic server-status refreshing
- *
- * IMPORTANT:
- *
- * The browser does NOT decide:
- *
- * - ELO
- * - Rank
- * - Server status
- * - Player counts
- *
- * Those values come from the server.
- *
+ * CARD STUFF YES
+ * HOMEPAGE JAVASCRIPT
  * ============================================================
  */
 
+(function () {
 
-/* ============================================================
-   API HELPER
-   ============================================================ */
-
-/*
- * Make an API request and automatically parse the JSON response.
- */
-
-async function apiRequest(
-    url,
-    options = {}
-) {
-
-    const response =
-        await fetch(
-            url,
-            {
-                credentials: "same-origin",
-
-                ...options
-            }
-        );
+    "use strict";
 
 
-    let data = null;
+    /* ========================================================
+       BASIC HELPERS
+       ======================================================== */
 
+    function getElement(id) {
 
-    /*
-     * Some endpoints may return no JSON body.
-     */
-
-    try {
-
-        data =
-            await response.json();
-
-    } catch {
-
-        data = null;
+        return document.getElementById(id);
 
     }
 
 
-    /*
-     * Turn HTTP errors into JavaScript errors.
-     */
+    function setText(id, text) {
 
-    if (!response.ok) {
+        const element =
+            getElement(id);
 
-        const message =
-            data &&
-            data.error
-                ? data.error
-                : `Request failed with status ${response.status}.`;
+        if (element) {
 
+            element.textContent =
+                String(text);
 
-        throw new Error(message);
+        }
 
     }
 
 
-    return data;
+    function goTo(path) {
 
-}
-
-
-/* ============================================================
-   ACCESSIBILITY SETTINGS
-   ============================================================ */
-
-/*
- * Read a saved setting from localStorage.
- *
- * Settings are stored locally because things such as:
- *
- * - theme
- * - reduce movement
- * - reduce flashing
- * - volume
- *
- * are user preferences rather than server-authoritative
- * player information.
- */
-
-function getSavedSetting(
-    key,
-    defaultValue
-) {
-
-    try {
-
-        const value =
-            localStorage.getItem(key);
-
-
-        return value === null
-            ? defaultValue
-            : value;
-
-    } catch {
-
-        return defaultValue;
+        window.location.href =
+            path;
 
     }
 
-}
+
+    /* ========================================================
+       LOADING SCREEN
+       ======================================================== */
+
+    function setLoadingDestination(text) {
+
+        if (
+            window.LoadingScreen &&
+            typeof window.LoadingScreen.setDestination ===
+                "function"
+        ) {
+
+            window.LoadingScreen.setDestination(
+                text
+            );
+
+        }
+
+    }
 
 
-/*
- * Apply settings that affect the entire website.
- *
- * The Settings page uses the same class names so every page
- * can behave consistently.
- */
+    function finishLoadingScreen() {
 
-function applyAccessibilitySettings() {
+        if (
+            window.LoadingScreen &&
+            typeof window.LoadingScreen.finish ===
+                "function"
+        ) {
 
-    const root =
-        document.documentElement;
+            window.LoadingScreen.finish();
 
+        }
 
-    /*
-     * Theme
-     *
-     * "dark"
-     * "light"
-     * "system"
-     *
-     * colors.css can use these attributes when the theme system
-     * is expanded.
-     */
-
-    const theme =
-        getSavedSetting(
-            "cardStuffYesTheme",
-            "dark"
-        );
+    }
 
 
-    root.dataset.theme =
-        theme;
+    /* ========================================================
+       SETTINGS
+       ======================================================== */
 
-
-    /*
-     * Reduce movement.
-     */
-
-    const reduceMotion =
-        getSavedSetting(
-            "cardStuffYesReduceMotion",
-            "false"
-        ) === "true";
-
-
-    root.classList.toggle(
-        "reduce-motion",
-        reduceMotion
-    );
-
-
-    /*
-     * Reduce flashing.
-     */
-
-    const reduceFlashing =
-        getSavedSetting(
-            "cardStuffYesReduceFlashing",
-            "false"
-        ) === "true";
-
-
-    root.classList.toggle(
-        "reduce-flashing",
-        reduceFlashing
-    );
-
-}
-
-
-/* ============================================================
-   LOADING SCREEN
-   ============================================================ */
-
-/*
- * Update the global loading screen's destination text.
- *
- * The loading.js file creates the LoadingScreen object.
- *
- * This helper checks that it exists before using it so the
- * homepage still works if the loading script fails to load.
- */
-
-function setLoadingDestination(
-    text
-) {
-
-    if (
-        window.LoadingScreen &&
-        typeof window.LoadingScreen.setDestination ===
-            "function"
+    function getSavedSetting(
+        key,
+        defaultValue
     ) {
-
-        window.LoadingScreen.setDestination(
-            text
-        );
-
-    }
-
-}
-
-
-/*
- * Finish the global loading screen.
- *
- * This is called only after the homepage's initial information
- * has been loaded.
- */
-
-function finishLoadingScreen() {
-
-    if (
-        window.LoadingScreen &&
-        typeof window.LoadingScreen.finish ===
-            "function"
-    ) {
-
-        window.LoadingScreen.finish();
-
-    }
-
-}
-
-
-/* ============================================================
-   SERVER STATUS
-   ============================================================ */
-
-/*
- * Load the current server information.
- *
- * The preferred endpoint is:
- *
- *     /api/homepage
- *
- * because that endpoint can provide all three counters:
- *
- * - Players Online
- * - Players in Queue
- * - Players in Battle
- *
- * If an older server does not have that endpoint yet, the code
- * falls back to /api/status.
- */
-
-async function loadServerStatus() {
-
-    const statusText =
-        document.getElementById(
-            "server-status-text"
-        );
-
-
-    const statusDot =
-        document.getElementById(
-            "server-status-dot"
-        );
-
-
-    const playersOnline =
-        document.getElementById(
-            "players-online"
-        );
-
-
-    const playersQueue =
-        document.getElementById(
-            "players-queue"
-        );
-
-
-    const playersBattle =
-        document.getElementById(
-            "players-battle"
-        );
-
-
-    try {
-
-        let data;
-
-
-        /*
-         * First try the homepage-specific endpoint.
-         */
 
         try {
 
-            data =
-                await apiRequest(
-                    "/api/homepage"
-                );
-
-        } catch {
-
-            /*
-             * Fallback for an older server implementation.
-             */
-
-            data =
-                await apiRequest(
-                    "/api/status"
-                );
-
-        }
+            const value =
+                localStorage.getItem(key);
 
 
-        /*
-         * Determine whether the server is online.
-         */
+            if (value === null) {
 
-        const online =
-            data.online === true;
+                return defaultValue;
 
-
-        if (online) {
-
-            statusText.textContent =
-                "Server Online";
+            }
 
 
-            statusDot.classList.remove(
-                "offline"
-            );
+            return value;
 
-        } else {
+        } catch (error) {
 
-            statusText.textContent =
-                "Server Offline";
-
-
-            statusDot.classList.add(
-                "offline"
-            );
+            return defaultValue;
 
         }
 
-
-        /*
-         * Players Online
-         *
-         * If the server does not provide the value yet,
-         * display zero rather than inventing a number.
-         */
-
-        playersOnline.textContent =
-            Number.isFinite(
-                Number(data.playersOnline)
-            )
-                ? Number(data.playersOnline)
-                : 0;
+    }
 
 
-        /*
-         * Players in Queue
-         */
+    function applyAccessibilitySettings() {
 
-        playersQueue.textContent =
-            Number.isFinite(
-                Number(data.playersInQueue)
-            )
-                ? Number(data.playersInQueue)
-                : 0;
+        const root =
+            document.documentElement;
 
 
-        /*
-         * Players in Battle
-         */
-
-        playersBattle.textContent =
-            Number.isFinite(
-                Number(data.playersInBattle)
-            )
-                ? Number(data.playersInBattle)
-                : 0;
+        const theme =
+            getSavedSetting(
+                "cardStuffYesTheme",
+                "dark"
+            );
 
 
-    } catch (error) {
-
-        /*
-         * If the server cannot be reached, show it as offline.
-         */
-
-        statusText.textContent =
-            "Server Offline";
+        root.dataset.theme =
+            theme;
 
 
-        statusDot.classList.add(
-            "offline"
+        const reduceMotion =
+            getSavedSetting(
+                "cardStuffYesReduceMotion",
+                "false"
+            ) === "true";
+
+
+        root.classList.toggle(
+            "reduce-motion",
+            reduceMotion
         );
 
 
-        playersOnline.textContent =
-            "0";
+        const reduceFlashing =
+            getSavedSetting(
+                "cardStuffYesReduceFlashing",
+                "false"
+            ) === "true";
 
 
-        playersQueue.textContent =
-            "0";
-
-
-        playersBattle.textContent =
-            "0";
-
-
-        console.error(
-            "Could not load Card Stuff Yes server status:",
-            error
+        root.classList.toggle(
+            "reduce-flashing",
+            reduceFlashing
         );
 
     }
 
-}
 
+    /* ========================================================
+       API
+       ======================================================== */
 
-/* ============================================================
-   ELO FORMATTING
-   ============================================================ */
-
-/*
- * Convert the server's ELO value into the format shown on the
- * homepage.
- */
-
-function formatELO(
-    elo
-) {
-
-    const numericELO =
-        Number(elo);
-
-
-    if (
-        !Number.isFinite(
-            numericELO
-        )
+    async function apiRequest(
+        url,
+        options
     ) {
 
-        return "Not available";
-
-    }
-
-
-    return `${Math.round(numericELO)} ELO`;
-
-}
+        const requestOptions =
+            options || {};
 
 
-/* ============================================================
-   CURRENT PLAYER
-   ============================================================ */
-
-/*
- * Load the currently signed-in player.
- */
-
-async function loadCurrentPlayer() {
-
-    const profileContent =
-        document.getElementById(
-            "profile-content"
-        );
-
-
-    const headerUsername =
-        document.getElementById(
-            "header-username"
-        );
-
-
-    const headerProfileLink =
-        document.getElementById(
-            "header-profile-link"
-        );
-
-
-    try {
-
-        const data =
-            await apiRequest(
-                "/api/me"
+        const response =
+            await fetch(
+                url,
+                {
+                    credentials: "same-origin",
+                    ...requestOptions
+                }
             );
 
 
-        /*
-         * The server should return the current player in
-         * data.player.
-         */
+        let data = null;
 
-        const player =
-            data.player;
+
+        const contentType =
+            response.headers.get(
+                "content-type"
+            ) || "";
 
 
         if (
-            !player ||
-            !player.username
+            contentType.includes(
+                "application/json"
+            )
         ) {
 
+            try {
+
+                data =
+                    await response.json();
+
+            } catch (error) {
+
+                data = null;
+
+            }
+
+        }
+
+
+        if (!response.ok) {
+
+            const message =
+                data &&
+                typeof data.error === "string"
+
+                    ? data.error
+
+                    : "Request failed with status " +
+                      response.status +
+                      ".";
+
+
             throw new Error(
-                "The server returned invalid player information."
+                message
             );
 
         }
 
 
-        /*
-         * Header account information.
-         */
+        return data;
 
-        headerUsername.textContent =
-            player.username;
+    }
 
 
-        headerProfileLink.href =
-            "/profile";
+    /* ========================================================
+       SERVER STATUS
+       ======================================================== */
 
+    async function loadServerStatus() {
 
-        /*
-         * Clear the loading message.
-         */
-
-        profileContent.innerHTML =
-            "";
-
-
-        /*
-         * Create the profile card.
-         */
-
-        const card =
-            document.createElement(
-                "div"
+        const statusText =
+            getElement(
+                "server-status-text"
             );
 
 
-        card.className =
-            "profile-card";
-
-
-        /* ----------------------------------------------------
-           Username
-           ---------------------------------------------------- */
-
-        const username =
-            document.createElement(
-                "h3"
+        const statusDot =
+            getElement(
+                "server-status-dot"
             );
 
 
-        username.className =
-            "profile-username";
-
-
-        username.textContent =
-            player.username;
-
-
-        card.appendChild(
-            username
-        );
-
-
-        /* ----------------------------------------------------
-           ELO
-           ---------------------------------------------------- */
-
-        const eloRow =
-            document.createElement(
-                "div"
+        const playersOnline =
+            getElement(
+                "players-online"
             );
 
 
-        eloRow.className =
-            "profile-row profile-elo";
-
-
-        const eloLabel =
-            document.createElement(
-                "span"
+        const playersQueue =
+            getElement(
+                "players-queue"
             );
 
 
-        eloLabel.textContent =
-            "Rating:";
-
-
-        const eloValue =
-            document.createElement(
-                "strong"
+        const playersBattle =
+            getElement(
+                "players-battle"
             );
-
-
-        eloValue.textContent =
-            formatELO(
-                player.elo
-            );
-
-
-        eloRow.appendChild(
-            eloLabel
-        );
-
-
-        eloRow.appendChild(
-            eloValue
-        );
-
-
-        card.appendChild(
-            eloRow
-        );
-
-
-        /* ----------------------------------------------------
-           Rank
-           ---------------------------------------------------- */
-
-        const rankRow =
-            document.createElement(
-                "div"
-            );
-
-
-        rankRow.className =
-            "profile-row profile-rank";
-
-
-        const rankLabel =
-            document.createElement(
-                "span"
-            );
-
-
-        rankLabel.textContent =
-            "Rank:";
-
-
-        const rankValue =
-            document.createElement(
-                "strong"
-            );
-
-
-        rankValue.textContent =
-            player.rank || "Player";
-
-
-        rankRow.appendChild(
-            rankLabel
-        );
-
-
-        rankRow.appendChild(
-            rankValue
-        );
-
-
-        card.appendChild(
-            rankRow
-        );
-
-
-        /* ----------------------------------------------------
-           Profile Button
-           ---------------------------------------------------- */
-
-        const profileButton =
-            document.createElement(
-                "a"
-            );
-
-
-        profileButton.className =
-            "profile-button";
-
-
-        profileButton.href =
-            "/profile";
-
-
-        profileButton.textContent =
-            "VIEW PROFILE";
-
-
-        card.appendChild(
-            profileButton
-        );
 
 
         /*
-         * Put the finished card onto the page.
+         * GitHub Pages is static.
+         *
+         * Do NOT call /api/... here unless you have configured
+         * a separate backend/API server.
+         *
+         * Set this to your actual backend URL when available.
          */
 
-        profileContent.appendChild(
-            card
-        );
+        const SERVER_API = "";
 
 
-    } catch (error) {
+        if (!SERVER_API) {
 
-        /*
-         * A failed /api/me request normally means the visitor
-         * is not signed in.
-         */
+            if (statusText) {
 
-        headerUsername.textContent =
-            "Not signed in";
+                statusText.textContent =
+                    "Server Offline";
 
-
-        headerProfileLink.href =
-            "/profile";
+            }
 
 
-        profileContent.innerHTML =
-            "";
+            if (statusDot) {
+
+                statusDot.classList.add(
+                    "offline"
+                );
+
+            }
 
 
-        const message =
-            document.createElement(
-                "div"
+            if (playersOnline) {
+
+                playersOnline.textContent =
+                    "0";
+
+            }
+
+
+            if (playersQueue) {
+
+                playersQueue.textContent =
+                    "0";
+
+            }
+
+
+            if (playersBattle) {
+
+                playersBattle.textContent =
+                    "0";
+
+            }
+
+
+            return;
+
+        }
+
+
+        try {
+
+            let data;
+
+
+            try {
+
+                data =
+                    await apiRequest(
+                        SERVER_API +
+                        "/api/homepage"
+                    );
+
+            } catch (error) {
+
+                data =
+                    await apiRequest(
+                        SERVER_API +
+                        "/api/status"
+                    );
+
+            }
+
+
+            const online =
+                data &&
+                data.online === true;
+
+
+            if (online) {
+
+                if (statusText) {
+
+                    statusText.textContent =
+                        "Server Online";
+
+                }
+
+
+                if (statusDot) {
+
+                    statusDot.classList.remove(
+                        "offline"
+                    );
+
+                }
+
+            } else {
+
+                if (statusText) {
+
+                    statusText.textContent =
+                        "Server Offline";
+
+                }
+
+
+                if (statusDot) {
+
+                    statusDot.classList.add(
+                        "offline"
+                    );
+
+                }
+
+            }
+
+
+            const onlineCount =
+                Number(
+                    data &&
+                    data.playersOnline
+                );
+
+
+            const queueCount =
+                Number(
+                    data &&
+                    data.playersInQueue
+                );
+
+
+            const battleCount =
+                Number(
+                    data &&
+                    data.playersInBattle
+                );
+
+
+            if (playersOnline) {
+
+                playersOnline.textContent =
+                    Number.isFinite(
+                        onlineCount
+                    )
+                        ? String(
+                            onlineCount
+                        )
+                        : "0";
+
+            }
+
+
+            if (playersQueue) {
+
+                playersQueue.textContent =
+                    Number.isFinite(
+                        queueCount
+                    )
+                        ? String(
+                            queueCount
+                        )
+                        : "0";
+
+            }
+
+
+            if (playersBattle) {
+
+                playersBattle.textContent =
+                    Number.isFinite(
+                        battleCount
+                    )
+                        ? String(
+                            battleCount
+                        )
+                        : "0";
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Could not load server status:",
+                error
             );
 
 
-        message.className =
-            "profile-login-message";
+            if (statusText) {
+
+                statusText.textContent =
+                    "Server Offline";
+
+            }
 
 
-        message.textContent =
-            "Sign in to see your profile and ELO.";
+            if (statusDot) {
+
+                statusDot.classList.add(
+                    "offline"
+                );
+
+            }
 
 
-        profileContent.appendChild(
-            message
-        );
+            if (playersOnline) {
+
+                playersOnline.textContent =
+                    "0";
+
+            }
 
 
-        /*
-         * Do not treat a normal signed-out state as a server
-         * failure.
-         */
+            if (playersQueue) {
 
-        console.log(
-            "No signed-in player found.",
-            error
+                playersQueue.textContent =
+                    "0";
+
+            }
+
+
+            if (playersBattle) {
+
+                playersBattle.textContent =
+                    "0";
+
+            }
+
+        }
+
+    }
+
+
+    /* ========================================================
+       ELO
+       ======================================================== */
+
+    function formatELO(elo) {
+
+        const value =
+            Number(elo);
+
+
+        if (
+            !Number.isFinite(value)
+        ) {
+
+            return "Not available";
+
+        }
+
+
+        return (
+            Math.round(value) +
+            " ELO"
         );
 
     }
 
-}
+
+    /* ========================================================
+       CURRENT PLAYER
+       ======================================================== */
+
+    async function loadCurrentPlayer() {
+
+        const profileContent =
+            getElement(
+                "profile-content"
+            );
 
 
-/* ============================================================
-   NAVIGATION
-   ============================================================ */
+        const headerUsername =
+            getElement(
+                "header-username"
+            );
 
-/*
- * PLAY
- *
- * Opens the multiplayer game page.
- */
 
-function setupPlayButton() {
+        const headerProfileLink =
+            getElement(
+                "header-profile-link"
+            );
 
-    const button =
-        document.getElementById(
-            "play-button"
+
+        /*
+         * GitHub Pages cannot directly provide /api/me.
+         *
+         * Keep the page usable while signed out.
+         */
+
+        const SERVER_API = "";
+
+
+        if (!SERVER_API) {
+
+            if (headerUsername) {
+
+                headerUsername.textContent =
+                    "Not signed in";
+
+            }
+
+
+            if (headerProfileLink) {
+
+                headerProfileLink.href =
+                    "profile.html";
+
+            }
+
+
+            if (profileContent) {
+
+                profileContent.innerHTML =
+                    "";
+
+
+                const message =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                message.className =
+                    "profile-login-message";
+
+
+                message.textContent =
+                    "Sign in to see your profile and ELO.";
+
+
+                profileContent.appendChild(
+                    message
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        try {
+
+            const data =
+                await apiRequest(
+                    SERVER_API +
+                    "/api/me"
+                );
+
+
+            const player =
+                data &&
+                data.player;
+
+
+            if (
+                !player ||
+                !player.username
+            ) {
+
+                throw new Error(
+                    "Invalid player information."
+                );
+
+            }
+
+
+            if (headerUsername) {
+
+                headerUsername.textContent =
+                    player.username;
+
+            }
+
+
+            if (headerProfileLink) {
+
+                headerProfileLink.href =
+                    "profile.html";
+
+            }
+
+
+            if (!profileContent) {
+
+                return;
+
+            }
+
+
+            profileContent.innerHTML =
+                "";
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "profile-card";
+
+
+            /*
+             * USERNAME
+             */
+
+            const username =
+                document.createElement(
+                    "h3"
+                );
+
+
+            username.className =
+                "profile-username";
+
+
+            username.textContent =
+                player.username;
+
+
+            card.appendChild(
+                username
+            );
+
+
+            /*
+             * ELO
+             */
+
+            const eloRow =
+                document.createElement(
+                    "div"
+                );
+
+
+            eloRow.className =
+                "profile-row profile-elo";
+
+
+            const eloLabel =
+                document.createElement(
+                    "span"
+                );
+
+
+            eloLabel.textContent =
+                "Rating:";
+
+
+            const eloValue =
+                document.createElement(
+                    "strong"
+                );
+
+
+            eloValue.textContent =
+                formatELO(
+                    player.elo
+                );
+
+
+            eloRow.appendChild(
+                eloLabel
+            );
+
+
+            eloRow.appendChild(
+                eloValue
+            );
+
+
+            card.appendChild(
+                eloRow
+            );
+
+
+            /*
+             * RANK
+             */
+
+            const rankRow =
+                document.createElement(
+                    "div"
+                );
+
+
+            rankRow.className =
+                "profile-row profile-rank";
+
+
+            const rankLabel =
+                document.createElement(
+                    "span"
+                );
+
+
+            rankLabel.textContent =
+                "Rank:";
+
+
+            const rankValue =
+                document.createElement(
+                    "strong"
+                );
+
+
+            rankValue.textContent =
+                player.rank ||
+                "Player";
+
+
+            rankRow.appendChild(
+                rankLabel
+            );
+
+
+            rankRow.appendChild(
+                rankValue
+            );
+
+
+            card.appendChild(
+                rankRow
+            );
+
+
+            /*
+             * PROFILE BUTTON
+             */
+
+            const profileButton =
+                document.createElement(
+                    "a"
+                );
+
+
+            profileButton.className =
+                "profile-button";
+
+
+            profileButton.href =
+                "profile.html";
+
+
+            profileButton.textContent =
+                "VIEW PROFILE";
+
+
+            card.appendChild(
+                profileButton
+            );
+
+
+            profileContent.appendChild(
+                card
+            );
+
+
+        } catch (error) {
+
+            console.log(
+                "No signed-in player found.",
+                error
+            );
+
+
+            if (headerUsername) {
+
+                headerUsername.textContent =
+                    "Not signed in";
+
+            }
+
+
+            if (headerProfileLink) {
+
+                headerProfileLink.href =
+                    "profile.html";
+
+            }
+
+
+            if (profileContent) {
+
+                profileContent.innerHTML =
+                    "";
+
+
+                const message =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                message.className =
+                    "profile-login-message";
+
+
+                message.textContent =
+                    "Sign in to see your profile and ELO.";
+
+
+                profileContent.appendChild(
+                    message
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* ========================================================
+       NAVIGATION
+       ======================================================== */
+
+    function setupButton(
+        id,
+        path
+    ) {
+
+        const button =
+            getElement(id);
+
+
+        if (!button) {
+
+            console.warn(
+                "Button not found:",
+                id
+            );
+
+            return;
+
+        }
+
+
+        button.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                goTo(path);
+
+            }
+        );
+
+    }
+
+
+    function setupNavigation() {
+
+        /*
+         * IMPORTANT:
+         *
+         * These are relative paths.
+         *
+         * GitHub Pages repository:
+         *
+         * /Card-Stuff-Yes/
+         *
+         * Therefore:
+         *
+         * "cardgame.html"
+         *
+         * becomes:
+         *
+         * /Card-Stuff-Yes/cardgame.html
+         */
+
+        setupButton(
+            "play-button",
+            "cardgame.html"
         );
 
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "/cardgame.html";
-
-        }
-    );
-
-}
-
-
-/*
- * DECK BUILDER
- *
- * Opens the dedicated deck-builder page.
- */
-
-function setupDeckButton() {
-
-    const button =
-        document.getElementById(
-            "deck-button"
+        setupButton(
+            "deck-button",
+            "deckbuild.html"
         );
 
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "/deckbuild.html";
-
-        }
-    );
-
-}
-
-
-/*
- * NEWS
- *
- * Opens the Card Stuff Yes news archive.
- */
-
-function setupNewsButton() {
-
-    const button =
-        document.getElementById(
-            "news-button"
+        setupButton(
+            "news-button",
+            "news.html"
         );
 
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "/news.html";
-
-        }
-    );
-
-}
-
-
-/*
- * HOW TO PLAY
- *
- * Opens the rules/instructions page.
- */
-
-function setupHowToPlayButton() {
-
-    const button =
-        document.getElementById(
-            "how-to-play-button"
+        setupButton(
+            "how-to-play-button",
+            "how-to-play.html"
         );
 
 
-    button.addEventListener(
-        "click",
-        () => {
+        setupButton(
+            "settings-button",
+            "settings.html"
+        );
 
-            window.location.href =
-                "/how-to-play";
-
-        }
-    );
-
-}
+    }
 
 
-/*
- * SETTINGS
- *
- * Opens the global Card Stuff Yes settings page.
- */
+    /* ========================================================
+       SERVER REFRESH
+       ======================================================== */
 
-function setupSettingsButton() {
+    function startStatusRefresh() {
 
-    const button =
-        document.getElementById(
-            "settings-button"
+        window.setInterval(
+            function () {
+
+                loadServerStatus();
+
+            },
+            10000
+        );
+
+    }
+
+
+    /* ========================================================
+       INITIALIZATION
+       ======================================================== */
+
+    async function initializeHomepage() {
+
+        applyAccessibilitySettings();
+
+
+        setLoadingDestination(
+            "Loading homepage"
         );
 
 
-    button.addEventListener(
-        "click",
-        () => {
+        /*
+         * Promise.allSettled means a failed API call cannot
+         * stop the rest of the homepage from loading.
+         */
 
-            window.location.href =
-                "/settings.html";
-
-        }
-    );
-
-}
+        await Promise.allSettled([
+            loadServerStatus(),
+            loadCurrentPlayer()
+        ]);
 
 
-/* ============================================================
-   AUTOMATIC SERVER REFRESH
-   ============================================================ */
-
-/*
- * Refresh server statistics every ten seconds.
- *
- * This means the homepage can update player counts without
- * requiring the visitor to manually refresh the page.
- */
-
-function startStatusRefresh() {
-
-    setInterval(
-        loadServerStatus,
-        10000
-    );
-
-}
+        setupNavigation();
 
 
-/* ============================================================
-   PAGE STARTUP
-   ============================================================ */
-
-/*
- * Start everything needed by the homepage.
- */
-
-async function initializeHomepage() {
-
-    /*
-     * Apply local accessibility preferences immediately.
-     */
-
-    applyAccessibilitySettings();
+        startStatusRefresh();
 
 
-    /*
-     * Tell the loading screen what is happening.
-     */
+        finishLoadingScreen();
 
-    setLoadingDestination(
-        "Loading homepage"
-    );
+    }
 
 
-    /*
-     * Load server and player information at the same time.
-     *
-     * Promise.all waits for both operations before the initial
-     * loading screen is removed.
-     */
+    /* ========================================================
+       START
+       ======================================================== */
 
-    await Promise.all([
-        loadServerStatus(),
-        loadCurrentPlayer()
-    ]);
+    if (
+        document.readyState ===
+        "loading"
+    ) {
 
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeHomepage,
+            {
+                once: true
+            }
+        );
 
-    /*
-     * Enable navigation buttons.
-     */
+    } else {
 
-    setupPlayButton();
+        initializeHomepage();
 
-    setupDeckButton();
+    }
 
-    setupNewsButton();
-
-    setupHowToPlayButton();
-
-    setupSettingsButton();
-
-
-    /*
-     * Continue updating server statistics.
-     */
-
-    startStatusRefresh();
-
-
-    /*
-     * The initial homepage data is ready.
-
-     * Remove the global loading screen.
-     */
-
-    finishLoadingScreen();
-
-}
-
-
-/*
- * Start the homepage.
- */
-
-initializeHomepage();
-```
+})();
