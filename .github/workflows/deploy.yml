@@ -1,10 +1,7 @@
-name: Deploy test site
+name: Build and Deploy Pages
 
 on:
   push:
-    branches:
-      - Server
-
   workflow_dispatch:
 
 permissions:
@@ -13,12 +10,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy to GitHub Pages
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     environment:
@@ -26,17 +22,25 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Server branch
+        uses: actions/checkout@v6
+        with:
+          ref: Server
+
+      - name: Build
+        run: |
+          echo "Building Server branch..."
+          # Static site: nothing to compile.
+          # Put any build commands here if you add one later.
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload website
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
         with:
           path: .
 
-      - name: Deploy website
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
