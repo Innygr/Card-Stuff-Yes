@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Stuff Yes — Admin</title>
+<link rel="stylesheet" href="./colors.css">
+<link rel="stylesheet" href="./admin.css">
+<script src="./admin.js" defer></script>
+</head>
+<body>
+<main class="admin-shell">
+  <header class="admin-header">
+    <div>
+      <p class="eyebrow">CARD STUFF YES</p>
+      <h1>Admin Panel</h1>
+      <p id="admin-user" class="muted">Checking admin session…</p>
+    </div>
+    <button id="logout-button" type="button">Sign out</button>
+  </header>
+
+  <p id="admin-status" class="status"></p>
+
+  <section class="admin-grid">
+    <button class="admin-card" data-section="dashboard"><strong>Dashboard</strong><span>Server and player overview</span></button>
+    <button class="admin-card" data-section="sets"><strong>Set Manager</strong><span>Cards, sets, covers and artwork</span></button>
+    <button class="admin-card" data-section="packs"><strong>Pack Manager</strong><span>Packs, rarity and bonus settings</span></button>
+    <button class="admin-card" data-section="news"><strong>News</strong><span>Create and publish news</span></button>
+    <button class="admin-card" data-section="howtoplay"><strong>How to Play</strong><span>Edit player documentation</span></button>
+    <button class="admin-card" data-section="players"><strong>Players</strong><span>Accounts and player tools</span></button>
+    <button class="admin-card" data-section="rewards"><strong>Rewards</strong><span>Packs, cards, badges and tokens</span></button>
+    <button class="admin-card" data-section="server"><strong>Server</strong><span>Status and administration</span></button>
+  </section>
+
+  <section id="admin-content" class="admin-content">
+    <h2>Dashboard</h2>
+    <p>Select a management area above.</p>
+  </section>
+</main>
+</body>
+</html>

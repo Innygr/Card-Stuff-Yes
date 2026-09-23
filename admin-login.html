@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Stuff Yes — Admin Sign In</title>
+<link rel="stylesheet" href="./colors.css">
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<main class="admin-shell">
+  <section class="admin-content">
+    <p class="eyebrow">CARD STUFF YES</p>
+    <h1>Admin Sign In</h1>
+    <p class="muted">This area requires an administrator session.</p>
+    <form id="admin-login-form">
+      <p><label>Username<br><input id="username" autocomplete="username" required></label></p>
+      <p><label>Password<br><input id="password" type="password" autocomplete="current-password" required></label></p>
+      <button type="submit">Sign in</button>
+      <p id="login-status" class="status"></p>
+    </form>
+  </section>
+</main>
+<script>
+const form = document.getElementById("admin-login-form");
+const status = document.getElementById("login-status");
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  status.textContent = "Signing in…";
+  try {
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ username: document.getElementById("username").value, password: document.getElementById("password").value })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Admin sign in failed.");
+    window.location.replace("./admin.html");
+  } catch (error) {
+    status.textContent = error.message;
+  }
+});
+</script>
+</body>
+</html>
