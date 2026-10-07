@@ -1,4 +1,7 @@
-```css
+/* ============================================================
+   account.css
+   ============================================================ */
+
 html {
     box-sizing: border-box;
 }
@@ -29,22 +32,20 @@ body {
 }
 
 
-/* ============================================================
-   HEADER
-   ============================================================ */
-
 .account-header {
-    width: min(
-        calc(100% - 32px),
-        900px
-    );
+    width:
+        min(
+            calc(100% - 32px),
+            850px
+        );
 
-    margin: 0 auto;
+    margin:
+        0 auto;
 
     padding:
         24px
         0
-        22px;
+        20px;
 
     border-bottom:
         1px solid
@@ -82,84 +83,41 @@ body {
         clamp(
             30px,
             7vw,
-            42px
+            44px
         );
 }
 
 
 .account-header p {
     margin:
-        8px
-        0
-        0;
+        8px 0 0;
 
     color:
         var(--color-text-secondary);
 }
 
-
-/* ============================================================
-   MAIN
-   ============================================================ */
 
 .account-container {
-    width: min(
-        calc(100% - 32px),
-        900px
-    );
-
-    margin: 0 auto;
-
-    padding:
-        28px
-        0
-        50px;
-}
-
-
-/* ============================================================
-   STATUS
-   ============================================================ */
-
-.status-message {
-    min-height: 22px;
+    width:
+        min(
+            calc(100% - 32px),
+            850px
+        );
 
     margin:
+        0 auto;
+
+    padding:
+        10px
         0
-        0
-        20px;
-
-    color:
-        var(--color-text-secondary);
+        60px;
 }
 
-
-.status-message.error {
-    color:
-        var(--color-error);
-}
-
-
-.status-message.success {
-    color:
-        var(--color-success);
-}
-
-
-.status-message.info {
-    color:
-        var(--color-info);
-}
-
-
-/* ============================================================
-   SECTIONS
-   ============================================================ */
 
 .account-section {
     margin-top: 30px;
 
-    padding-top: 25px;
+    padding-top: 26px;
 
     border-top:
         1px solid
@@ -192,10 +150,6 @@ body {
 }
 
 
-/* ============================================================
-   ACCOUNT INFORMATION
-   ============================================================ */
-
 .account-info {
     display: flex;
 
@@ -209,7 +163,7 @@ body {
     display: grid;
 
     grid-template-columns:
-        minmax(140px, 200px)
+        minmax(120px, 180px)
         1fr;
 
     gap: 15px;
@@ -223,63 +177,85 @@ body {
         1px solid
         var(--color-border);
 
-    border-radius: 7px;
+    border-radius: 8px;
 }
 
 
 .account-label {
+    font-weight: bold;
+
     color:
         var(--color-text-secondary);
+}
+
+
+.account-value {
+    color:
+        var(--color-text);
+
+    word-break: break-word;
+}
+
+
+.email-status-box {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 18px;
+
+    padding: 14px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
+}
+
+
+.email-status-box > div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.verification-status {
+    flex-shrink: 0;
+
+    padding:
+        5px
+        9px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 999px;
+
+    color:
+        var(--color-warning-text);
+
+    background:
+        var(--color-warning-background);
+
+    font-size: 12px;
 
     font-weight: bold;
 }
 
 
-.account-value {
-    word-break: break-word;
-}
-
-
-/* ============================================================
-   PASSWORD
-   ============================================================ */
-
-.warning-box {
-    margin-bottom: 20px;
-
-    padding: 16px;
-
-    background:
-        var(--color-warning-background);
-
-    border:
-        1px solid
-        var(--color-warning-border);
-
-    border-radius: 7px;
-}
-
-
-.warning-box h3 {
-    margin:
-        0
-        0
-        7px;
-
-    color:
-        var(--color-warning-text);
-}
-
-
-.warning-box p {
-    margin: 0;
-
-    color:
-        var(--color-warning-text);
-}
-
-
-.password-form {
+.account-form {
     display: flex;
 
     flex-direction: column;
@@ -307,23 +283,28 @@ body {
         11px
         12px;
 
+    border:
+        1px solid
+        var(--color-input-border);
+
+    border-radius: 7px;
+
+    outline: none;
+
     background:
         var(--color-input);
 
     color:
         var(--color-input-text);
 
-    border:
-        1px solid
-        var(--color-input-border);
-
-    border-radius: 6px;
-
-    outline: none;
-
     font-family: inherit;
 
     font-size: 16px;
+
+    transition:
+        border-color
+        var(--global-transition-speed)
+        ease;
 }
 
 
@@ -333,64 +314,26 @@ body {
 }
 
 
-.form-status {
-    min-height: 20px;
-
-    margin:
-        12px
-        0
-        0;
-
-    color:
-        var(--color-text-secondary);
-}
-
-
-.security-note {
-    max-width: 700px;
-
-    margin-top: 20px;
-
-    padding: 14px;
-
-    background:
-        var(--color-background-secondary);
-
-    border:
-        1px solid
-        var(--color-border);
-
-    border-radius: 7px;
-
-    color:
-        var(--color-text-secondary);
-
-    font-size: 14px;
-
-    line-height: 1.5;
-}
-
-
-/* ============================================================
-   BUTTONS
-   ============================================================ */
-
 .account-button {
+    width: fit-content;
+
+    margin-top: 8px;
+
     padding:
         11px
         17px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 7px;
 
     background:
         var(--color-button);
 
     color:
         var(--color-button-text);
-
-    border:
-        1px solid
-        var(--color-border-light);
-
-    border-radius: 6px;
 
     font-family: inherit;
 
@@ -427,49 +370,11 @@ body {
 }
 
 
-/* ============================================================
-   FUTURE SECURITY
-   ============================================================ */
+.form-status {
+    min-height: 20px;
 
-.future-security {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 10px;
-}
-
-
-.future-security-row {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding: 15px;
-
-    background:
-        var(--color-background-secondary);
-
-    border:
-        1px solid
-        var(--color-border);
-
-    border-radius: 7px;
-}
-
-
-.future-security-row strong {
-    display: block;
-}
-
-
-.future-security-row p {
     margin:
-        5px
+        8px
         0
         0;
 
@@ -480,28 +385,89 @@ body {
 }
 
 
-.feature-status {
-    flex-shrink: 0;
-
+.form-status.success {
     color:
-        var(--color-text-muted);
-
-    font-size: 12px;
+        var(--color-success);
 }
 
 
-/* ============================================================
-   UTILITY
-   ============================================================ */
+.form-status.error {
+    color:
+        var(--color-error);
+}
+
+
+.success-box {
+    margin-top: 14px;
+
+    padding: 13px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-success);
+
+    border-radius: 8px;
+
+    color:
+        var(--color-success);
+}
+
+
+.future-security-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.future-security-item {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 13px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
+}
+
+
+.future-security-item span {
+    color:
+        var(--color-text-muted);
+
+    font-size: 13px;
+}
+
+
+.account-danger-section {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+}
+
 
 .hidden {
     display: none !important;
 }
 
-
-/* ============================================================
-   MOBILE
-   ============================================================ */
 
 @media (max-width: 600px) {
 
@@ -513,18 +479,28 @@ body {
 
 
     .account-info-row {
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
 
         gap: 4px;
     }
 
 
-    .future-security-row {
+    .email-status-box {
         align-items: flex-start;
 
         flex-direction: column;
     }
 
+
+    .future-security-item {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .account-button {
+        width: 100%;
+    }
+
 }
-```
