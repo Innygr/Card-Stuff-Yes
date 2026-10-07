@@ -1,2418 +1,1262 @@
 ```javascript
 /*
  * ============================================================
- * Card Stuff Yes
- * Set Manager JavaScript
+ * CARD STUFF YES
+ * SET MANAGER
  * ============================================================
  *
- * This file controls the Set Manager page.
+ * Frontend foundation for creating card sets.
  *
- * The server remains authoritative.
+ * This version:
  *
- * This file is responsible for:
+ * - Creates sets
+ * - Creates cards
+ * - Edits cards
+ * - Deletes cards
+ * - Adds multiple abilities
+ * - Validates basic card data
+ * - Imports JSON
+ * - Exports JSON
  *
- * - Loading sets
- * - Loading cards
- * - Creating sets
- * - Updating sets
- * - Deleting sets
- * - Uploading set covers
- * - Creating cards
- * - Updating cards
- * - Deleting cards
- * - Uploading card artwork
- * - Managing multiple abilities
- * - Managing resource requirements
- * - Showing status messages
- *
- * The client NEVER decides whether an operation is allowed.
- *
- * The server checks Owner/Moderator permissions.
- *
+ * Server/database saving will be connected later.
  * ============================================================
  */
 
 
-/* ============================================================
-   API HELPERS
-   ============================================================ */
-
-/*
- * Send a request to the server API.
- *
- * Keeping this in one function makes it easier to change the
- * API behaviour later.
- */
-async function apiRequest(
-    url,
-    options = {}
-) {
-
-    const response =
-        await fetch(
-            url,
-            {
-                credentials: "same-origin",
-
-                ...options
-            }
-        );
-
-
-    let data = null;
-
-    try {
-
-        data =
-            await response.json();
-
-    } catch {
-
-        /*
-         * Some requests may not return JSON.
-         */
-
-        data = null;
-    }
-
-
-    if (!response.ok) {
-
-        const message =
-            data &&
-            data.error
-
-                ? data.error
-
-                : `Request failed (${response.status})`;
-
-
-        throw new Error(message);
-    }
-
-
-    return data;
-}
-
-
-/*
- * Convert a JavaScript value into JSON text.
- *
- * This is primarily used for displaying ability effects.
- */
-function prettyJSON(value) {
-
-    return JSON.stringify(
-        value,
-        null,
-        4
-    );
-}
+"use strict";
 
 
 /* ============================================================
-   STATUS
+   STATE
    ============================================================ */
 
-const statusMessage =
-    document.getElementById(
-        "status-message"
-    );
+const state = {
 
+    set: {
 
-function setStatus(
-    message,
-    type = "info"
-) {
+        id: "",
 
-    if (!statusMessage) {
-        return;
-    }
+        name: "",
 
+        version: "1.0.0",
 
-    statusMessage.textContent =
-        message;
+        status: "development",
 
+        cards: []
 
-    statusMessage.className =
-        "status-message";
+    },
 
+    editingCardIndex: null
 
-    if (type) {
-
-        statusMessage.classList.add(
-            type
-        );
-    }
-}
+};
 
 
 /* ============================================================
-   DOM REFERENCES
+   DOM
    ============================================================ */
 
-const setForm =
-    document.getElementById(
-        "set-form"
-    );
+const setIdInput =
+    document.getElementById("set-id");
 
+const setNameInput =
+    document.getElementById("set-name");
 
-const cardForm =
-    document.getElementById(
-        "card-form"
-    );
+const setVersionInput =
+    document.getElementById("set-version");
 
+const setStatusInput =
+    document.getElementById("set-status");
 
-const setsList =
-    document.getElementById(
-        "sets-list"
-    );
+const cardList =
+    document.getElementById("card-list");
 
+const cardCount =
+    document.getElementById("card-count");
 
-const cardsList =
-    document.getElementById(
-        "cards-list"
-    );
+const emptyMessage =
+    document.getElementById("empty-message");
 
+const addCardButton =
+    document.getElementById("add-card-button");
 
-const abilitiesList =
-    document.getElementById(
-        "abilities-list"
-    );
+const cardEditor =
+    document.getElementById("card-editor");
 
+const editorTitle =
+    document.getElementById("editor-title");
 
-const addAbilityButton =
-    document.getElementById(
-        "add-ability-button"
-    );
-
-
-const cancelSetButton =
-    document.getElementById(
-        "cancel-set-button"
-    );
-
+const closeEditorButton =
+    document.getElementById("close-editor");
 
 const cancelCardButton =
-    document.getElementById(
-        "cancel-card-button"
-    );
+    document.getElementById("cancel-card");
 
+const cardForm =
+    document.getElementById("card-form");
 
-/*
- * The current item being edited.
- *
- * null means that the form is creating something new.
- */
-let editingSetId = null;
+const importFile =
+    document.getElementById("import-file");
 
-let editingCardId = null;
+const exportButton =
+    document.getElementById("export-button");
+
+const statusMessage =
+    document.getElementById("status-message");
+
+const abilityList =
+    document.getElementById("ability-list");
+
+const addAbilityButton =
+    document.getElementById("add-ability-button");
 
 
 /* ============================================================
-   SET FORM
+   CARD EDITOR INPUTS
    ============================================================ */
 
-function resetSetForm() {
+const cardIdInput =
+    document.getElementById("card-id");
 
-    editingSetId =
-        null;
+const cardNameInput =
+    document.getElementById("card-name");
 
+const cardTypeInput =
+    document.getElementById("card-type");
 
-    if (!setForm) {
-        return;
-    }
+const cardRarityInput =
+    document.getElementById("card-rarity");
 
+const cardArtInput =
+    document.getElementById("card-art");
 
-    setForm.reset();
+const cardDescriptionInput =
+    document.getElementById("card-description");
 
+const cardHealthInput =
+    document.getElementById("card-health");
 
-    /*
-     * These IDs are optional depending on the exact HTML.
-     * We only touch them when they exist.
-     */
-
-    const submitButton =
-        document.getElementById(
-            "set-submit-button"
-        );
-
-
-    if (submitButton) {
-
-        submitButton.textContent =
-            "Create Set";
-    }
+const cardAttackInput =
+    document.getElementById("card-attack");
 
 
-    const setFormTitle =
-        document.getElementById(
-            "set-form-title"
-        );
+/* ============================================================
+   UTILITIES
+   ============================================================ */
 
-
-    if (setFormTitle) {
-
-        setFormTitle.textContent =
-            "Create Set";
-    }
-
-
-    const coverPreview =
-        document.getElementById(
-            "set-cover-preview"
-        );
-
-
-    if (coverPreview) {
-
-        coverPreview.removeAttribute(
-            "src"
-        );
-
-        coverPreview.classList.add(
-            "hidden"
-        );
-    }
-}
-
-
-/*
- * Read set metadata from the form.
- */
-function getSetFormData() {
-
-    const formData =
-        new FormData(
-            setForm
-        );
-
+function createEmptyAbility() {
 
     return {
+
         id:
-            formData.get("id") ||
-            undefined,
-
-        displayName:
-            String(
-                formData.get(
-                    "displayName"
-                ) || ""
-            ).trim(),
-
-        releaseDate:
-            String(
-                formData.get(
-                    "releaseDate"
-                ) || ""
-            ).trim(),
-
-        releaseTime:
-            String(
-                formData.get(
-                    "releaseTime"
-                ) || ""
-            ).trim()
-    };
-}
-
-
-/*
- * Create or update a set.
- */
-async function submitSetForm(
-    event
-) {
-
-    event.preventDefault();
-
-
-    try {
-
-        setStatus(
-            editingSetId
-                ? "Updating set..."
-                : "Creating set...",
-            "info"
-        );
-
-
-        const data =
-            getSetFormData();
-
-
-        if (!data.displayName) {
-
-            throw new Error(
-                "A set display name is required."
-            );
-        }
-
-
-        if (!data.releaseDate) {
-
-            throw new Error(
-                "A release date is required."
-            );
-        }
-
-
-        if (!data.releaseTime) {
-
-            throw new Error(
-                "A release time is required."
-            );
-        }
-
-
-        const method =
-            editingSetId
-                ? "PUT"
-                : "POST";
-
-
-        const url =
-            editingSetId
-                ? `/api/admin/sets/${encodeURIComponent(editingSetId)}`
-                : "/api/admin/sets";
-
-
-        await apiRequest(
-            url,
-            {
-                method,
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(data)
-            }
-        );
-
-
-        /*
-         * Cover uploads are handled separately because the cover
-         * is a file rather than JSON.
-         */
-
-        const coverInput =
-            document.getElementById(
-                "set-cover"
-            );
-
-
-        if (
-            coverInput &&
-            coverInput.files &&
-            coverInput.files.length > 0
-        ) {
-
-            /*
-             * The set must exist before its cover can be uploaded.
-             */
-
-            const setId =
-                editingSetId ||
-                data.id;
-
-
-            if (setId) {
-
-                await uploadSetCover(
-                    setId,
-                    coverInput.files[0]
-                );
-            }
-        }
-
-
-        setStatus(
-            editingSetId
-                ? "Set updated successfully."
-                : "Set created successfully.",
-            "success"
-        );
-
-
-        resetSetForm();
-
-
-        await loadSets();
-
-    } catch (error) {
-
-        console.error(error);
-
-        setStatus(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   SET COVER
-   ============================================================ */
-
-async function uploadSetCover(
-    setId,
-    file
-) {
-
-    const formData =
-        new FormData();
-
-
-    formData.append(
-        "setId",
-        setId
-    );
-
-
-    formData.append(
-        "cover",
-        file
-    );
-
-
-    await apiRequest(
-        "/api/admin/sets/cover",
-        {
-            method: "POST",
-
-            body: formData
-        }
-    );
-}
-
-
-/* ============================================================
-   LOAD SETS
-   ============================================================ */
-
-async function loadSets() {
-
-    if (!setsList) {
-        return;
-    }
-
-
-    setsList.innerHTML =
-        `<p class="manager-list-item-meta">
-            Loading sets...
-        </p>`;
-
-
-    try {
-
-        const result =
-            await apiRequest(
-                "/api/admin/sets"
-            );
-
-
-        const sets =
-            Array.isArray(result)
-                ? result
-                : result.sets || [];
-
-
-        renderSets(
-            sets
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        setsList.innerHTML =
-            `<p class="manager-list-item-meta">
-                Failed to load sets.
-            </p>`;
-    }
-}
-
-
-/*
- * Render the set list.
- */
-function renderSets(
-    sets
-) {
-
-    if (!sets.length) {
-
-        setsList.innerHTML =
-            `<p class="manager-list-item-meta">
-                No sets have been created yet.
-            </p>`;
-
-        return;
-    }
-
-
-    setsList.innerHTML =
-        "";
-
-
-    for (const set of sets) {
-
-        const item =
-            document.createElement(
-                "div"
-            );
-
-
-        item.className =
-            "manager-list-item";
-
-
-        const info =
-            document.createElement(
-                "div"
-            );
-
-
-        info.className =
-            "manager-list-item-info";
-
-
-        const title =
-            document.createElement(
-                "p"
-            );
-
-
-        title.className =
-            "manager-list-item-title";
-
-
-        title.textContent =
-            `${set.id || ""} — ${set.displayName || "Unnamed Set"}`;
-
-
-        const meta =
-            document.createElement(
-                "p"
-            );
-
-
-        meta.className =
-            "manager-list-item-meta";
-
-
-        meta.textContent =
-            `Release: ${set.releaseDate || "?"} ${set.releaseTime || ""}`;
-
-
-        info.appendChild(
-            title
-        );
-
-
-        info.appendChild(
-            meta
-        );
-
-
-        const actions =
-            document.createElement(
-                "div"
-            );
-
-
-        actions.className =
-            "manager-list-item-actions";
-
-
-        const editButton =
-            document.createElement(
-                "button"
-            );
-
-
-        editButton.textContent =
-            "Edit";
-
-
-        editButton.addEventListener(
-            "click",
-            () => editSet(set)
-        );
-
-
-        const deleteButton =
-            document.createElement(
-                "button"
-            );
-
-
-        deleteButton.textContent =
-            "Delete";
-
-
-        deleteButton.className =
-            "button-danger";
-
-
-        deleteButton.addEventListener(
-            "click",
-            () => deleteSet(set.id)
-        );
-
-
-        actions.appendChild(
-            editButton
-        );
-
-
-        actions.appendChild(
-            deleteButton
-        );
-
-
-        item.appendChild(
-            info
-        );
-
-
-        item.appendChild(
-            actions
-        );
-
-
-        setsList.appendChild(
-            item
-        );
-    }
-}
-
-
-/* ============================================================
-   EDIT SET
-   ============================================================ */
-
-function editSet(
-    set
-) {
-
-    editingSetId =
-        set.id;
-
-
-    const fields = {
-        id: set.id,
-        displayName: set.displayName,
-        releaseDate: set.releaseDate,
-        releaseTime: set.releaseTime
-    };
-
-
-    for (
-        const [
-            name,
-            value
-        ] of Object.entries(fields)
-    ) {
-
-        const field =
-            setForm.elements[name];
-
-
-        if (field) {
-
-            field.value =
-                value || "";
-        }
-    }
-
-
-    const submitButton =
-        document.getElementById(
-            "set-submit-button"
-        );
-
-
-    if (submitButton) {
-
-        submitButton.textContent =
-            "Update Set";
-    }
-
-
-    const setFormTitle =
-        document.getElementById(
-            "set-form-title"
-        );
-
-
-    if (setFormTitle) {
-
-        setFormTitle.textContent =
-            "Edit Set";
-    }
-
-
-    setForm.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
-}
-
-
-/* ============================================================
-   DELETE SET
-   ============================================================ */
-
-async function deleteSet(
-    setId
-) {
-
-    if (!setId) {
-        return;
-    }
-
-
-    /*
-     * The server will also enforce deletion rules.
-     *
-     * In particular, a set containing cards should not be deleted
-     * unless the server allows it.
-     */
-
-    if (
-        !window.confirm(
-            `Delete set ${setId}?`
-        )
-    ) {
-
-        return;
-    }
-
-
-    try {
-
-        setStatus(
-            "Deleting set...",
-            "info"
-        );
-
-
-        await apiRequest(
-            `/api/admin/sets/${encodeURIComponent(setId)}`,
-            {
-                method: "DELETE"
-            }
-        );
-
-
-        setStatus(
-            "Set deleted successfully.",
-            "success"
-        );
-
-
-        if (
-            editingSetId === setId
-        ) {
-
-            resetSetForm();
-        }
-
-
-        await loadSets();
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        setStatus(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   CARD FORM
-   ============================================================ */
-
-function resetCardForm() {
-
-    editingCardId =
-        null;
-
-
-    if (!cardForm) {
-        return;
-    }
-
-
-    cardForm.reset();
-
-
-    /*
-     * Remove all dynamically created abilities.
-     */
-
-    if (abilitiesList) {
-
-        abilitiesList.innerHTML =
-            "";
-    }
-
-
-    /*
-     * Every new card starts with one ability editor.
-     */
-
-    addAbilityEditor();
-
-
-    const submitButton =
-        document.getElementById(
-            "card-submit-button"
-        );
-
-
-    if (submitButton) {
-
-        submitButton.textContent =
-            "Create Card";
-    }
-
-
-    const cardFormTitle =
-        document.getElementById(
-            "card-form-title"
-        );
-
-
-    if (cardFormTitle) {
-
-        cardFormTitle.textContent =
-            "Create Card";
-    }
-
-
-    const artworkPreview =
-        document.getElementById(
-            "card-artwork-preview"
-        );
-
-
-    if (artworkPreview) {
-
-        artworkPreview.removeAttribute(
-            "src"
-        );
-
-        artworkPreview.classList.add(
-            "hidden"
-        );
-    }
-}
-
-
-/*
- * Convert a resource editor into a plain object.
- */
-function readAbilityEditor(
-    editor
-) {
-
-    const nameInput =
-        editor.querySelector(
-            ".ability-name"
-        );
-
-
-    const resourceRows =
-        editor.querySelectorAll(
-            ".resource-row"
-        );
-
-
-    const requiredResources = {};
-
-
-    for (
-        const row of resourceRows
-    ) {
-
-        const resourceNameInput =
-            row.querySelector(
-                ".resource-name"
-            );
-
-
-        const amountInput =
-            row.querySelector(
-                ".resource-amount"
-            );
-
-
-        const resourceName =
-            String(
-                resourceNameInput?.value ||
-                ""
-            ).trim();
-
-
-        const amount =
-            Number(
-                amountInput?.value || 0
-            );
-
-
-        if (
-            resourceName &&
-            Number.isFinite(amount) &&
-            amount > 0
-        ) {
-
-            requiredResources[
-                resourceName
-            ] =
-                amount;
-        }
-    }
-
-
-    const effectsInput =
-        editor.querySelector(
-            ".effects-json"
-        );
-
-
-    let effects = [];
-
-
-    if (effectsInput) {
-
-        const text =
-            effectsInput.value.trim();
-
-
-        if (text) {
-
-            try {
-
-                effects =
-                    JSON.parse(text);
-
-            } catch {
-
-                throw new Error(
-                    `Invalid effects JSON in ability "${nameInput?.value || "Unnamed Ability"}".`
-                );
-            }
-        }
-    }
-
-
-    return {
-        id:
-            editor.dataset.abilityId ||
             `ability-${Date.now()}-${Math.random()
                 .toString(36)
                 .slice(2, 7)}`,
 
-        name:
-            String(
-                nameInput?.value ||
-                ""
-            ).trim(),
+        name: "",
 
-        requiredResources,
+        description: "",
 
-        effects
+        costs: {
+
+            magik: 0,
+
+            astralMagik: 0,
+
+            gildedMagik: 0,
+
+            bloodMagik: 0,
+
+            darkMagik: 0
+
+        }
+
     };
+
 }
 
 
-/*
- * Read every ability from the card form.
- */
-function readAbilities() {
+function createEmptyCard() {
 
-    if (!abilitiesList) {
-        return [];
-    }
+    return {
+
+        id: "",
+
+        name: "",
+
+        type: "normal",
+
+        rarity: "common",
+
+        art: "",
+
+        description: "",
+
+        health: 0,
+
+        attack: 0,
+
+        abilities: []
+
+    };
+
+}
 
 
-    const editors =
-        abilitiesList.querySelectorAll(
-            ".ability-editor"
-        );
+function setStatus(message, type = "") {
+
+    statusMessage.textContent =
+        message;
+
+    statusMessage.className =
+        `status-message ${type}`.trim();
+
+}
 
 
-    return Array.from(
-        editors,
-        readAbilityEditor
+function updateSetFromInputs() {
+
+    state.set.id =
+        setIdInput.value.trim();
+
+    state.set.name =
+        setNameInput.value.trim();
+
+    state.set.version =
+        setVersionInput.value.trim();
+
+    state.set.status =
+        setStatusInput.value;
+
+}
+
+
+/* ============================================================
+   RENDER CARDS
+   ============================================================ */
+
+function renderCards() {
+
+    cardList.innerHTML = "";
+
+    cardCount.textContent =
+        `${state.set.cards.length} ${
+            state.set.cards.length === 1
+                ? "card"
+                : "cards"
+        }`;
+
+    emptyMessage.style.display =
+        state.set.cards.length === 0
+            ? "block"
+            : "none";
+
+
+    state.set.cards.forEach(
+        (card, index) => {
+
+            const entry =
+                document.createElement("article");
+
+            entry.className =
+                "card-entry";
+
+
+            const header =
+                document.createElement("div");
+
+            header.className =
+                "card-entry-header";
+
+
+            const title =
+                document.createElement("div");
+
+
+            const name =
+                document.createElement("h3");
+
+            name.className =
+                "card-entry-name";
+
+            name.textContent =
+                card.name || "Unnamed Card";
+
+
+            const id =
+                document.createElement("p");
+
+            id.className =
+                "card-entry-id";
+
+            id.textContent =
+                card.id || "No ID";
+
+
+            title.append(
+                name,
+                id
+            );
+
+
+            header.appendChild(title);
+
+
+            const meta =
+                document.createElement("div");
+
+            meta.className =
+                "card-entry-meta";
+
+
+            [
+                card.type,
+                card.rarity
+            ].forEach(value => {
+
+                const tag =
+                    document.createElement("span");
+
+                tag.className =
+                    "card-tag";
+
+                tag.textContent =
+                    value;
+
+                meta.appendChild(tag);
+
+            });
+
+
+            const abilityTag =
+                document.createElement("span");
+
+            abilityTag.className =
+                "card-tag";
+
+            abilityTag.textContent =
+                `${card.abilities.length} abilities`;
+
+            meta.appendChild(
+                abilityTag
+            );
+
+
+            const actions =
+                document.createElement("div");
+
+            actions.className =
+                "card-entry-actions";
+
+
+            const editButton =
+                document.createElement("button");
+
+            editButton.type =
+                "button";
+
+            editButton.textContent =
+                "Edit";
+
+            editButton.addEventListener(
+                "click",
+                () => openCardEditor(index)
+            );
+
+
+            const deleteButton =
+                document.createElement("button");
+
+            deleteButton.type =
+                "button";
+
+            deleteButton.textContent =
+                "Delete";
+
+            deleteButton.addEventListener(
+                "click",
+                () => deleteCard(index)
+            );
+
+
+            actions.append(
+                editButton,
+                deleteButton
+            );
+
+
+            entry.append(
+                header,
+                meta,
+                actions
+            );
+
+
+            cardList.appendChild(
+                entry
+            );
+
+        }
     );
+
 }
 
 
-/*
- * Read card metadata.
- */
-function getCardFormData() {
+/* ============================================================
+   CARD EDITOR
+   ============================================================ */
 
-    const formData =
-        new FormData(
-            cardForm
-        );
+function openCardEditor(index = null) {
 
-
-    const hp =
-        Number(
-            formData.get("hp")
-        );
+    state.editingCardIndex =
+        index;
 
 
-    const power =
-        Number(
-            formData.get("power")
-        );
+    const card =
+        index === null
+            ? createEmptyCard()
+            : structuredClone(
+                state.set.cards[index]
+            );
 
 
-    const cardLimit =
-        Number(
-            formData.get("cardLimit")
+    editorTitle.textContent =
+        index === null
+            ? "Add Card"
+            : "Edit Card";
+
+
+    cardForm.dataset.temporaryCard =
+        JSON.stringify(card);
+
+
+    cardIdInput.value =
+        card.id;
+
+    cardNameInput.value =
+        card.name;
+
+    cardTypeInput.value =
+        card.type;
+
+    cardRarityInput.value =
+        card.rarity;
+
+    cardArtInput.value =
+        card.art;
+
+    cardDescriptionInput.value =
+        card.description;
+
+    cardHealthInput.value =
+        card.health;
+
+    cardAttackInput.value =
+        card.attack;
+
+
+    renderAbilities(
+        card.abilities
+    );
+
+
+    cardEditor.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+function closeCardEditor() {
+
+    state.editingCardIndex =
+        null;
+
+    cardForm.reset();
+
+    cardEditor.classList.add(
+        "hidden"
+    );
+
+}
+
+
+function readEditorCard() {
+
+    const temporaryCard =
+        JSON.parse(
+            cardForm.dataset.temporaryCard ||
+            JSON.stringify(
+                createEmptyCard()
+            )
         );
 
 
     return {
+
         id:
-            formData.get("id") ||
-            undefined,
+            cardIdInput.value.trim(),
 
         name:
-            String(
-                formData.get("name") ||
-                ""
-            ).trim(),
+            cardNameInput.value.trim(),
 
-        setId:
-            String(
-                formData.get("setId") ||
-                ""
-            ).trim(),
+        type:
+            cardTypeInput.value,
 
         rarity:
-            String(
-                formData.get("rarity") ||
-                ""
-            ).trim(),
+            cardRarityInput.value,
 
-        hp:
-            Number.isFinite(hp)
-                ? hp
-                : 0,
+        art:
+            cardArtInput.value.trim(),
 
-        power:
-            Number.isFinite(power)
-                ? power
-                : 0,
+        description:
+            cardDescriptionInput.value.trim(),
 
-        cardLimit:
-            Number.isFinite(cardLimit)
-                ? cardLimit
-                : 4,
+        health:
+            Number(cardHealthInput.value) || 0,
 
-        isSpecialEventCard:
-            formData.get(
-                "isSpecialEventCard"
-            ) === "on",
+        attack:
+            Number(cardAttackInput.value) || 0,
 
         abilities:
-            readAbilities()
+            temporaryCard.abilities || []
+
     };
+
 }
 
 
 /* ============================================================
-   ABILITY EDITOR
+   ABILITIES
    ============================================================ */
 
-function addAbilityEditor(
-    ability = null
-) {
+function renderAbilities(abilities) {
 
-    if (!abilitiesList) {
-        return;
-    }
+    abilityList.innerHTML = "";
 
 
-    const editor =
-        document.createElement(
-            "div"
-        );
+    abilities.forEach(
+        (ability, index) => {
 
+            const entry =
+                document.createElement("div");
 
-    editor.className =
-        "ability-editor";
+            entry.className =
+                "ability-entry";
 
 
-    editor.dataset.abilityId =
-        ability?.id ||
-        `ability-${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2, 7)}`;
+            const header =
+                document.createElement("div");
 
+            header.className =
+                "ability-header";
 
-    const header =
-        document.createElement(
-            "div"
-        );
 
+            const title =
+                document.createElement("h4");
 
-    header.className =
-        "ability-header";
+            title.textContent =
+                ability.name ||
+                `Ability ${index + 1}`;
 
 
-    const title =
-        document.createElement(
-            "h3"
-        );
+            const remove =
+                document.createElement("button");
 
+            remove.type =
+                "button";
 
-    title.className =
-        "ability-title";
+            remove.textContent =
+                "Remove";
 
+            remove.addEventListener(
+                "click",
+                () => {
 
-    title.textContent =
-        "Ability";
+                    const card =
+                        JSON.parse(
+                            cardForm.dataset
+                                .temporaryCard
+                        );
 
+                    card.abilities.splice(
+                        index,
+                        1
+                    );
 
-    const removeButton =
-        document.createElement(
-            "button"
-        );
+                    cardForm.dataset
+                        .temporaryCard =
+                        JSON.stringify(card);
 
+                    renderAbilities(
+                        card.abilities
+                    );
 
-    removeButton.type =
-        "button";
-
-
-    removeButton.className =
-        "ability-remove button-danger";
-
-
-    removeButton.textContent =
-        "Remove Ability";
-
-
-    removeButton.addEventListener(
-        "click",
-        () => {
-
-            editor.remove();
-
-        }
-    );
-
-
-    header.appendChild(
-        title
-    );
-
-
-    header.appendChild(
-        removeButton
-    );
-
-
-    editor.appendChild(
-        header
-    );
-
-
-    /*
-     * Ability name.
-     */
-
-    const nameGroup =
-        document.createElement(
-            "div"
-        );
-
-
-    nameGroup.className =
-        "form-group";
-
-
-    const nameLabel =
-        document.createElement(
-            "label"
-        );
-
-
-    nameLabel.className =
-        "form-label";
-
-
-    nameLabel.textContent =
-        "Ability Name";
-
-
-    const nameInput =
-        document.createElement(
-            "input"
-        );
-
-
-    nameInput.type =
-        "text";
-
-
-    nameInput.className =
-        "ability-name";
-
-
-    nameInput.placeholder =
-        "Example: Quick Strike";
-
-
-    nameInput.value =
-        ability?.name ||
-        "";
-
-
-    nameGroup.appendChild(
-        nameLabel
-    );
-
-
-    nameGroup.appendChild(
-        nameInput
-    );
-
-
-    editor.appendChild(
-        nameGroup
-    );
-
-
-    /*
-     * Resource requirements.
-     *
-     * Resources belong to the individual ability rather than
-     * the entire card.
-     */
-
-    const resourceGroup =
-        document.createElement(
-            "div"
-        );
-
-
-    resourceGroup.className =
-        "form-group";
-
-
-    resourceGroup.style.marginTop =
-        "16px";
-
-
-    const resourceLabel =
-        document.createElement(
-            "label"
-        );
-
-
-    resourceLabel.className =
-        "form-label";
-
-
-    resourceLabel.textContent =
-        "Required Resources";
-
-
-    const resourceList =
-        document.createElement(
-            "div"
-        );
-
-
-    resourceList.className =
-        "resource-list";
-
-
-    const addResourceButton =
-        document.createElement(
-            "button"
-        );
-
-
-    addResourceButton.type =
-        "button";
-
-
-    addResourceButton.className =
-        "button-secondary";
-
-
-    addResourceButton.textContent =
-        "Add Resource Requirement";
-
-
-    addResourceButton.addEventListener(
-        "click",
-        () => {
-
-            addResourceRow(
-                resourceList
-            );
-
-        }
-    );
-
-
-    resourceGroup.appendChild(
-        resourceLabel
-    );
-
-
-    resourceGroup.appendChild(
-        resourceList
-    );
-
-
-    resourceGroup.appendChild(
-        addResourceButton
-    );
-
-
-    editor.appendChild(
-        resourceGroup
-    );
-
-
-    /*
-     * Restore existing resources when editing a card.
-     */
-
-    const resources =
-        ability?.requiredResources ||
-        {};
-
-
-    for (
-        const [
-            resourceName,
-            amount
-        ] of Object.entries(resources)
-    ) {
-
-        addResourceRow(
-            resourceList,
-            resourceName,
-            amount
-        );
-    }
-
-
-    /*
-     * Effects JSON.
-     */
-
-    const effectsGroup =
-        document.createElement(
-            "div"
-        );
-
-
-    effectsGroup.className =
-        "form-group";
-
-
-    effectsGroup.style.marginTop =
-        "16px";
-
-
-    const effectsLabel =
-        document.createElement(
-            "label"
-        );
-
-
-    effectsLabel.className =
-        "form-label";
-
-
-    effectsLabel.textContent =
-        "Effects JSON";
-
-
-    const effectsHelp =
-        document.createElement(
-            "p"
-        );
-
-
-    effectsHelp.className =
-        "form-help";
-
-
-    effectsHelp.textContent =
-        "The server/game rules interpret these effects.";
-
-
-    const effectsInput =
-        document.createElement(
-            "textarea"
-        );
-
-
-    effectsInput.className =
-        "effects-json";
-
-
-    effectsInput.value =
-        prettyJSON(
-            ability?.effects ||
-            []
-        );
-
-
-    effectsGroup.appendChild(
-        effectsLabel
-    );
-
-
-    effectsGroup.appendChild(
-        effectsHelp
-    );
-
-
-    effectsGroup.appendChild(
-        effectsInput
-    );
-
-
-    editor.appendChild(
-        effectsGroup
-    );
-
-
-    abilitiesList.appendChild(
-        editor
-    );
-}
-
-
-/*
- * Add one resource requirement row.
- */
-function addResourceRow(
-    resourceList,
-    resourceName = "",
-    amount = 1
-) {
-
-    const row =
-        document.createElement(
-            "div"
-        );
-
-
-    row.className =
-        "resource-row";
-
-
-    const nameInput =
-        document.createElement(
-            "input"
-        );
-
-
-    nameInput.type =
-        "text";
-
-
-    nameInput.className =
-        "resource-name";
-
-
-    nameInput.placeholder =
-        "Resource name";
-
-
-    nameInput.value =
-        resourceName;
-
-
-    const amountInput =
-        document.createElement(
-            "input"
-        );
-
-
-    amountInput.type =
-        "number";
-
-
-    amountInput.className =
-        "resource-amount";
-
-
-    amountInput.min =
-        "1";
-
-
-    amountInput.step =
-        "1";
-
-
-    amountInput.value =
-        amount;
-
-
-    const removeButton =
-        document.createElement(
-            "button"
-        );
-
-
-    removeButton.type =
-        "button";
-
-
-    removeButton.className =
-        "resource-remove button-danger";
-
-
-    removeButton.textContent =
-        "Remove";
-
-
-    removeButton.addEventListener(
-        "click",
-        () => {
-
-            row.remove();
-
-        }
-    );
-
-
-    row.appendChild(
-        nameInput
-    );
-
-
-    row.appendChild(
-        amountInput
-    );
-
-
-    row.appendChild(
-        removeButton
-    );
-
-
-    resourceList.appendChild(
-        row
-    );
-}
-
-
-/* ============================================================
-   CARD SUBMISSION
-   ============================================================ */
-
-async function submitCardForm(
-    event
-) {
-
-    event.preventDefault();
-
-
-    try {
-
-        setStatus(
-            editingCardId
-                ? "Updating card..."
-                : "Creating card...",
-            "info"
-        );
-
-
-        const data =
-            getCardFormData();
-
-
-        if (!data.name) {
-
-            throw new Error(
-                "A card name is required."
-            );
-        }
-
-
-        if (!data.setId) {
-
-            throw new Error(
-                "A set must be selected."
-            );
-        }
-
-
-        if (!data.rarity) {
-
-            throw new Error(
-                "A card rarity is required."
-            );
-        }
-
-
-        if (!data.abilities.length) {
-
-            throw new Error(
-                "A card must have at least one ability."
-            );
-        }
-
-
-        for (
-            const ability
-            of data.abilities
-        ) {
-
-            if (!ability.name) {
-
-                throw new Error(
-                    "Every ability must have a name."
-                );
-            }
-        }
-
-
-        const method =
-            editingCardId
-                ? "PUT"
-                : "POST";
-
-
-        const url =
-            editingCardId
-                ? `/api/admin/cards/${encodeURIComponent(editingCardId)}`
-                : "/api/admin/cards";
-
-
-        const result =
-            await apiRequest(
-                url,
-                {
-                    method,
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify(data)
                 }
             );
 
 
-        /*
-         * Card artwork is uploaded after the metadata exists.
-         */
-
-        const artworkInput =
-            document.getElementById(
-                "card-artwork"
+            header.append(
+                title,
+                remove
             );
 
 
-        const createdCardId =
-            editingCardId ||
-            result?.card?.id ||
-            result?.id ||
-            data.id;
+            const grid =
+                document.createElement("div");
+
+            grid.className =
+                "form-grid";
+
+
+            const nameLabel =
+                document.createElement("label");
+
+            nameLabel.innerHTML =
+                `
+                    Ability Name
+                    <input
+                        type="text"
+                        value=""
+                    >
+                `;
+
+
+            const descriptionLabel =
+                document.createElement("label");
+
+            descriptionLabel.innerHTML =
+                `
+                    Description
+                    <input
+                        type="text"
+                        value=""
+                    >
+                `;
+
+
+            grid.append(
+                nameLabel,
+                descriptionLabel
+            );
+
+
+            const costs =
+                document.createElement("div");
+
+            costs.className =
+                "form-grid";
+
+
+            [
+                ["magik", "Magik"],
+                ["astralMagik", "Astral Magik"],
+                ["gildedMagik", "Gilded Magik"],
+                ["bloodMagik", "Blood Magik"],
+                ["darkMagik", "Dark Magik"]
+            ].forEach(
+                ([key, label]) => {
+
+                    const costLabel =
+                        document.createElement("label");
+
+                    costLabel.innerHTML =
+                        `
+                            ${label}
+                            <input
+                                type="number"
+                                min="0"
+                                value="${
+                                    ability.costs[key] || 0
+                                }"
+                            >
+                        `;
+
+                    costs.appendChild(
+                        costLabel
+                    );
+
+                }
+            );
+
+
+            const nameInput =
+                nameLabel.querySelector("input");
+
+            const descriptionInput =
+                descriptionLabel.querySelector("input");
+
+            nameInput.value =
+                ability.name;
+
+            descriptionInput.value =
+                ability.description;
+
+
+            nameInput.addEventListener(
+                "input",
+                () => {
+
+                    const card =
+                        JSON.parse(
+                            cardForm.dataset
+                                .temporaryCard
+                        );
+
+                    card.abilities[index].name =
+                        nameInput.value;
+
+                    cardForm.dataset
+                        .temporaryCard =
+                        JSON.stringify(card);
+
+                    title.textContent =
+                        nameInput.value ||
+                        `Ability ${index + 1}`;
+
+                }
+            );
+
+
+            descriptionInput.addEventListener(
+                "input",
+                () => {
+
+                    const card =
+                        JSON.parse(
+                            cardForm.dataset
+                                .temporaryCard
+                        );
+
+                    card.abilities[index]
+                        .description =
+                        descriptionInput.value;
+
+                    cardForm.dataset
+                        .temporaryCard =
+                        JSON.stringify(card);
+
+                }
+            );
+
+
+            const costInputs =
+                costs.querySelectorAll(
+                    "input"
+                );
+
+
+            costInputs.forEach(
+                (input, costIndex) => {
+
+                    input.addEventListener(
+                        "input",
+                        () => {
+
+                            const keys = [
+                                "magik",
+                                "astralMagik",
+                                "gildedMagik",
+                                "bloodMagik",
+                                "darkMagik"
+                            ];
+
+                            const card =
+                                JSON.parse(
+                                    cardForm.dataset
+                                        .temporaryCard
+                                );
+
+                            card.abilities[index]
+                                .costs[keys[costIndex]] =
+                                Number(input.value) || 0;
+
+                            cardForm.dataset
+                                .temporaryCard =
+                                JSON.stringify(card);
+
+                        }
+                    );
+
+                }
+            );
+
+
+            entry.append(
+                header,
+                grid,
+                costs
+            );
+
+
+            abilityList.appendChild(
+                entry
+            );
+
+        }
+    );
+
+}
+
+
+function addAbility() {
+
+    const card =
+        JSON.parse(
+            cardForm.dataset.temporaryCard ||
+            JSON.stringify(
+                createEmptyCard()
+            )
+        );
+
+
+    card.abilities.push(
+        createEmptyAbility()
+    );
+
+
+    cardForm.dataset.temporaryCard =
+        JSON.stringify(card);
+
+
+    renderAbilities(
+        card.abilities
+    );
+
+}
+
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+
+function validateCard(card) {
+
+    if (!card.id) {
+        return "Card ID is required.";
+    }
+
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(card.id)) {
+        return (
+            "Card ID may only contain letters, numbers, " +
+            "underscores, and hyphens."
+        );
+    }
+
+
+    if (!card.name) {
+        return "Card name is required.";
+    }
+
+
+    if (
+        !Number.isInteger(card.health) ||
+        card.health < 0
+    ) {
+        return "Health must be a non-negative whole number.";
+    }
+
+
+    if (
+        !Number.isInteger(card.attack) ||
+        card.attack < 0
+    ) {
+        return "Attack must be a non-negative whole number.";
+    }
+
+
+    return null;
+
+}
+
+
+/* ============================================================
+   SAVE CARD
+   ============================================================ */
+
+cardForm.addEventListener(
+    "submit",
+    event => {
+
+        event.preventDefault();
+
+
+        const card =
+            readEditorCard();
+
+
+        const validationError =
+            validateCard(card);
+
+
+        if (validationError) {
+
+            setStatus(
+                validationError,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const duplicate =
+            state.set.cards.findIndex(
+                (existing, index) =>
+                    existing.id === card.id &&
+                    index !==
+                    state.editingCardIndex
+            );
+
+
+        if (duplicate !== -1) {
+
+            setStatus(
+                "A card with that ID already exists.",
+                "error"
+            );
+
+            return;
+
+        }
 
 
         if (
-            artworkInput &&
-            artworkInput.files &&
-            artworkInput.files.length > 0 &&
-            createdCardId
+            state.editingCardIndex === null
         ) {
 
-            await uploadCardArtwork(
-                createdCardId,
-                artworkInput.files[0]
+            state.set.cards.push(
+                card
             );
+
+        } else {
+
+            state.set.cards[
+                state.editingCardIndex
+            ] = card;
+
         }
 
 
+        renderCards();
+
+        closeCardEditor();
+
         setStatus(
-            editingCardId
-                ? "Card updated successfully."
-                : "Card created successfully.",
+            "Card saved.",
             "success"
         );
 
-
-        resetCardForm();
-
-
-        await loadCards();
-
-    } catch (error) {
-
-        console.error(error);
-
-        setStatus(
-            error.message,
-            "error"
-        );
     }
-}
-
-
-/* ============================================================
-   CARD ARTWORK
-   ============================================================ */
-
-async function uploadCardArtwork(
-    cardId,
-    file
-) {
-
-    const formData =
-        new FormData();
-
-
-    formData.append(
-        "cardId",
-        cardId
-    );
-
-
-    formData.append(
-        "artwork",
-        file
-    );
-
-
-    await apiRequest(
-        "/api/admin/cards/upload",
-        {
-            method: "POST",
-
-            body: formData
-        }
-    );
-}
-
-
-/* ============================================================
-   LOAD CARDS
-   ============================================================ */
-
-async function loadCards() {
-
-    if (!cardsList) {
-        return;
-    }
-
-
-    cardsList.innerHTML =
-        `<p class="manager-list-item-meta">
-            Loading cards...
-        </p>`;
-
-
-    try {
-
-        const result =
-            await apiRequest(
-                "/api/admin/cards"
-            );
-
-
-        const cards =
-            Array.isArray(result)
-                ? result
-                : result.cards || [];
-
-
-        renderCards(
-            cards
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        cardsList.innerHTML =
-            `<p class="manager-list-item-meta">
-                Failed to load cards.
-            </p>`;
-    }
-}
-
-
-/*
- * Render card list.
- */
-function renderCards(
-    cards
-) {
-
-    if (!cards.length) {
-
-        cardsList.innerHTML =
-            `<p class="manager-list-item-meta">
-                No cards have been created yet.
-            </p>`;
-
-        return;
-    }
-
-
-    cardsList.innerHTML =
-        "";
-
-
-    for (
-        const card
-        of cards
-    ) {
-
-        const item =
-            document.createElement(
-                "div"
-            );
-
-
-        item.className =
-            "manager-list-item";
-
-
-        const info =
-            document.createElement(
-                "div"
-            );
-
-
-        info.className =
-            "manager-list-item-info";
-
-
-        const title =
-            document.createElement(
-                "p"
-            );
-
-
-        title.className =
-            "manager-list-item-title";
-
-
-        title.textContent =
-            `${card.id || ""} — ${card.name || "Unnamed Card"}`;
-
-
-        const meta =
-            document.createElement(
-                "p"
-            );
-
-
-        meta.className =
-            "manager-list-item-meta";
-
-
-        meta.textContent =
-            `Set: ${card.setId || "?"} | Rarity: ${card.rarity || "?"} | HP: ${card.hp ?? 0} | Power: ${card.power ?? 0}`;
-
-
-        info.appendChild(
-            title
-        );
-
-
-        info.appendChild(
-            meta
-        );
-
-
-        const actions =
-            document.createElement(
-                "div"
-            );
-
-
-        actions.className =
-            "manager-list-item-actions";
-
-
-        const editButton =
-            document.createElement(
-                "button"
-            );
-
-
-        editButton.textContent =
-            "Edit";
-
-
-        editButton.addEventListener(
-            "click",
-            () => editCard(card)
-        );
-
-
-        const deleteButton =
-            document.createElement(
-                "button"
-            );
-
-
-        deleteButton.textContent =
-            "Delete";
-
-
-        deleteButton.className =
-            "button-danger";
-
-
-        deleteButton.addEventListener(
-            "click",
-            () => deleteCard(card.id)
-        );
-
-
-        actions.appendChild(
-            editButton
-        );
-
-
-        actions.appendChild(
-            deleteButton
-        );
-
-
-        item.appendChild(
-            info
-        );
-
-
-        item.appendChild(
-            actions
-        );
-
-
-        cardsList.appendChild(
-            item
-        );
-    }
-}
-
-
-/* ============================================================
-   EDIT CARD
-   ============================================================ */
-
-function editCard(
-    card
-) {
-
-    editingCardId =
-        card.id;
-
-
-    const fields = {
-        id: card.id,
-        name: card.name,
-        setId: card.setId,
-        rarity: card.rarity,
-        hp: card.hp,
-        power: card.power,
-        cardLimit: card.cardLimit
-    };
-
-
-    for (
-        const [
-            name,
-            value
-        ] of Object.entries(fields)
-    ) {
-
-        const field =
-            cardForm.elements[name];
-
-
-        if (field) {
-
-            field.value =
-                value ?? "";
-        }
-    }
-
-
-    const specialEventCheckbox =
-        cardForm.elements[
-            "isSpecialEventCard"
-        ];
-
-
-    if (specialEventCheckbox) {
-
-        specialEventCheckbox.checked =
-            Boolean(
-                card.isSpecialEventCard
-            );
-    }
-
-
-    /*
-     * Replace the existing ability editors.
-     */
-
-    if (abilitiesList) {
-
-        abilitiesList.innerHTML =
-            "";
-
-
-        const abilities =
-            Array.isArray(
-                card.abilities
-            )
-                ? card.abilities
-                : [];
-
-
-        for (
-            const ability
-            of abilities
-        ) {
-
-            addAbilityEditor(
-                ability
-            );
-        }
-
-
-        if (!abilities.length) {
-
-            addAbilityEditor();
-        }
-    }
-
-
-    const submitButton =
-        document.getElementById(
-            "card-submit-button"
-        );
-
-
-    if (submitButton) {
-
-        submitButton.textContent =
-            "Update Card";
-    }
-
-
-    const cardFormTitle =
-        document.getElementById(
-            "card-form-title"
-        );
-
-
-    if (cardFormTitle) {
-
-        cardFormTitle.textContent =
-            "Edit Card";
-    }
-
-
-    cardForm.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
-}
+);
 
 
 /* ============================================================
    DELETE CARD
    ============================================================ */
 
-async function deleteCard(
-    cardId
-) {
+function deleteCard(index) {
 
-    if (!cardId) {
-        return;
-    }
+    const card =
+        state.set.cards[index];
 
 
     if (
-        !window.confirm(
-            `Delete card ${cardId}?`
+        !confirm(
+            `Delete "${card.name || card.id}"?`
         )
     ) {
-
         return;
     }
 
 
-    try {
+    state.set.cards.splice(
+        index,
+        1
+    );
 
-        setStatus(
-            "Deleting card...",
-            "info"
+
+    renderCards();
+
+    setStatus(
+        "Card deleted.",
+        "success"
+    );
+
+}
+
+
+/* ============================================================
+   SET INPUTS
+   ============================================================ */
+
+[
+    setIdInput,
+    setNameInput,
+    setVersionInput,
+    setStatusInput
+].forEach(
+    input => {
+
+        input.addEventListener(
+            "input",
+            updateSetFromInputs
         );
 
-
-        await apiRequest(
-            `/api/admin/cards/${encodeURIComponent(cardId)}`,
-            {
-                method: "DELETE"
-            }
+        input.addEventListener(
+            "change",
+            updateSetFromInputs
         );
 
-
-        setStatus(
-            "Card deleted successfully.",
-            "success"
-        );
+    }
+);
 
 
-        if (
-            editingCardId === cardId
-        ) {
+/* ============================================================
+   IMPORT
+   ============================================================ */
 
-            resetCardForm();
+importFile.addEventListener(
+    "change",
+    async () => {
+
+        const file =
+            importFile.files[0];
+
+        if (!file) {
+            return;
         }
 
 
-        await loadCards();
+        try {
 
+            const text =
+                await file.text();
 
-    } catch (error) {
+            const imported =
+                JSON.parse(text);
 
-        console.error(error);
-
-        setStatus(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   FORM EVENTS
-   ============================================================ */
-
-if (setForm) {
-
-    setForm.addEventListener(
-        "submit",
-        submitSetForm
-    );
-}
-
-
-if (cardForm) {
-
-    cardForm.addEventListener(
-        "submit",
-        submitCardForm
-    );
-}
-
-
-if (addAbilityButton) {
-
-    addAbilityButton.addEventListener(
-        "click",
-        () => addAbilityEditor()
-    );
-}
-
-
-if (cancelSetButton) {
-
-    cancelSetButton.addEventListener(
-        "click",
-        resetSetForm
-    );
-}
-
-
-if (cancelCardButton) {
-
-    cancelCardButton.addEventListener(
-        "click",
-        resetCardForm
-    );
-}
-
-
-/* ============================================================
-   FILE PREVIEWS
-   ============================================================ */
-
-function setupImagePreview(
-    inputId,
-    previewId
-) {
-
-    const input =
-        document.getElementById(
-            inputId
-        );
-
-
-    const preview =
-        document.getElementById(
-            previewId
-        );
-
-
-    if (
-        !input ||
-        !preview
-    ) {
-
-        return;
-    }
-
-
-    input.addEventListener(
-        "change",
-        () => {
-
-            const file =
-                input.files?.[0];
-
-
-            if (!file) {
-
-                preview.removeAttribute(
-                    "src"
-                );
-
-                preview.classList.add(
-                    "hidden"
-                );
-
-                return;
-            }
-
-
-            /*
-             * Only create previews for image files.
-             */
 
             if (
-                !file.type.startsWith(
-                    "image/"
-                )
+                !imported ||
+                typeof imported !== "object"
             ) {
-
-                preview.removeAttribute(
-                    "src"
+                throw new Error(
+                    "Invalid set file."
                 );
-
-                preview.classList.add(
-                    "hidden"
-                );
-
-                return;
             }
 
 
-            const objectURL =
-                URL.createObjectURL(
-                    file
+            if (
+                !Array.isArray(
+                    imported.cards
+                )
+            ) {
+                throw new Error(
+                    "Set must contain a cards array."
                 );
+            }
 
 
-            preview.src =
-                objectURL;
+            state.set = {
+
+                id:
+                    String(
+                        imported.id || ""
+                    ),
+
+                name:
+                    String(
+                        imported.name || ""
+                    ),
+
+                version:
+                    String(
+                        imported.version ||
+                        "1.0.0"
+                    ),
+
+                status:
+                    imported.status ||
+                    "development",
+
+                cards:
+                    imported.cards
+
+            };
 
 
-            preview.classList.remove(
-                "hidden"
+            setIdInput.value =
+                state.set.id;
+
+            setNameInput.value =
+                state.set.name;
+
+            setVersionInput.value =
+                state.set.version;
+
+            setStatusInput.value =
+                state.set.status;
+
+
+            renderCards();
+
+
+            setStatus(
+                "Set imported successfully.",
+                "success"
+            );
+
+        } catch (error) {
+
+            setStatus(
+                `Import failed: ${error.message}`,
+                "error"
+            );
+
+        }
+
+        importFile.value = "";
+
+    }
+);
+
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+
+exportButton.addEventListener(
+    "click",
+    () => {
+
+        updateSetFromInputs();
+
+
+        if (!state.set.id) {
+
+            setStatus(
+                "Set ID is required before exporting.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        if (!state.set.name) {
+
+            setStatus(
+                "Set name is required before exporting.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const json =
+            JSON.stringify(
+                state.set,
+                null,
+                4
             );
 
 
-            /*
-             * Release the temporary object URL once the image
-             * has loaded.
-             */
+        const blob =
+            new Blob(
+                [json],
+                {
+                    type:
+                        "application/json"
+                }
+            );
 
-            preview.onload =
-                () => {
 
-                    URL.revokeObjectURL(
-                        objectURL
-                    );
+        const url =
+            URL.createObjectURL(
+                blob
+            );
 
-                };
-        }
-    );
-}
+
+        const link =
+            document.createElement("a");
+
+
+        link.href =
+            url;
+
+        link.download =
+            `${state.set.id}.json`;
+
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+
+        URL.revokeObjectURL(
+            url
+        );
+
+
+        setStatus(
+            "Set exported.",
+            "success"
+        );
+
+    }
+);
 
 
 /* ============================================================
-   INITIALIZATION
+   EVENTS
    ============================================================ */
 
-async function initializeSetManager() {
-
-    /*
-     * Make sure the ability editor starts in a useful state.
-     */
-
-    if (
-        abilitiesList &&
-        abilitiesList.children.length === 0
-    ) {
-
-        addAbilityEditor();
-    }
+addCardButton.addEventListener(
+    "click",
+    () => openCardEditor()
+);
 
 
-    setupImagePreview(
-        "set-cover",
-        "set-cover-preview"
-    );
+addAbilityButton.addEventListener(
+    "click",
+    addAbility
+);
 
 
-    setupImagePreview(
-        "card-artwork",
-        "card-artwork-preview"
-    );
+closeEditorButton.addEventListener(
+    "click",
+    closeCardEditor
+);
 
 
-    /*
-     * Load existing data.
-     */
-
-    await Promise.all([
-        loadSets(),
-        loadCards()
-    ]);
-}
+cancelCardButton.addEventListener(
+    "click",
+    closeCardEditor
+);
 
 
-initializeSetManager();
+document.querySelector(
+    "[data-close-editor]"
+).addEventListener(
+    "click",
+    closeCardEditor
+);
+
+
+/* ============================================================
+   INITIALIZE
+   ============================================================ */
+
+updateSetFromInputs();
+
+renderCards();
 ```
