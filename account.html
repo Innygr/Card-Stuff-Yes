@@ -1,4 +1,7 @@
-```html
+/* ============================================================
+   account.html
+   ============================================================ */
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,11 +25,6 @@
         rel="stylesheet"
         href="./account.css"
     >
-
-    <script
-        src="./account.js"
-        defer
-    ></script>
 
 </head>
 
@@ -53,15 +51,9 @@
 
     <main class="account-container">
 
-        <p
-            id="account-status"
-            class="status-message"
-            aria-live="polite"
-        ></p>
-
 
         <!-- =====================================================
-             ACCOUNT
+             ACCOUNT INFORMATION
              ===================================================== -->
 
         <section class="account-section">
@@ -71,7 +63,7 @@
                 <h2>Account</h2>
 
                 <p>
-                    Your current account information.
+                    Your basic Card Stuff Yes account information.
                 </p>
 
             </div>
@@ -86,7 +78,7 @@
                     </span>
 
                     <span
-                        id="username"
+                        id="account-username"
                         class="account-value"
                     >
                         Loading...
@@ -102,7 +94,7 @@
                     </span>
 
                     <span
-                        id="player-id"
+                        id="account-id"
                         class="account-value"
                     >
                         Loading...
@@ -118,7 +110,7 @@
                     </span>
 
                     <span
-                        id="rank"
+                        id="account-rank"
                         class="account-value"
                     >
                         Loading...
@@ -130,11 +122,11 @@
                 <div class="account-info-row">
 
                     <span class="account-label">
-                        Rating
+                        Created
                     </span>
 
                     <span
-                        id="elo"
+                        id="account-created"
                         class="account-value"
                     >
                         Loading...
@@ -142,22 +134,107 @@
 
                 </div>
 
+            </div>
 
-                <div class="account-info-row">
+        </section>
+
+
+        <!-- =====================================================
+             EMAIL
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Email Address</h2>
+
+                <p>
+                    Add an email address to secure and recover
+                    your Card Stuff Yes account.
+                </p>
+
+            </div>
+
+
+            <div
+                id="email-status-box"
+                class="email-status-box"
+            >
+
+                <div>
 
                     <span class="account-label">
-                        Account Created
+                        Current email
                     </span>
 
                     <span
-                        id="created"
+                        id="account-email"
                         class="account-value"
                     >
-                        Loading...
+                        Not linked
                     </span>
 
                 </div>
 
+
+                <span
+                    id="email-verification-status"
+                    class="verification-status"
+                >
+                    Not verified
+                </span>
+
+            </div>
+
+
+            <form
+                id="email-form"
+                class="account-form"
+            >
+
+                <label
+                    class="form-label"
+                    for="email-input"
+                >
+                    Email address
+                </label>
+
+
+                <input
+                    id="email-input"
+                    class="form-input"
+                    type="email"
+                    autocomplete="email"
+                    maxlength="254"
+                    placeholder="you@example.com"
+                    required
+                >
+
+
+                <button
+                    id="email-submit-button"
+                    class="account-button"
+                    type="submit"
+                >
+                    Send Verification Email
+                </button>
+
+
+                <p
+                    id="email-form-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+
+            <div
+                id="email-verified-message"
+                class="success-box hidden"
+            >
+                Your email address is verified.
             </div>
 
         </section>
@@ -180,33 +257,16 @@
             </div>
 
 
-            <div
-                id="temporary-password-warning"
-                class="warning-box hidden"
-            >
-
-                <h3>
-                    Password Change Required
-                </h3>
-
-                <p>
-                    Your account is using a temporary password.
-                    Choose a new password before continuing.
-                </p>
-
-            </div>
-
-
             <form
                 id="password-form"
-                class="password-form"
+                class="account-form"
             >
 
                 <label
                     class="form-label"
                     for="current-password"
                 >
-                    Current Password
+                    Current password
                 </label>
 
                 <input
@@ -222,7 +282,7 @@
                     class="form-label"
                     for="new-password"
                 >
-                    New Password
+                    New password
                 </label>
 
                 <input
@@ -240,7 +300,7 @@
                     class="form-label"
                     for="confirm-password"
                 >
-                    Confirm New Password
+                    Confirm new password
                 </label>
 
                 <input
@@ -255,33 +315,20 @@
 
 
                 <button
-                    id="change-password-button"
                     class="account-button"
                     type="submit"
                 >
                     Change Password
                 </button>
 
+
+                <p
+                    id="password-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
             </form>
-
-
-            <p
-                id="password-status"
-                class="form-status"
-                aria-live="polite"
-            ></p>
-
-
-            <div class="security-note">
-
-                <strong>
-                    Security note:
-                </strong>
-
-                Changing your password signs this account out
-                everywhere. You will need to sign in again.
-
-            </div>
 
         </section>
 
@@ -294,98 +341,51 @@
 
             <div class="section-heading">
 
-                <h2>Additional Security</h2>
+                <h2>More Security</h2>
 
                 <p>
-                    More account-security features will be added here.
+                    Additional account security features.
                 </p>
 
             </div>
 
 
-            <div class="future-security">
+            <div class="future-security-list">
 
-                <div class="future-security-row">
+                <div class="future-security-item">
 
-                    <div>
+                    <strong>
+                        Password Recovery
+                    </strong>
 
-                        <strong>
-                            Email Verification
-                        </strong>
-
-                        <p>
-                            Link and verify an email address.
-                        </p>
-
-                    </div>
-
-                    <span class="feature-status">
-                        Coming Soon
+                    <span>
+                        Coming next.
                     </span>
 
                 </div>
 
 
-                <div class="future-security-row">
+                <div class="future-security-item">
 
-                    <div>
+                    <strong>
+                        Two-Factor Authentication
+                    </strong>
 
-                        <strong>
-                            Two-Factor Authentication
-                        </strong>
-
-                        <p>
-                            Protect your account with an
-                            authenticator app.
-                        </p>
-
-                    </div>
-
-                    <span class="feature-status">
-                        Coming Soon
+                    <span>
+                        Coming soon.
                     </span>
 
                 </div>
 
 
-                <div class="future-security-row">
+                <div class="future-security-item">
 
-                    <div>
+                    <strong>
+                        Session Management
+                    </strong>
 
-                        <strong>
-                            Password Recovery
-                        </strong>
-
-                        <p>
-                            Recover your account if you forget
-                            your password.
-                        </p>
-
-                    </div>
-
-                    <span class="feature-status">
-                        Coming Soon
-                    </span>
-
-                </div>
-
-
-                <div class="future-security-row">
-
-                    <div>
-
-                        <strong>
-                            Session Management
-                        </strong>
-
-                        <p>
-                            View and manage active sign-ins.
-                        </p>
-
-                    </div>
-
-                    <span class="feature-status">
-                        Coming Soon
+                    <span>
+                        Coming soon.
                     </span>
 
                 </div>
@@ -396,17 +396,10 @@
 
 
         <!-- =====================================================
-             ACCOUNT ACTIONS
+             SIGN OUT
              ===================================================== -->
 
-        <section class="account-section">
-
-            <div class="section-heading">
-
-                <h2>Account Actions</h2>
-
-            </div>
-
+        <section class="account-section account-danger-section">
 
             <button
                 id="logout-button"
@@ -414,14 +407,1062 @@
                 type="button"
             >
                 Sign Out
-
             </button>
+
+            <p
+                id="logout-status"
+                class="form-status"
+                aria-live="polite"
+            ></p>
 
         </section>
 
     </main>
 
+
+    <script src="./account.js"></script>
+
 </body>
 
 </html>
-```
+
+
+/* ============================================================
+   account.css
+   ============================================================ */
+
+html {
+    box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+
+body {
+    margin: 0;
+
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        var(--color-background);
+
+    color:
+        var(--color-text);
+}
+
+
+.account-header {
+    width:
+        min(
+            calc(100% - 32px),
+            850px
+        );
+
+    margin:
+        0 auto;
+
+    padding:
+        24px
+        0
+        20px;
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+}
+
+
+.back-link {
+    display: inline-block;
+
+    margin-bottom: 22px;
+
+    color:
+        var(--color-link);
+
+    text-decoration: none;
+
+    transition:
+        color
+        var(--global-transition-speed)
+        ease;
+}
+
+
+.back-link:hover {
+    color:
+        var(--color-link-hover);
+}
+
+
+.account-header h1 {
+    margin: 0;
+
+    font-size:
+        clamp(
+            30px,
+            7vw,
+            44px
+        );
+}
+
+
+.account-header p {
+    margin:
+        8px 0 0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.account-container {
+    width:
+        min(
+            calc(100% - 32px),
+            850px
+        );
+
+    margin:
+        0 auto;
+
+    padding:
+        10px
+        0
+        60px;
+}
+
+
+.account-section {
+    margin-top: 30px;
+
+    padding-top: 26px;
+
+    border-top:
+        1px solid
+        var(--color-border);
+}
+
+
+.section-heading {
+    margin-bottom: 18px;
+}
+
+
+.section-heading h2 {
+    margin: 0;
+
+    font-size: 22px;
+}
+
+
+.section-heading p {
+    margin:
+        6px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+.account-info {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.account-info-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(120px, 180px)
+        1fr;
+
+    gap: 15px;
+
+    padding: 12px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
+}
+
+
+.account-label {
+    font-weight: bold;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.account-value {
+    color:
+        var(--color-text);
+
+    word-break: break-word;
+}
+
+
+.email-status-box {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 18px;
+
+    padding: 14px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
+}
+
+
+.email-status-box > div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.verification-status {
+    flex-shrink: 0;
+
+    padding:
+        5px
+        9px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 999px;
+
+    color:
+        var(--color-warning-text);
+
+    background:
+        var(--color-warning-background);
+
+    font-size: 12px;
+
+    font-weight: bold;
+}
+
+
+.account-form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    max-width: 500px;
+}
+
+
+.form-label {
+    margin-top: 5px;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+.form-input {
+    width: 100%;
+
+    padding:
+        11px
+        12px;
+
+    border:
+        1px solid
+        var(--color-input-border);
+
+    border-radius: 7px;
+
+    outline: none;
+
+    background:
+        var(--color-input);
+
+    color:
+        var(--color-input-text);
+
+    font-family: inherit;
+
+    font-size: 16px;
+
+    transition:
+        border-color
+        var(--global-transition-speed)
+        ease;
+}
+
+
+.form-input:focus {
+    border-color:
+        var(--color-link);
+}
+
+
+.account-button {
+    width: fit-content;
+
+    margin-top: 8px;
+
+    padding:
+        11px
+        17px;
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 7px;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background
+        var(--global-transition-speed)
+        ease,
+
+        border-color
+        var(--global-transition-speed)
+        ease;
+}
+
+
+.account-button:hover {
+    background:
+        var(--color-button-hover);
+
+    border-color:
+        var(--color-link);
+}
+
+
+.account-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+
+.form-status {
+    min-height: 20px;
+
+    margin:
+        8px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+.form-status.success {
+    color:
+        var(--color-success);
+}
+
+
+.form-status.error {
+    color:
+        var(--color-error);
+}
+
+
+.success-box {
+    margin-top: 14px;
+
+    padding: 13px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-success);
+
+    border-radius: 8px;
+
+    color:
+        var(--color-success);
+}
+
+
+.future-security-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.future-security-item {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 13px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
+}
+
+
+.future-security-item span {
+    color:
+        var(--color-text-muted);
+
+    font-size: 13px;
+}
+
+
+.account-danger-section {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+}
+
+
+.hidden {
+    display: none !important;
+}
+
+
+@media (max-width: 600px) {
+
+    .account-header,
+    .account-container {
+        width:
+            calc(100% - 20px);
+    }
+
+
+    .account-info-row {
+        grid-template-columns: 1fr;
+
+        gap: 4px;
+    }
+
+
+    .email-status-box {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .future-security-item {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .account-button {
+        width: 100%;
+    }
+
+}
+
+
+/* ============================================================
+   account.js
+   ============================================================ */
+
+const usernameElement =
+    document.getElementById(
+        "account-username"
+    );
+
+const idElement =
+    document.getElementById(
+        "account-id"
+    );
+
+const rankElement =
+    document.getElementById(
+        "account-rank"
+    );
+
+const createdElement =
+    document.getElementById(
+        "account-created"
+    );
+
+const emailElement =
+    document.getElementById(
+        "account-email"
+    );
+
+const emailVerificationStatus =
+    document.getElementById(
+        "email-verification-status"
+    );
+
+const emailForm =
+    document.getElementById(
+        "email-form"
+    );
+
+const emailInput =
+    document.getElementById(
+        "email-input"
+    );
+
+const emailSubmitButton =
+    document.getElementById(
+        "email-submit-button"
+    );
+
+const emailFormStatus =
+    document.getElementById(
+        "email-form-status"
+    );
+
+const emailVerifiedMessage =
+    document.getElementById(
+        "email-verified-message"
+    );
+
+const passwordForm =
+    document.getElementById(
+        "password-form"
+    );
+
+const passwordStatus =
+    document.getElementById(
+        "password-status"
+    );
+
+const logoutButton =
+    document.getElementById(
+        "logout-button"
+    );
+
+const logoutStatus =
+    document.getElementById(
+        "logout-status"
+    );
+
+
+function setStatus(
+    element,
+    message,
+    type = ""
+) {
+
+    element.textContent =
+        message;
+
+    element.className =
+        "form-status";
+
+    if (type) {
+        element.classList.add(type);
+    }
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "Unknown";
+    }
+
+    const date =
+        new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return value;
+    }
+
+    return date.toLocaleString();
+}
+
+
+function displayAccount(player) {
+
+    usernameElement.textContent =
+        player.username;
+
+    idElement.textContent =
+        player.id;
+
+    rankElement.textContent =
+        player.rank;
+
+    createdElement.textContent =
+        formatDate(
+            player.createdAt
+        );
+
+    const email =
+        player.email || "";
+
+    const verified =
+        Boolean(
+            player.emailVerified
+        );
+
+    if (email) {
+
+        emailElement.textContent =
+            email;
+
+        emailInput.value =
+            email;
+
+        if (verified) {
+
+            emailVerificationStatus.textContent =
+                "Verified";
+
+            emailVerificationStatus.style.color =
+                "var(--color-success)";
+
+            emailVerificationStatus.style.background =
+                "var(--color-background-secondary)";
+
+            emailVerifiedMessage.classList.remove(
+                "hidden"
+            );
+
+            emailSubmitButton.textContent =
+                "Change Email";
+
+        } else {
+
+            emailVerificationStatus.textContent =
+                "Not verified";
+
+            emailSubmitButton.textContent =
+                "Send Verification Email";
+        }
+
+    } else {
+
+        emailElement.textContent =
+            "Not linked";
+
+        emailVerificationStatus.textContent =
+            "Not verified";
+
+        emailSubmitButton.textContent =
+            "Send Verification Email";
+    }
+}
+
+
+async function loadAccount() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/me",
+                {
+                    credentials:
+                        "include"
+                }
+            );
+
+        if (
+            response.status === 401
+        ) {
+
+            window.location.href =
+                "./login.html";
+
+            return;
+        }
+
+
+        if (!response.ok) {
+            throw new Error(
+                "Could not load account."
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+        displayAccount(
+            data.player
+        );
+
+    } catch (error) {
+
+        setStatus(
+            emailFormStatus,
+            error.message,
+            "error"
+        );
+    }
+}
+
+
+/* ============================================================
+   EMAIL LINKING
+   ============================================================ */
+
+emailForm.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        const email =
+            emailInput.value.trim();
+
+        if (!email) {
+
+            setStatus(
+                emailFormStatus,
+                "Enter an email address.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        emailSubmitButton.disabled =
+            true;
+
+        setStatus(
+            emailFormStatus,
+            "Sending verification email..."
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/account/email",
+                    {
+                        method: "POST",
+
+                        credentials:
+                            "include",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                email
+                            })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Could not update your email."
+                );
+            }
+
+
+            setStatus(
+                emailFormStatus,
+                data.message ||
+                "Verification email sent.",
+                "success"
+            );
+
+
+            if (data.email) {
+
+                emailElement.textContent =
+                    data.email;
+
+                emailVerificationStatus.textContent =
+                    "Not verified";
+
+                emailVerifiedMessage.classList.add(
+                    "hidden"
+                );
+            }
+
+
+        } catch (error) {
+
+            setStatus(
+                emailFormStatus,
+                error.message,
+                "error"
+            );
+
+        } finally {
+
+            emailSubmitButton.disabled =
+                false;
+        }
+
+    }
+);
+
+
+/* ============================================================
+   PASSWORD
+   ============================================================ */
+
+passwordForm.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        const currentPassword =
+            document.getElementById(
+                "current-password"
+            ).value;
+
+        const newPassword =
+            document.getElementById(
+                "new-password"
+            ).value;
+
+        const confirmPassword =
+            document.getElementById(
+                "confirm-password"
+            ).value;
+
+
+        if (
+            newPassword !==
+            confirmPassword
+        ) {
+
+            setStatus(
+                passwordStatus,
+                "New passwords do not match.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        setStatus(
+            passwordStatus,
+            "Changing password..."
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/auth/change-password",
+                    {
+                        method: "POST",
+
+                        credentials:
+                            "include",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                currentPassword,
+                                newPassword
+                            })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Could not change password."
+                );
+            }
+
+
+            setStatus(
+                passwordStatus,
+                data.message ||
+                "Password changed successfully.",
+                "success"
+            );
+
+
+            passwordForm.reset();
+
+
+            setTimeout(
+                () => {
+                    window.location.href =
+                        "./login.html";
+                },
+                1200
+            );
+
+        } catch (error) {
+
+            setStatus(
+                passwordStatus,
+                error.message,
+                "error"
+            );
+        }
+
+    }
+);
+
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+
+logoutButton.addEventListener(
+    "click",
+    async () => {
+
+        logoutButton.disabled =
+            true;
+
+        setStatus(
+            logoutStatus,
+            "Signing out..."
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/auth/logout",
+                    {
+                        method: "POST",
+
+                        credentials:
+                            "include"
+                    }
+                );
+
+
+            if (!response.ok) {
+                throw new Error(
+                    "Could not sign out."
+                );
+            }
+
+
+            window.location.href =
+                "./login.html";
+
+        } catch (error) {
+
+            logoutButton.disabled =
+                false;
+
+            setStatus(
+                logoutStatus,
+                error.message,
+                "error"
+            );
+        }
+
+    }
+);
+
+
+/* ============================================================
+   INITIAL LOAD
+   ============================================================ */
+
+loadAccount();
