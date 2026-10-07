@@ -1,0 +1,530 @@
+```css
+html {
+    box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+
+body {
+    margin: 0;
+
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        var(--color-background);
+
+    color:
+        var(--color-text);
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.account-header {
+    width: min(
+        calc(100% - 32px),
+        900px
+    );
+
+    margin: 0 auto;
+
+    padding:
+        24px
+        0
+        22px;
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+}
+
+
+.back-link {
+    display: inline-block;
+
+    margin-bottom: 22px;
+
+    color:
+        var(--color-link);
+
+    text-decoration: none;
+
+    transition:
+        color
+        var(--global-transition-speed)
+        ease;
+}
+
+
+.back-link:hover {
+    color:
+        var(--color-link-hover);
+}
+
+
+.account-header h1 {
+    margin: 0;
+
+    font-size:
+        clamp(
+            30px,
+            7vw,
+            42px
+        );
+}
+
+
+.account-header p {
+    margin:
+        8px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+
+.account-container {
+    width: min(
+        calc(100% - 32px),
+        900px
+    );
+
+    margin: 0 auto;
+
+    padding:
+        28px
+        0
+        50px;
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.status-message {
+    min-height: 22px;
+
+    margin:
+        0
+        0
+        20px;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.status-message.error {
+    color:
+        var(--color-error);
+}
+
+
+.status-message.success {
+    color:
+        var(--color-success);
+}
+
+
+.status-message.info {
+    color:
+        var(--color-info);
+}
+
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+
+.account-section {
+    margin-top: 30px;
+
+    padding-top: 25px;
+
+    border-top:
+        1px solid
+        var(--color-border);
+}
+
+
+.section-heading {
+    margin-bottom: 18px;
+}
+
+
+.section-heading h2 {
+    margin: 0;
+
+    font-size: 22px;
+}
+
+
+.section-heading p {
+    margin:
+        6px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+/* ============================================================
+   ACCOUNT INFORMATION
+   ============================================================ */
+
+.account-info {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.account-info-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(140px, 200px)
+        1fr;
+
+    gap: 15px;
+
+    padding: 12px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 7px;
+}
+
+
+.account-label {
+    color:
+        var(--color-text-secondary);
+
+    font-weight: bold;
+}
+
+
+.account-value {
+    word-break: break-word;
+}
+
+
+/* ============================================================
+   PASSWORD
+   ============================================================ */
+
+.warning-box {
+    margin-bottom: 20px;
+
+    padding: 16px;
+
+    background:
+        var(--color-warning-background);
+
+    border:
+        1px solid
+        var(--color-warning-border);
+
+    border-radius: 7px;
+}
+
+
+.warning-box h3 {
+    margin:
+        0
+        0
+        7px;
+
+    color:
+        var(--color-warning-text);
+}
+
+
+.warning-box p {
+    margin: 0;
+
+    color:
+        var(--color-warning-text);
+}
+
+
+.password-form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    max-width: 500px;
+}
+
+
+.form-label {
+    margin-top: 5px;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+.form-input {
+    width: 100%;
+
+    padding:
+        11px
+        12px;
+
+    background:
+        var(--color-input);
+
+    color:
+        var(--color-input-text);
+
+    border:
+        1px solid
+        var(--color-input-border);
+
+    border-radius: 6px;
+
+    outline: none;
+
+    font-family: inherit;
+
+    font-size: 16px;
+}
+
+
+.form-input:focus {
+    border-color:
+        var(--color-link);
+}
+
+
+.form-status {
+    min-height: 20px;
+
+    margin:
+        12px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.security-note {
+    max-width: 700px;
+
+    margin-top: 20px;
+
+    padding: 14px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 7px;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.account-button {
+    padding:
+        11px
+        17px;
+
+    background:
+        var(--color-button);
+
+    color:
+        var(--color-button-text);
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 6px;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background
+        var(--global-transition-speed)
+        ease,
+
+        border-color
+        var(--global-transition-speed)
+        ease;
+}
+
+
+.account-button:hover {
+    background:
+        var(--color-button-hover);
+
+    border-color:
+        var(--color-link);
+}
+
+
+.account-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+
+/* ============================================================
+   FUTURE SECURITY
+   ============================================================ */
+
+.future-security {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.future-security-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 15px;
+
+    background:
+        var(--color-background-secondary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 7px;
+}
+
+
+.future-security-row strong {
+    display: block;
+}
+
+
+.future-security-row p {
+    margin:
+        5px
+        0
+        0;
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 14px;
+}
+
+
+.feature-status {
+    flex-shrink: 0;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 12px;
+}
+
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    .account-header,
+    .account-container {
+        width:
+            calc(100% - 20px);
+    }
+
+
+    .account-info-row {
+        grid-template-columns:
+            1fr;
+
+        gap: 4px;
+    }
+
+
+    .future-security-row {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+}
+```
