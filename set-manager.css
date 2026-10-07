@@ -1,36 +1,4 @@
 ```css
-/*
- * ============================================================
- * Card Stuff Yes
- * Set Manager Styles
- * ============================================================
- *
- * This file controls the visual appearance of the Set Manager.
- *
- * All colours come from colors.css.
- *
- * The Set Manager is intended for Owner/Moderator use and
- * provides tools for:
- *
- * - Creating sets
- * - Editing sets
- * - Uploading set covers
- * - Creating cards
- * - Editing cards
- * - Uploading card artwork
- * - Adding multiple abilities
- * - Setting resource requirements
- * - Setting card limits
- * - Marking special-event cards
- *
- * ============================================================
- */
-
-
-/* ============================================================
-   PAGE
-   ============================================================ */
-
 html {
     box-sizing: border-box;
 }
@@ -47,8 +15,6 @@ body {
 
     min-height: 100vh;
 
-    padding: 20px;
-
     font-family:
         Arial,
         Helvetica,
@@ -62,33 +28,23 @@ body {
 }
 
 
-/* ============================================================
-   MAIN CONTAINER
-   ============================================================ */
-
+.set-header,
 .set-manager {
-    width:
-        min(
-            100%,
-            1100px
-        );
+    width: min(
+        100% - 32px,
+        1100px
+    );
 
     margin:
         0 auto;
-
-    padding:
-        24px;
 }
 
 
-/* ============================================================
-   HEADER
-   ============================================================ */
-
-.set-manager-header {
-    margin-bottom: 30px;
-
-    padding-bottom: 20px;
+.set-header {
+    padding:
+        24px
+        0
+        20px;
 
     border-bottom:
         1px solid
@@ -96,45 +52,15 @@ body {
 }
 
 
-.set-manager-header h1 {
-    margin: 0;
-
-    font-size:
-        clamp(
-            28px,
-            6vw,
-            42px
-        );
-}
-
-
-.set-manager-header p {
-    margin:
-        8px 0 0;
-
-    color:
-        var(--color-text-secondary);
-}
-
-
-/* ============================================================
-   NAVIGATION
-   ============================================================ */
-
 .back-link {
     display: inline-block;
 
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 
     color:
         var(--color-link);
 
     text-decoration: none;
-
-    transition:
-        color
-        var(--global-transition-speed)
-        ease;
 }
 
 
@@ -144,12 +70,37 @@ body {
 }
 
 
-/* ============================================================
-   PANELS
-   ============================================================ */
+.set-header h1 {
+    margin: 0;
 
-.manager-panel {
-    margin-bottom: 24px;
+    font-size:
+        clamp(
+            30px,
+            7vw,
+            48px
+        );
+}
+
+
+.set-header p {
+    margin:
+        8px 0 0;
+
+    color:
+        var(--color-text-secondary);
+}
+
+
+.set-manager {
+    padding:
+        28px
+        0
+        60px;
+}
+
+
+.panel {
+    margin-bottom: 25px;
 
     padding: 24px;
 
@@ -160,23 +111,33 @@ body {
         1px solid
         var(--color-border);
 
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 
-.manager-panel h2 {
-    margin:
-        0 0 18px;
+.section-heading {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+}
+
+
+.section-heading h2 {
+    margin: 0;
 
     font-size: 22px;
 }
 
 
-.manager-panel-description {
+.section-heading p {
     margin:
-        -8px
-        0
-        20px;
+        6px 0 0;
 
     color:
         var(--color-text-secondary);
@@ -184,10 +145,6 @@ body {
     font-size: 14px;
 }
 
-
-/* ============================================================
-   FORM LAYOUT
-   ============================================================ */
 
 .form-grid {
     display: grid;
@@ -205,22 +162,13 @@ body {
 }
 
 
-.form-group {
+label {
     display: flex;
 
     flex-direction: column;
 
     gap: 7px;
-}
 
-
-.form-group.full-width {
-    grid-column:
-        1 / -1;
-}
-
-
-.form-label {
     color:
         var(--color-text-secondary);
 
@@ -229,20 +177,6 @@ body {
     font-weight: bold;
 }
 
-
-.form-help {
-    margin: 0;
-
-    color:
-        var(--color-text-muted);
-
-    font-size: 12px;
-}
-
-
-/* ============================================================
-   INPUTS
-   ============================================================ */
 
 input,
 select,
@@ -259,8 +193,6 @@ textarea {
 
     border-radius: 6px;
 
-    outline: none;
-
     background:
         var(--color-input);
 
@@ -271,18 +203,14 @@ textarea {
 
     font-size: 15px;
 
-    transition:
-        border-color
-        var(--global-transition-speed)
-        ease;
+    outline: none;
 }
 
 
 textarea {
-    min-height: 110px;
+    resize: vertical;
 
-    resize:
-        vertical;
+    min-height: 100px;
 }
 
 
@@ -294,79 +222,17 @@ textarea:focus {
 }
 
 
-input::placeholder,
-textarea::placeholder {
-    color:
-        var(--color-text-muted);
-}
-
-
-/* ============================================================
-   CHECKBOXES
-   ============================================================ */
-
-.checkbox-group {
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    min-height: 42px;
-
-    padding:
-        9px
-        12px;
-
-    background:
-        var(--color-background-tertiary);
-
-    border:
-        1px solid
-        var(--color-border);
-
-    border-radius: 6px;
-}
-
-
-.checkbox-group input {
-    width: auto;
-
-    margin: 0;
-}
-
-
-.checkbox-label {
-    color:
-        var(--color-text);
-}
-
-
-/* ============================================================
-   BUTTONS
-   ============================================================ */
-
-.button-row {
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 10px;
-
-    margin-top: 20px;
-}
-
-
-button {
-    padding:
-        11px
-        17px;
-
+button,
+.file-button {
     border:
         1px solid
         var(--color-border-light);
 
     border-radius: 6px;
+
+    padding:
+        10px
+        15px;
 
     background:
         var(--color-button);
@@ -389,15 +255,12 @@ button {
 
         border-color
         var(--global-transition-speed)
-        ease,
-
-        transform
-        var(--global-transition-speed)
         ease;
 }
 
 
-button:hover {
+button:hover,
+.file-button:hover {
     background:
         var(--color-button-hover);
 
@@ -406,47 +269,156 @@ button:hover {
 }
 
 
-button:active {
-    transform:
-        translateY(1px);
-}
-
-
-button:disabled {
-    opacity: 0.55;
-
-    cursor: not-allowed;
-}
-
-
-.button-danger {
+.primary-button {
     background:
-        var(--color-error);
+        var(--color-link);
+
+    color:
+        var(--color-background);
 }
 
 
-.button-danger:hover {
+.primary-button:hover {
     background:
-        var(--color-error);
+        var(--color-link-hover);
 }
 
 
-.button-secondary {
+.card-list {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(
+                220px,
+                1fr
+            )
+        );
+
+    gap: 15px;
+}
+
+
+.card-entry {
+    padding: 16px;
+
     background:
         var(--color-background-tertiary);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius: 8px;
 }
 
 
-/* ============================================================
-   STATUS
-   ============================================================ */
+.card-entry-header {
+    display: flex;
 
-.status-message {
-    min-height: 22px;
+    justify-content: space-between;
+
+    gap: 10px;
+}
+
+
+.card-entry-name {
+    margin: 0;
+
+    font-size: 18px;
+}
+
+
+.card-entry-id {
+    margin:
+        5px 0 0;
+
+    color:
+        var(--color-text-muted);
+
+    font-size: 12px;
+
+    word-break: break-all;
+}
+
+
+.card-entry-meta {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
 
     margin:
-        0 0
-        20px;
+        12px 0;
+}
+
+
+.card-tag {
+    padding:
+        4px
+        7px;
+
+    border-radius: 4px;
+
+    background:
+        var(--color-background-hover);
+
+    color:
+        var(--color-text-secondary);
+
+    font-size: 11px;
+}
+
+
+.card-entry-actions {
+    display: flex;
+
+    gap: 8px;
+}
+
+
+.empty-message {
+    margin: 0;
+
+    padding: 25px 0;
+
+    text-align: center;
+
+    color:
+        var(--color-text-muted);
+}
+
+
+.action-row {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+}
+
+
+.file-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+
+.file-button input {
+    display: none;
+}
+
+
+.status-message {
+    min-height: 20px;
+
+    margin:
+        15px 0 0;
 
     color:
         var(--color-text-secondary);
@@ -465,78 +437,19 @@ button:disabled {
 }
 
 
-.status-message.info {
-    color:
-        var(--color-info);
-}
-
-
-/* ============================================================
-   UPLOAD AREA
-   ============================================================ */
-
-.upload-area {
+.ability-list {
     display: flex;
 
     flex-direction: column;
 
-    align-items: center;
+    gap: 12px;
 
-    justify-content: center;
-
-    gap: 10px;
-
-    min-height: 150px;
-
-    padding: 20px;
-
-    background:
-        var(--color-background-tertiary);
-
-    border:
-        1px dashed
-        var(--color-border-light);
-
-    border-radius: 8px;
-
-    text-align: center;
+    margin-bottom: 20px;
 }
 
 
-.upload-area p {
-    margin: 0;
-
-    color:
-        var(--color-text-secondary);
-}
-
-
-.upload-area input[type="file"] {
-    max-width: 100%;
-
-    border: none;
-
-    background: transparent;
-
-    padding: 0;
-}
-
-
-/* ============================================================
-   ABILITY EDITOR
-   ============================================================ */
-
-.abilities-list {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 16px;
-}
-
-
-.ability-editor {
-    padding: 18px;
+.ability-entry {
+    padding: 15px;
 
     background:
         var(--color-background-tertiary);
@@ -545,7 +458,7 @@ button:disabled {
         1px solid
         var(--color-border);
 
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 
@@ -556,173 +469,39 @@ button:disabled {
 
     justify-content: space-between;
 
-    gap: 12px;
-
-    margin-bottom: 16px;
-}
-
-
-.ability-title {
-    margin: 0;
-
-    font-size: 17px;
-}
-
-
-.ability-remove {
-    padding:
-        7px
-        11px;
-
-    font-size: 12px;
-}
-
-
-.resource-list {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 9px;
-
-    margin-top: 10px;
-}
-
-
-.resource-row {
-    display: grid;
-
-    grid-template-columns:
-        1fr
-        100px
-        auto;
-
-    gap: 8px;
-
-    align-items: center;
-}
-
-
-.resource-row input {
-    min-width: 0;
-}
-
-
-.resource-remove {
-    padding:
-        8px
-        10px;
-
-    font-size: 12px;
-}
-
-
-/* ============================================================
-   EFFECTS
-   ============================================================ */
-
-.effects-json {
-    min-height: 150px;
-
-    font-family:
-        "Courier New",
-        Courier,
-        monospace;
-
-    font-size: 13px;
-
-    line-height: 1.45;
-}
-
-
-/* ============================================================
-   FILE PREVIEWS
-   ============================================================ */
-
-.image-preview {
-    display: block;
-
-    max-width: 180px;
-
-    max-height: 220px;
-
-    margin-top: 12px;
-
-    border:
-        1px solid
-        var(--color-border);
-
-    border-radius: 6px;
-
-    object-fit: contain;
-}
-
-
-.cover-preview {
-    max-width: 260px;
-
-    max-height: 160px;
-}
-
-
-/* ============================================================
-   SET / CARD LISTS
-   ============================================================ */
-
-.manager-list {
-    display: flex;
-
-    flex-direction: column;
-
     gap: 10px;
+
+    margin-bottom: 12px;
 }
 
 
-.manager-list-item {
+.ability-header h4 {
+    margin: 0;
+}
+
+
+.abilities-heading {
     display: flex;
 
     align-items: center;
 
     justify-content: space-between;
 
-    gap: 16px;
+    gap: 15px;
 
-    padding:
-        14px
-        16px;
-
-    background:
-        var(--color-background-tertiary);
-
-    border:
-        1px solid
-        var(--color-border);
-
-    border-radius: 8px;
-}
-
-
-.manager-list-item-info {
-    min-width: 0;
-}
-
-
-.manager-list-item-title {
-    margin: 0;
-
-    font-size: 16px;
-
-    font-weight: bold;
-
-    word-break: break-word;
-}
-
-
-.manager-list-item-meta {
     margin:
-        5px
-        0
-        0;
+        25px 0 15px;
+}
+
+
+.abilities-heading h3 {
+    margin: 0;
+}
+
+
+.abilities-heading p {
+    margin:
+        5px 0 0;
 
     color:
         var(--color-text-secondary);
@@ -731,143 +510,146 @@ button:disabled {
 }
 
 
-.manager-list-item-actions {
+.modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
     display: flex;
 
-    flex-wrap: wrap;
+    align-items: center;
 
-    gap: 8px;
+    justify-content: center;
 
-    flex-shrink: 0;
+    padding: 20px;
 }
 
 
-.manager-list-item-actions button {
+.modal.hidden {
+    display: none;
+}
+
+
+.modal-background {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        var(--color-overlay);
+}
+
+
+.modal-content {
+    position: relative;
+
+    z-index: 1;
+
+    width:
+        min(
+            700px,
+            100%
+        );
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 25px;
+
+    background:
+        var(--color-zoom-card);
+
+    border:
+        1px solid
+        var(--color-border-light);
+
+    border-radius: 8px;
+}
+
+
+.modal-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+
+.modal-header h2 {
+    margin: 0;
+}
+
+
+.icon-button {
     padding:
-        8px
-        11px;
+        4px
+        10px;
 
-    font-size: 12px;
+    font-size: 22px;
 }
 
 
-/* ============================================================
-   RARITY DISPLAY
-   ============================================================ */
+#card-form {
+    display: flex;
 
-.rarity-common {
-    color:
-        var(--color-rarity-common);
+    flex-direction: column;
+
+    gap: 16px;
 }
 
 
-.rarity-uncommon {
-    color:
-        var(--color-rarity-uncommon);
+.modal-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    padding-top: 10px;
+
+    border-top:
+        1px solid
+        var(--color-border);
 }
 
 
-.rarity-rare {
-    color:
-        var(--color-rarity-rare);
-}
+@media (max-width: 650px) {
 
-
-.rarity-epic {
-    color:
-        var(--color-rarity-epic);
-}
-
-
-.rarity-legendary {
-    color:
-        var(--color-rarity-legendary);
-}
-
-
-/* ============================================================
-   HIDDEN ELEMENTS
-   ============================================================ */
-
-.hidden {
-    display: none !important;
-}
-
-
-/* ============================================================
-   MOBILE
-   ============================================================ */
-
-@media (max-width: 700px) {
-
-    body {
-        padding: 10px;
-    }
-
-
+    .set-header,
     .set-manager {
-        padding: 10px;
-    }
-
-
-    .manager-panel {
-        padding: 18px;
+        width:
+            calc(100% - 20px);
     }
 
 
     .form-grid {
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
     }
 
 
-    .form-group.full-width {
-        grid-column:
-            auto;
-    }
-
-
-    .ability-header {
+    .section-heading,
+    .abilities-heading {
         align-items: flex-start;
 
         flex-direction: column;
     }
 
 
-    .resource-row {
-        grid-template-columns:
-            1fr
-            80px;
-    }
-
-
-    .resource-remove {
-        grid-column:
-            1 / -1;
-
+    .section-heading button,
+    .abilities-heading button {
         width: 100%;
     }
 
 
-    .manager-list-item {
-        align-items: flex-start;
-
-        flex-direction: column;
+    .modal-content {
+        padding: 18px;
     }
 
-
-    .manager-list-item-actions {
-        width: 100%;
-    }
-
-
-    .manager-list-item-actions button {
-        flex: 1;
-    }
-
-
-    .button-row button {
-        width: 100%;
-    }
 }
 ```
