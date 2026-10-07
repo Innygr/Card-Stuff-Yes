@@ -1,46 +1,375 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Card Stuff Yes — Admin Sign In</title>
-<link rel="stylesheet" href="./colors.css">
-<link rel="stylesheet" href="./admin.css">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Card Stuff Yes — Admin Login</title>
+
+    <style>
+
+        :root {
+            --background: #111111;
+            --panel: #1c1c1c;
+            --panel-hover: #242424;
+            --text: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border: #383838;
+            --input: #292929;
+            --button: #444444;
+            --button-hover: #555555;
+            --error: #f44336;
+        }
+
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            background:
+                var(--background);
+
+            color:
+                var(--text);
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+
+        .login-panel {
+            width: 100%;
+
+            max-width: 420px;
+
+            padding: 32px;
+
+            background:
+                var(--panel);
+
+            border:
+                1px solid
+                var(--border);
+
+            border-radius: 12px;
+        }
+
+
+        h1 {
+            margin:
+                0
+                0
+                8px;
+        }
+
+
+        .subtitle {
+            margin:
+                0
+                0
+                28px;
+
+            color:
+                var(--text-secondary);
+        }
+
+
+        label {
+            display: block;
+
+            margin:
+                16px
+                0
+                7px;
+
+            color:
+                var(--text-secondary);
+
+            font-size: 14px;
+        }
+
+
+        input {
+            width: 100%;
+
+            padding:
+                12px;
+
+            background:
+                var(--input);
+
+            color:
+                var(--text);
+
+            border:
+                1px solid
+                var(--border);
+
+            border-radius: 7px;
+
+            outline: none;
+
+            font: inherit;
+        }
+
+
+        input:focus {
+            border-color:
+                var(--text-secondary);
+        }
+
+
+        button {
+            width: 100%;
+
+            margin-top: 24px;
+
+            padding:
+                12px;
+
+            background:
+                var(--button);
+
+            color:
+                var(--text);
+
+            border:
+                1px solid
+                var(--border);
+
+            border-radius: 7px;
+
+            font: inherit;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+
+        button:hover {
+            background:
+                var(--button-hover);
+        }
+
+
+        button:disabled {
+            opacity: 0.6;
+
+            cursor: not-allowed;
+        }
+
+
+        #status {
+            min-height: 20px;
+
+            margin-top: 16px;
+
+            color:
+                var(--error);
+
+            font-size: 14px;
+        }
+
+
+        .back {
+            display: block;
+
+            margin-top: 20px;
+
+            color:
+                var(--text-secondary);
+
+            text-align: center;
+
+            text-decoration: none;
+        }
+
+
+        .back:hover {
+            color:
+                var(--text);
+        }
+
+    </style>
+
 </head>
+
+
 <body>
-<main class="admin-shell">
-  <section class="admin-content">
-    <p class="eyebrow">CARD STUFF YES</p>
-    <h1>Admin Sign In</h1>
-    <p class="muted">This area requires an administrator session.</p>
-    <form id="admin-login-form">
-      <p><label>Username<br><input id="username" autocomplete="username" required></label></p>
-      <p><label>Password<br><input id="password" type="password" autocomplete="current-password" required></label></p>
-      <button type="submit">Sign in</button>
-      <p id="login-status" class="status"></p>
-    </form>
-  </section>
-</main>
-<script>
-const form = document.getElementById("admin-login-form");
-const status = document.getElementById("login-status");
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  status.textContent = "Signing in…";
-  try {
-    const response = await fetch("/api/admin/login", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ username: document.getElementById("username").value, password: document.getElementById("password").value })
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Admin sign in failed.");
-    window.location.replace("./admin.html");
-  } catch (error) {
-    status.textContent = error.message;
-  }
-});
-</script>
+
+    <main class="login-panel">
+
+        <h1>Admin</h1>
+
+        <p class="subtitle">
+            Card Stuff Yes administration
+        </p>
+
+
+        <form id="login-form">
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                required
+            >
+
+
+            <label for="password">
+                Password
+            </label>
+
+            <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+            >
+
+
+            <button
+                id="login-button"
+                type="submit"
+            >
+                SIGN IN
+            </button>
+
+        </form>
+
+
+        <div id="status"></div>
+
+
+        <a
+            class="back"
+            href="./homepage.html"
+        >
+            ← Back to Card Stuff Yes
+        </a>
+
+    </main>
+
+
+    <script>
+
+        const form =
+            document.getElementById(
+                "login-form"
+            );
+
+
+        const button =
+            document.getElementById(
+                "login-button"
+            );
+
+
+        const status =
+            document.getElementById(
+                "status"
+            );
+
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+
+                button.disabled = true;
+
+                status.textContent =
+                    "Signing in...";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/admin/login",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                credentials: "same-origin",
+
+                                body:
+                                    JSON.stringify({
+                                        username:
+                                            form.username.value.trim(),
+
+                                        password:
+                                            form.password.value
+                                    })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.error ||
+                            "Admin login failed."
+                        );
+
+                    }
+
+
+                    window.location.href =
+                        "./admin.html";
+
+                } catch (error) {
+
+                    status.textContent =
+                        error.message;
+
+                    button.disabled = false;
+                }
+
+            }
+        );
+
+    </script>
+
 </body>
+
 </html>
+```
