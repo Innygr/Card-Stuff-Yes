@@ -1,0 +1,427 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Account Settings - Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="./colors.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./account.css"
+    >
+
+    <script
+        src="./account.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <header class="account-header">
+
+        <a
+            class="back-link"
+            href="./homepage.html"
+        >
+            ← Back to Card Stuff Yes
+        </a>
+
+        <h1>Account Settings</h1>
+
+        <p>
+            Manage your Card Stuff Yes account and security.
+        </p>
+
+    </header>
+
+
+    <main class="account-container">
+
+        <p
+            id="account-status"
+            class="status-message"
+            aria-live="polite"
+        ></p>
+
+
+        <!-- =====================================================
+             ACCOUNT
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Account</h2>
+
+                <p>
+                    Your current account information.
+                </p>
+
+            </div>
+
+
+            <div class="account-info">
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Username
+                    </span>
+
+                    <span
+                        id="username"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Player ID
+                    </span>
+
+                    <span
+                        id="player-id"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Rank
+                    </span>
+
+                    <span
+                        id="rank"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Rating
+                    </span>
+
+                    <span
+                        id="elo"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Account Created
+                    </span>
+
+                    <span
+                        id="created"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PASSWORD
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Password</h2>
+
+                <p>
+                    Change your account password.
+                </p>
+
+            </div>
+
+
+            <div
+                id="temporary-password-warning"
+                class="warning-box hidden"
+            >
+
+                <h3>
+                    Password Change Required
+                </h3>
+
+                <p>
+                    Your account is using a temporary password.
+                    Choose a new password before continuing.
+                </p>
+
+            </div>
+
+
+            <form
+                id="password-form"
+                class="password-form"
+            >
+
+                <label
+                    class="form-label"
+                    for="current-password"
+                >
+                    Current Password
+                </label>
+
+                <input
+                    id="current-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="new-password"
+                >
+                    New Password
+                </label>
+
+                <input
+                    id="new-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    maxlength="256"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="confirm-password"
+                >
+                    Confirm New Password
+                </label>
+
+                <input
+                    id="confirm-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    maxlength="256"
+                    required
+                >
+
+
+                <button
+                    id="change-password-button"
+                    class="account-button"
+                    type="submit"
+                >
+                    Change Password
+                </button>
+
+            </form>
+
+
+            <p
+                id="password-status"
+                class="form-status"
+                aria-live="polite"
+            ></p>
+
+
+            <div class="security-note">
+
+                <strong>
+                    Security note:
+                </strong>
+
+                Changing your password signs this account out
+                everywhere. You will need to sign in again.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             FUTURE SECURITY
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Additional Security</h2>
+
+                <p>
+                    More account-security features will be added here.
+                </p>
+
+            </div>
+
+
+            <div class="future-security">
+
+                <div class="future-security-row">
+
+                    <div>
+
+                        <strong>
+                            Email Verification
+                        </strong>
+
+                        <p>
+                            Link and verify an email address.
+                        </p>
+
+                    </div>
+
+                    <span class="feature-status">
+                        Coming Soon
+                    </span>
+
+                </div>
+
+
+                <div class="future-security-row">
+
+                    <div>
+
+                        <strong>
+                            Two-Factor Authentication
+                        </strong>
+
+                        <p>
+                            Protect your account with an
+                            authenticator app.
+                        </p>
+
+                    </div>
+
+                    <span class="feature-status">
+                        Coming Soon
+                    </span>
+
+                </div>
+
+
+                <div class="future-security-row">
+
+                    <div>
+
+                        <strong>
+                            Password Recovery
+                        </strong>
+
+                        <p>
+                            Recover your account if you forget
+                            your password.
+                        </p>
+
+                    </div>
+
+                    <span class="feature-status">
+                        Coming Soon
+                    </span>
+
+                </div>
+
+
+                <div class="future-security-row">
+
+                    <div>
+
+                        <strong>
+                            Session Management
+                        </strong>
+
+                        <p>
+                            View and manage active sign-ins.
+                        </p>
+
+                    </div>
+
+                    <span class="feature-status">
+                        Coming Soon
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             ACCOUNT ACTIONS
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Account Actions</h2>
+
+            </div>
+
+
+            <button
+                id="logout-button"
+                class="account-button"
+                type="button"
+            >
+                Sign Out
+
+            </button>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>
+```
