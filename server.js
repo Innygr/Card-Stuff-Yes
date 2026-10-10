@@ -278,6 +278,26 @@ async function handleApi(req, res, url, player) {
         log(match, player.name + " joined. The battle begins!");
         sendJson(res, 200, { match: view(match, player.id) }); return;
     }
+    if (p[0] === "api" && p[1] === "multiplayer" && p[2] === "matches" && p[3] && p[4] === "leave" && req.method === "POST") {
+        const found = findMatch(p[3].toUpperCase(), player.id);
+        if (found.error) { sendJson(res, found.status, { error: found.error }); return; }
+        const match = found.match;
+        if (match.status === "waiting") {
+            matches.delete(match.id);
+            sendJson(res, 200, { message: "Waiting match cancelled." });
+            return;
+        }
+        if (match.status === "active") {
+            const other = match.players.find(item => item && item.playerId !== player.id);
+            match.status = "finished";
+            match.activePlayerId = null;
+            match.result = other ? other.playerId : "draw";
+            log(match, player.name + " left the match. " + (other ? other.name + " wins by forfeit." : "The match ended."));
+            match.updatedAt = new Date().toISOString();
+        }
+        sendJson(res, 200, { message: "You left the match." });
+        return;
+    }
     if (p[0] === "api" && p[1] === "multiplayer" && p[2] === "matches" && p[3] && p[4] === "action" && req.method === "POST") {
         const found = findMatch(p[3].toUpperCase(), player.id);
         if (found.error) { sendJson(res, found.status, { error: found.error }); return; }
