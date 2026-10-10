@@ -11,6 +11,8 @@
         create: $("create-match-button"),
         refresh: $("refresh-lobby-button"),
         matches: $("matches-list"),
+        joinCodeForm: $("join-code-form"),
+        joinCode: $("join-code"),
         lobby: $("lobby-panel"),
         waiting: $("waiting-panel"),
         waitingCode: $("waiting-match-code"),
@@ -371,6 +373,12 @@
     });
 
     ui.create.addEventListener("click", createMatch);
+    ui.joinCodeForm.addEventListener("submit", event => {
+        event.preventDefault();
+        const code = ui.joinCode.value.trim().toUpperCase();
+        if (!code) return;
+        joinMatch(code);
+    });
     ui.refresh.addEventListener("click", refreshLobby);
     ui.draw.addEventListener("click", () => submitAction("draw"));
     ui.endTurn.addEventListener("click", () => submitAction("end_turn"));
