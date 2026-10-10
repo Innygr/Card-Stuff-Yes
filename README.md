@@ -10,7 +10,7 @@ The turn-based PvP prototype uses Node.js built-in modules only.
 2. Clone the repository and switch to the `Server` branch after this feature is merged.
 3. From the repository folder, run `npm start`.
 4. Open `http://127.0.0.1:6565/multiplayer.html`.
-5. Open that same address in a second browser/device that can reach the server, create a match in one session, and join it from the other.
+5. Open that address in two separate browser sessions on the same computer, create a match in one, and join it from the other. For another device on your local network, start the server with `HOST=0.0.0.0` and use the host computer's LAN address. Do not expose the prototype directly to the public internet; use HTTPS behind a properly configured reverse proxy first.
 
 Run `npm run check` to check the syntax of the multiplayer server and browser client.
 
