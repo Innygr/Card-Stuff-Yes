@@ -79,6 +79,9 @@
 
     async function showLobby() {
         const previousMatch = currentMatch;
+        if (previousMatch && previousMatch.status === "active" && !window.confirm("Leave this active match? It will count as a forfeit.")) {
+            return;
+        }
         stopPolling();
         if (previousMatch && previousMatch.status !== "finished") {
             try {
