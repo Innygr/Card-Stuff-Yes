@@ -34,6 +34,51 @@
     // ========================================================
     // HTML ELEMENTS
     // ========================================================
+    //
+    // The homepage already contains this markup. The in-game
+    // page can omit it; in that case, create it automatically.
+    // ========================================================
+
+    function ensureAlertMarkup() {
+
+        if (document.getElementById("csy-alert")) {
+            return;
+        }
+
+        const panelMarkup = document.createElement("section");
+
+        panelMarkup.id = "csy-alert";
+        panelMarkup.className = "csy-alert";
+        panelMarkup.setAttribute("role", "alert");
+        panelMarkup.setAttribute("aria-live", "assertive");
+        panelMarkup.setAttribute("aria-atomic", "true");
+        panelMarkup.hidden = true;
+
+        panelMarkup.innerHTML = `
+            <div class="csy-alert-header">
+                <strong id="csy-alert-title">SYSTEM ALERT</strong>
+                <button
+                    id="csy-alert-dismiss"
+                    class="csy-alert-dismiss"
+                    type="button"
+                    aria-label="Dismiss alert"
+                >×</button>
+            </div>
+            <p id="csy-alert-message"></p>
+            <div class="csy-alert-actions">
+                <button id="csy-alert-sound" type="button">
+                    Enable alert sounds
+                </button>
+                <button id="csy-alert-stop" type="button">
+                    Stop sound
+                </button>
+            </div>
+        `;
+
+        document.body.prepend(panelMarkup);
+    }
+
+    ensureAlertMarkup();
 
     const panel =
         document.getElementById("csy-alert");
@@ -53,7 +98,6 @@
     const stopButton =
         document.getElementById("csy-alert-stop");
 
-
     if (
         !panel ||
         !title ||
@@ -62,11 +106,9 @@
         !soundButton ||
         !stopButton
     ) {
-
         console.error(
-            "Card Stuff Yes alert HTML is missing."
+            "Card Stuff Yes alert UI could not be initialized."
         );
-
         return;
     }
 
@@ -507,13 +549,16 @@
         }
 
 
-        // Invalidate any previous repeating alarm.
+        // Keep a critical system failure visible if a lower
+        // severity application error occurs afterward.
+        if (currentLevel === 2 && level === 1) {
+            return;
+        }
 
+        // Invalidate any previous repeating alarm.
         alertSequence += 1;
 
-
         stopSound();
-
 
         currentLevel =
             level;
@@ -682,15 +727,152 @@
 
 
     // ========================================================
-    // PUBLIC FUNCTIONS
+    // PUBLIC FUNCTIONS AND EVENT INTEGRATION
+    // ========================================================
+    //
+    // Gameplay modules should call:
+    //   window.reportCsyGameplayError("Card action failed.");
+    //
+    // A trusted system-health monitor should call:
+    //   window.reportCsyCriticalFailure("Game service unavailable.");
+    //
+    // The equivalent events are:
+    //   csy:gameplay-error
+    //   csy:critical-system-failure
+    //
+    // Critical failures are never inferred from an ordinary
+    // network error or from a possible security incident.
     // ========================================================
 
     window.showCsyAlert =
         showAlert;
 
-
     window.clearCsyAlert =
         clearAlert;
 
+    function getErrorMessage(value) {
+        if (value instanceof Error) {
+            return value.message || value.name || "Unknown error";
+        }
+
+        if (value && typeof value.message === "string") {
+            return value.message;
+        }
+
+        if (typeof value === "string") {
+            return value;
+        }
+
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+
+    let lastReportedError = "";
+    let lastReportedErrorAt = 0;
+
+    function reportCsyGameplayError(value) {
+        const detail = getErrorMessage(value) ||
+            "An unexpected application error occurred.";
+        const now = Date.now();
+        const key = "level-1:" + detail;
+
+        // Browser error and unhandled-rejection events can describe
+        // the same failure; avoid showing the exact same alert twice.
+        if (
+            key === lastReportedError &&
+            now - lastReportedErrorAt < 5000
+        ) {
+            return;
+        }
+
+        lastReportedError = key;
+        lastReportedErrorAt = now;
+
+        showAlert(
+            1,
+            "The application encountered an error: " + detail
+        );
+    }
+
+    function reportCsyCriticalFailure(value) {
+        const detail = getErrorMessage(value) ||
+            "A critical system failure was reported.";
+
+        showAlert(
+            2,
+            "Critical system failure: " + detail
+        );
+    }
+
+    window.reportCsyGameplayError =
+        reportCsyGameplayError;
+
+    window.reportCsyCriticalFailure =
+        reportCsyCriticalFailure;
+
+    window.addEventListener(
+        "csy:gameplay-error",
+        (event) => {
+            reportCsyGameplayError(
+                event.detail ?? "A gameplay error was reported."
+            );
+        }
+    );
+
+    window.addEventListener(
+        "csy:critical-system-failure",
+        (event) => {
+            reportCsyCriticalFailure(
+                event.detail ?? "A critical system failure was reported."
+            );
+        }
+    );
+
+    // Uncaught same-origin JavaScript errors are genuine application
+    // failures and should raise Level 1. Ignore generic cross-origin
+    // "Script error." messages because they do not identify our code.
+    window.addEventListener(
+        "error",
+        (event) => {
+            if (!(event instanceof ErrorEvent)) {
+                return;
+            }
+
+            if (
+                event.filename &&
+                !event.filename.startsWith(window.location.origin)
+            ) {
+                return;
+            }
+
+            if (
+                !event.message ||
+                event.message === "Script error."
+            ) {
+                return;
+            }
+
+            reportCsyGameplayError(
+                event.message +
+                (event.filename ? " (" + event.filename + ")" : "") +
+                (event.lineno ? ":" + event.lineno : "")
+            );
+        }
+    );
+
+    // Unhandled promise rejections are also Level 1 unless the
+    // responsible system explicitly reports a critical failure.
+    window.addEventListener(
+        "unhandledrejection",
+        (event) => {
+            reportCsyGameplayError(
+                event.reason ??
+                "An unhandled asynchronous operation failed."
+            );
+        }
+    );
 
 })();
