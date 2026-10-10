@@ -1,0 +1,112 @@
+/* ============================================================
+   CARD STUFF YES — SYSTEM ALERTS
+   ============================================================ */
+
+.csy-alert[hidden] {
+    display: none !important;
+}
+
+.csy-alert {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    z-index: 2000;
+
+    width: min(560px, calc(100% - 24px));
+    padding: 16px;
+
+    transform: translateX(-50%);
+
+    background: var(--color-background-secondary);
+    color: var(--color-text);
+
+    border: 2px solid var(--color-border-light);
+    border-radius: 10px;
+
+    box-shadow: var(--profile-shadow, 0 8px 30px rgba(0, 0, 0, 0.35));
+
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.csy-alert.level-1 {
+    border-color: var(--color-warning-border);
+}
+
+.csy-alert.level-2 {
+    border-color: var(--color-error);
+}
+
+.csy-alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#csy-alert-title {
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.csy-alert.level-1 #csy-alert-title {
+    color: var(--color-warning-text);
+}
+
+.csy-alert.level-2 #csy-alert-title {
+    color: var(--color-error);
+}
+
+#csy-alert-message {
+    margin: 12px 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.csy-alert-dismiss {
+    padding: 2px 8px;
+
+    background: transparent;
+    color: var(--color-text);
+
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.csy-alert-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.csy-alert-actions button {
+    padding: 9px 12px;
+
+    background: var(--color-button);
+    color: var(--color-button-text);
+
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+
+    font: inherit;
+    cursor: pointer;
+}
+
+.csy-alert-actions button:hover,
+.csy-alert-dismiss:hover {
+    border-color: var(--color-link);
+}
+
+.csy-alert button:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .csy-alert {
+        animation: none;
+        transition: none;
+    }
+}
