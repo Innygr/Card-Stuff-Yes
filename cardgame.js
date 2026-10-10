@@ -228,7 +228,13 @@
     function playCard(combatant, target, card, isPlayer) {
         const definition = card.definition;
 
-        if (state.finished || state.locked || state.activeSide !== (isPlayer ? "player" : "opponent")) {
+        // The opponent turn is locked against player input, but the
+        // AI must still be allowed to resolve its own cards.
+        if (
+            state.finished ||
+            (state.locked && isPlayer) ||
+            state.activeSide !== (isPlayer ? "player" : "opponent")
+        ) {
             return false;
         }
 
