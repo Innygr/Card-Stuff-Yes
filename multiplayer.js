@@ -75,14 +75,22 @@
         pollTimer = null;
     }
 
-    function showLobby() {
+    async function showLobby() {
+        const previousMatch = currentMatch;
         stopPolling();
+        if (previousMatch && previousMatch.status !== "finished") {
+            try {
+                await request("/api/multiplayer/matches/" + encodeURIComponent(previousMatch.id) + "/leave", { method: "POST" });
+            } catch (error) {
+                // The match may already have finished or expired.
+            }
+        }
         currentMatch = null;
         ui.lobby.hidden = false;
         ui.waiting.hidden = true;
         ui.battle.hidden = true;
         ui.result.hidden = true;
-        refreshLobby();
+        await refreshLobby();
     }
 
     function showWaiting(match) {
@@ -111,6 +119,20 @@
         pollTimer = window.setInterval(pollMatch, 1800);
     }
 
+    function showFinished(match) {
+        currentMatch = match;
+        stopPolling();
+        ui.battle.hidden = false;
+        ui.lobby.hidden = true;
+        ui.waiting.hidden = true;
+        ui.result.hidden = false;
+        renderMatch(match);
+        const won = match.result === currentPlayer.id;
+        ui.resultHeading.textContent = match.result === "draw" ? "Draw" : won ? "Victory!" : "Defeat";
+        ui.resultMessage.textContent = match.result === "draw" ? "Both players fell at the same time." : won ? "You won the online match!" : "Your opponent won this match.";
+        setStatus("Match complete.", won ? "success" : "");
+    }
+
     async function pollMatch() {
         if (!currentMatch || polling || requestBusy) return;
         polling = true;
@@ -127,17 +149,7 @@
                 if (match.activePlayerId === currentPlayer.id) setStatus("Your turn. Play cards, then end your turn.", "");
                 else setStatus(match.opponent.name + " is taking their turn.", "");
             } else {
-                currentMatch = match;
-                stopPolling();
-                ui.battle.hidden = false;
-                ui.lobby.hidden = true;
-                ui.waiting.hidden = true;
-                ui.result.hidden = false;
-                renderMatch(match);
-                const won = match.result === currentPlayer.id;
-                ui.resultHeading.textContent = match.result === "draw" ? "Draw" : won ? "Victory!" : "Defeat";
-                ui.resultMessage.textContent = match.result === "draw" ? "Both players fell at the same time." : won ? "You won the online match!" : "Your opponent won this match.";
-                setStatus("Match complete.", won ? "success" : "");
+                showFinished(match);
             }
         } catch (error) {
             setConnection(false);
@@ -234,7 +246,7 @@
             currentMatch = data.match;
             renderMatch(currentMatch);
             if (currentMatch.status === "finished") {
-                await pollMatch();
+                showFinished(currentMatch);
             } else if (currentMatch.activePlayerId === currentPlayer.id) {
                 setStatus("Action accepted. Keep playing or end your turn.", "success");
             } else {
