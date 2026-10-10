@@ -51,6 +51,13 @@
                     <h2>Find an opponent</h2>
                 </div>
             </div>
+            <form id="join-code-form" class="join-code-form">
+                <label for="join-code">Or join directly with a match code</label>
+                <div class="inline-form">
+                    <input id="join-code" name="matchCode" maxlength="12" autocomplete="off" placeholder="Enter match code" required>
+                    <button class="button secondary-button" type="submit">Join by code</button>
+                </div>
+            </form>
             <div id="matches-list" class="matches-list">
                 <p class="muted">Loading open matches…</p>
             </div>
