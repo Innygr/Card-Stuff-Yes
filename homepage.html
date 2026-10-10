@@ -75,6 +75,51 @@
     <span id="security-lockdown-updated"></span>
 </div>
 
+  
+<!-- =========================================================
+     CARD STUFF YES — LEVEL 1 AND LEVEL 2 ALERTS
+     ========================================================= -->
+
+<section
+    id="csy-alert"
+    class="csy-alert"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+    hidden
+>
+    <div class="csy-alert-header">
+        <strong id="csy-alert-title">SYSTEM ALERT</strong>
+
+        <button
+            id="csy-alert-dismiss"
+            class="csy-alert-dismiss"
+            type="button"
+            aria-label="Dismiss alert"
+        >
+            ×
+        </button>
+    </div>
+
+    <p id="csy-alert-message"></p>
+
+    <div class="csy-alert-actions">
+        <button
+            id="csy-alert-sound"
+            type="button"
+        >
+            Enable alert sounds
+        </button>
+
+        <button
+            id="csy-alert-stop"
+            type="button"
+        >
+            Stop sound
+        </button>
+    </div>
+</section>
+
     <!-- ========================================================
          GLOBAL LOADING SCREEN
          ========================================================
