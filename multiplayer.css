@@ -81,3 +81,21 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--color-link-
 .turn-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+
+
+.join-code-form {
+    display: grid;
+    gap: 8px;
+    max-width: 620px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+.join-code-form label {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+.online-entry {
+    width: min(calc(100% - 32px), 1180px);
+    margin: 16px auto 0;
+}
