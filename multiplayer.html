@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111111">
+    <title>Online Battle — Card Stuff Yes</title>
+    <link rel="stylesheet" href="./colors.css">
+    <link rel="stylesheet" href="./multiplayer.css">
+    <script src="./multiplayer.js" defer></script>
+</head>
+<body>
+    <header class="online-header">
+        <a class="back-link" href="./cardgame.html">← Solo practice</a>
+        <div>
+            <p class="eyebrow">CARD STUFF YES</p>
+            <h1>Online Battle</h1>
+            <p class="muted">Turn-based player versus player</p>
+        </div>
+        <span id="connection-badge" class="connection-badge">Connecting…</span>
+    </header>
+
+    <main class="online-main">
+        <p id="online-status" class="status-message" role="status" aria-live="polite">Connecting to the game server…</p>
+
+        <section id="lobby-panel" class="panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">PLAYER PROFILE</p>
+                    <h2>Join the lobby</h2>
+                </div>
+                <span id="guest-label" class="muted">Guest</span>
+            </div>
+
+            <form id="name-form" class="name-form">
+                <label for="player-name">Display name</label>
+                <div class="inline-form">
+                    <input id="player-name" name="name" minlength="2" maxlength="20" required autocomplete="nickname" placeholder="Choose a player name">
+                    <button class="button secondary-button" type="submit">Save name</button>
+                </div>
+            </form>
+
+            <div class="lobby-actions">
+                <button id="create-match-button" class="button primary-button" type="button">Create a match</button>
+                <button id="refresh-lobby-button" class="button secondary-button" type="button">Refresh lobby</button>
+            </div>
+
+            <div class="panel-heading list-heading">
+                <div>
+                    <p class="eyebrow">OPEN MATCHES</p>
+                    <h2>Find an opponent</h2>
+                </div>
+            </div>
+            <div id="matches-list" class="matches-list">
+                <p class="muted">Loading open matches…</p>
+            </div>
+        </section>
+
+        <section id="waiting-panel" class="panel" hidden>
+            <p class="eyebrow">MATCH CREATED</p>
+            <h2>Waiting for an opponent</h2>
+            <p class="muted">Share this match code with your opponent:</p>
+            <div class="match-code-row">
+                <strong id="waiting-match-code" class="match-code">------</strong>
+                <button id="copy-code-button" class="button secondary-button" type="button">Copy code</button>
+            </div>
+            <p class="muted">Keep this page open. The match will start when someone joins.</p>
+            <button id="cancel-wait-button" class="button text-button" type="button">Back to lobby</button>
+        </section>
+
+        <section id="battle-panel" hidden>
+            <div class="battle-topline">
+                <div>
+                    <p class="eyebrow">MATCH <span id="active-match-code"></span></p>
+                    <h2 id="turn-heading">Waiting for match state…</h2>
+                </div>
+                <button id="leave-match-button" class="button secondary-button" type="button">Back to lobby</button>
+            </div>
+
+            <div class="battleboard">
+                <article class="combatant">
+                    <p class="eyebrow">OPPONENT</p>
+                    <h3 id="opponent-name">Opponent</h3>
+                    <div class="health-row"><span>Health</span><strong id="opponent-health">30 / 30</strong></div>
+                    <div class="health-track"><span id="opponent-health-fill"></span></div>
+                    <div class="stat-row">
+                        <span>Shield <strong id="opponent-shield">0</strong></span>
+                        <span>Deck <strong id="opponent-deck">60</strong></span>
+                        <span>Hand <strong id="opponent-hand">5</strong></span>
+                    </div>
+                </article>
+
+                <div class="versus">VS</div>
+
+                <article class="combatant you-combatant">
+                    <p class="eyebrow">YOU</p>
+                    <h3 id="you-name">You</h3>
+                    <div class="health-row"><span>Health</span><strong id="you-health">30 / 30</strong></div>
+                    <div class="health-track"><span id="you-health-fill"></span></div>
+                    <div class="stat-row">
+                        <span>Shield <strong id="you-shield">0</strong></span>
+                        <span>Deck <strong id="you-deck">60</strong></span>
+                        <span>Discard <strong id="you-discard">0</strong></span>
+                    </div>
+                    <div class="energy-row"><span>Astral Magik</span><strong id="you-energy">1 / 1</strong></div>
+                </article>
+            </div>
+
+            <section class="hand-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">YOUR HAND</p>
+                        <h2>Play a card</h2>
+                    </div>
+                    <div class="turn-actions">
+                        <button id="online-draw-button" class="button secondary-button" type="button">Draw (1 Magik)</button>
+                        <button id="online-end-turn-button" class="button primary-button" type="button">End turn</button>
+                    </div>
+                </div>
+                <div id="online-hand" class="online-hand"></div>
+            </section>
+
+            <section class="panel log-panel">
+                <div class="panel-heading">
+                    <h2>Battle log</h2>
+                    <span class="muted">Shared match history</span>
+                </div>
+                <ol id="online-log" class="online-log"></ol>
+            </section>
+        </section>
+
+        <section id="result-panel" class="panel result-panel" hidden>
+            <p class="eyebrow">MATCH COMPLETE</p>
+            <h2 id="result-heading">Match finished</h2>
+            <p id="result-message" class="muted"></p>
+            <button id="return-lobby-button" class="button primary-button" type="button">Return to lobby</button>
+        </section>
+
+        <p class="prototype-note">Prototype note: guest names and match state are stored in server memory for now. A server restart clears matches; accounts, persistent match history, and production security hardening are future work.</p>
+    </main>
+</body>
+</html>
