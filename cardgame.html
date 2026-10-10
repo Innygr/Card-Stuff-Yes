@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Stuff Yes Game</title>
+    <meta name="theme-color" content="#111111">
+    <title>Battle — Card Stuff Yes</title>
 
     <link rel="stylesheet" href="./colors.css">
     <link rel="stylesheet" href="./cardgame.css">
@@ -12,12 +13,129 @@
 
     <script src="./mobile.js" defer></script>
     <script src="./homepage-alerts.js" defer></script>
+    <script src="./cardgame.js" defer></script>
 </head>
 <body>
-    <main class="game-placeholder">
-        <h1>Card Stuff Yes Game</h1>
-        <p>The in-game page is ready to display Level 1 application errors and explicitly reported Level 2 critical failures.</p>
-        <p>Game mechanics are not implemented on this page yet.</p>
+    <header class="game-header">
+        <a class="back-link" href="./homepage.html">← Back to Card Stuff Yes</a>
+        <div class="header-copy">
+            <p class="eyebrow">SOLO PLAYTEST</p>
+            <h1>Battle Arena</h1>
+            <p class="subtitle">Play cards, manage Astral Magik, and defeat the rival.</p>
+        </div>
+        <button id="restart-button" class="button secondary-button" type="button">Restart Match</button>
+    </header>
+
+    <main class="game-layout">
+        <p id="game-status" class="game-status" role="status" aria-live="polite">
+            Preparing your starter deck...
+        </p>
+
+        <section class="battle-panel" aria-label="Battlefield">
+            <article class="combatant opponent-combatant">
+                <div class="combatant-heading">
+                    <div>
+                        <p class="eyebrow">RIVAL</p>
+                        <h2>Void Challenger</h2>
+                    </div>
+                    <span class="combatant-icon" aria-hidden="true">☄</span>
+                </div>
+                <div class="health-line">
+                    <span>Health</span>
+                    <strong id="opponent-health-label">30 / 30</strong>
+                </div>
+                <div class="health-track" role="progressbar" id="opponent-health-bar" aria-label="Rival health" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30">
+                    <span id="opponent-health-fill"></span>
+                </div>
+                <div class="combatant-stats">
+                    <span>Shield <strong id="opponent-shield">0</strong></span>
+                    <span>Deck <strong id="opponent-deck-count">60</strong></span>
+                    <span>Hand <strong id="opponent-hand-count">5</strong></span>
+                </div>
+                <p id="opponent-intent" class="intent">Waiting for your move.</p>
+            </article>
+
+            <div class="battle-divider" aria-hidden="true">
+                <span>VS</span>
+            </div>
+
+            <article class="combatant player-combatant">
+                <div class="combatant-heading">
+                    <div>
+                        <p class="eyebrow">YOU</p>
+                        <h2>Your Challenger</h2>
+                    </div>
+                    <span class="combatant-icon" aria-hidden="true">✦</span>
+                </div>
+                <div class="health-line">
+                    <span>Health</span>
+                    <strong id="player-health-label">30 / 30</strong>
+                </div>
+                <div class="health-track" role="progressbar" id="player-health-bar" aria-label="Your health" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30">
+                    <span id="player-health-fill"></span>
+                </div>
+                <div class="combatant-stats">
+                    <span>Shield <strong id="player-shield">0</strong></span>
+                    <span>Deck <strong id="player-deck-count">60</strong></span>
+                    <span>Discard <strong id="player-discard-count">0</strong></span>
+                </div>
+                <div class="resource-line">
+                    <span>Astral Magik</span>
+                    <strong id="player-energy">1 / 1</strong>
+                </div>
+                <div id="energy-pips" class="energy-pips" aria-label="Astral Magik remaining"></div>
+            </article>
+        </section>
+
+        <section class="hand-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR TURN</p>
+                    <h2>Your Hand</h2>
+                    <p id="hand-hint" class="muted">Select a card you can afford to play.</p>
+                </div>
+                <div class="turn-actions">
+                    <button id="draw-button" class="button secondary-button" type="button">Draw (1 Magik)</button>
+                    <button id="end-turn-button" class="button primary-button" type="button">End Turn</button>
+                </div>
+            </div>
+            <div id="player-hand" class="card-grid" aria-label="Cards in your hand"></div>
+        </section>
+
+        <section class="lower-grid">
+            <article class="panel">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <p class="eyebrow">BATTLE LOG</p>
+                        <h2>Recent Actions</h2>
+                    </div>
+                    <button id="clear-log-button" class="button text-button" type="button">Clear</button>
+                </div>
+                <ol id="battle-log" class="battle-log" aria-live="polite"></ol>
+            </article>
+            <article class="panel rules-panel">
+                <p class="eyebrow">PLAYTEST RULES</p>
+                <h2>How this prototype works</h2>
+                <ul>
+                    <li>Start with 30 health and draw five cards.</li>
+                    <li>Gain Astral Magik each turn, up to six.</li>
+                    <li>Attack cards deal damage; guard cards add shield.</li>
+                    <li>Heal restores health, and draw cards refill your hand.</li>
+                    <li>Defeat the rival by reducing its health to zero.</li>
+                </ul>
+                <p class="muted small-note">This is a local solo prototype, not online multiplayer. Match progress is kept in this page only.</p>
+            </article>
+        </section>
     </main>
+
+    <div id="result-overlay" class="result-overlay" hidden>
+        <section class="result-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <p class="eyebrow">MATCH COMPLETE</p>
+            <h2 id="result-title">Victory</h2>
+            <p id="result-message"></p>
+            <button id="play-again-button" class="button primary-button" type="button">Play Again</button>
+            <a class="back-link result-back-link" href="./homepage.html">Back to homepage</a>
+        </section>
+    </div>
 </body>
 </html>

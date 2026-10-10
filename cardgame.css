@@ -1,1 +1,587 @@
-*/ placeholder /*
+/*
+ * Card Stuff Yes — Battle Arena
+ * Colours are supplied by colors.css.
+ */
+
+html {
+    box-sizing: border-box;
+    min-height: 100%;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+button, a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button {
+    font: inherit;
+}
+
+.game-header {
+    width: min(calc(100% - 32px), 1180px);
+    margin: 0 auto;
+    padding: 22px 0;
+    display: grid;
+    grid-template-columns: 1fr minmax(240px, 2fr) 1fr;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.back-link {
+    color: var(--color-link);
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--color-link-hover);
+}
+
+.header-copy {
+    text-align: center;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+}
+
+.header-copy h1 {
+    margin: 0;
+    font-size: clamp(27px, 4vw, 38px);
+}
+
+.subtitle {
+    margin: 7px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+.button {
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 7px;
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--global-transition-speed), border-color var(--global-transition-speed), transform var(--global-transition-speed);
+}
+
+.button:hover:not(:disabled) {
+    background: var(--color-button-hover);
+    border-color: var(--color-link);
+}
+
+.button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+}
+
+.primary-button {
+    border-color: var(--color-link);
+    background: var(--color-background-hover);
+}
+
+.secondary-button {
+    background: var(--color-background-secondary);
+}
+
+.text-button {
+    min-height: 32px;
+    padding: 5px 9px;
+    background: transparent;
+}
+
+.game-layout {
+    width: min(calc(100% - 32px), 1180px);
+    margin: 0 auto;
+    padding: 20px 0 50px;
+}
+
+.game-status {
+    min-height: 22px;
+    margin: 0 0 16px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.game-status.success {
+    color: var(--color-success);
+}
+
+.game-status.error {
+    color: var(--color-error);
+}
+
+.battle-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 16px;
+}
+
+.combatant, .panel {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-background-secondary);
+}
+
+.opponent-combatant {
+    border-top: 3px solid var(--color-error);
+}
+
+.player-combatant {
+    border-top: 3px solid var(--color-rarity-rare);
+}
+
+.combatant-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.combatant-heading h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.combatant-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 50%;
+    background: var(--color-background-tertiary);
+    font-size: 25px;
+}
+
+.health-line, .resource-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.health-track {
+    height: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+}
+
+.health-track span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--color-success);
+    transition: width 180ms ease;
+}
+
+.opponent-combatant .health-track span {
+    background: var(--color-error);
+}
+
+.combatant-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-top: 14px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.combatant-stats strong {
+    color: var(--color-text);
+    margin-left: 3px;
+}
+
+.intent {
+    min-height: 36px;
+    margin: 15px 0 0;
+    padding: 9px 10px;
+    border-radius: 7px;
+    background: var(--color-background-tertiary);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.battle-divider {
+    display: grid;
+    place-items: center;
+}
+
+.battle-divider span {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 50%;
+    background: var(--color-background-tertiary);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.energy-pips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.energy-pip {
+    width: 17px;
+    height: 17px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 50%;
+    background: var(--color-background);
+}
+
+.energy-pip.filled {
+    background: var(--color-rarity-rare);
+    border-color: var(--color-rarity-rare);
+    box-shadow: 0 0 8px var(--color-rarity-rare);
+}
+
+.hand-section {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid var(--color-border);
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 16px;
+}
+
+.section-heading h2, .panel h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.muted {
+    color: var(--color-text-secondary);
+}
+
+.section-heading .muted {
+    margin: 6px 0 0;
+    font-size: 13px;
+}
+
+.turn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.game-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 225px;
+    padding: 13px;
+    text-align: left;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-background-secondary);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: transform var(--global-transition-speed), border-color var(--global-transition-speed), background var(--global-transition-speed);
+}
+
+.game-card:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: var(--color-link);
+    background: var(--color-background-hover);
+}
+
+.game-card:focus-visible, .button:focus-visible {
+    outline: 2px solid var(--color-link-hover);
+    outline-offset: 3px;
+}
+
+.game-card:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+}
+
+.game-card-cost {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--color-rarity-rare);
+    background: var(--color-background);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.game-card-symbol {
+    display: grid;
+    place-items: center;
+    min-height: 72px;
+    margin: 17px 0 10px;
+    border-radius: 8px;
+    background: var(--color-background-tertiary);
+    font-size: 38px;
+}
+
+.game-card-name {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.game-card-type {
+    margin: 5px 0 9px;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.game-card-description {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.game-card-effect {
+    margin-top: auto;
+    padding-top: 10px;
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lower-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 26px;
+}
+
+.compact-heading {
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.battle-log {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    margin: 0;
+    padding-left: 24px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.battle-log li::marker {
+    color: var(--color-text-muted);
+}
+
+.rules-panel ul {
+    padding-left: 20px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.small-note {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.result-overlay[hidden] {
+    display: none !important;
+}
+
+.result-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: var(--color-overlay);
+}
+
+.result-card {
+    width: min(420px, 100%);
+    padding: 28px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 12px;
+    background: var(--color-background-secondary);
+    text-align: center;
+}
+
+.result-card h2 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.result-card p:not(.eyebrow) {
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.result-card .primary-button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.result-back-link {
+    display: inline-block;
+    margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+    .card-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .game-header {
+        width: calc(100% - 20px);
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+    }
+
+    .header-copy {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        text-align: left;
+    }
+
+    .game-header > .back-link {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .game-header > button {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .game-layout {
+        width: calc(100% - 20px);
+        padding-top: 15px;
+    }
+
+    .battle-panel {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .battle-divider {
+        padding: 0;
+    }
+
+    .battle-divider span {
+        width: 32px;
+        height: 32px;
+    }
+
+    .combatant {
+        padding: 15px;
+    }
+
+    .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .turn-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .game-card {
+        min-height: 210px;
+        padding: 10px;
+    }
+
+    .lower-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 380px) {
+    .turn-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .combatant-stats {
+        gap: 8px 12px;
+    }
+
+    .game-card-symbol {
+        min-height: 58px;
+        font-size: 30px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
