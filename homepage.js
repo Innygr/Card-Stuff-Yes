@@ -1067,4 +1067,127 @@
 
     }
 
+// ============================================================
+// SECURITY LOCKDOWN BANNER
+// ============================================================
+//
+// The server enforces lockdown.
+// This script only displays the public security state.
+// ============================================================
+
+async function refreshSecurityLockdownBanner() {
+    const banner =
+        document.getElementById(
+            "security-lockdown-banner"
+        );
+
+    const title =
+        document.getElementById(
+            "security-lockdown-title"
+        );
+
+    const message =
+        document.getElementById(
+            "security-lockdown-message"
+        );
+
+    const updated =
+        document.getElementById(
+            "security-lockdown-updated"
+        );
+
+    if (
+        !banner ||
+        !title ||
+        !message ||
+        !updated
+    ) {
+        return;
+    }
+
+    try {
+        const response =
+            await fetch(
+                "/api/security/status",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            // Don't invent a breach warning when the API fails.
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        const state =
+            String(data.state || "normal");
+
+        if (
+            !data.active ||
+            state === "normal"
+        ) {
+            banner.hidden = true;
+            banner.removeAttribute("data-state");
+            return;
+        }
+
+        const titles = {
+            suspected_breach:
+                "POSSIBLE SECURITY BREACH",
+
+            confirmed_breach:
+                "SECURITY INCIDENT — RESTRICTED MODE",
+
+            recovery:
+                "SECURITY RECOVERY IN PROGRESS"
+        };
+
+        title.textContent =
+            titles[state] ||
+            "SECURITY NOTICE";
+
+        message.textContent =
+            String(
+                data.message ||
+                "Some features are temporarily restricted while we investigate."
+            );
+
+        updated.textContent =
+            data.updatedAt
+                ? `Last updated: ${new Date(
+                    data.updatedAt
+                ).toLocaleString()}`
+                : "";
+
+        banner.dataset.state =
+            state;
+
+        banner.hidden =
+            false;
+
+    } catch (error) {
+        // A network error alone is not proof of a breach.
+        console.error(
+            "Could not check security lockdown status:",
+            error
+        );
+    }
+}
+
+
+// Check immediately, then every 15 seconds.
+refreshSecurityLockdownBanner();
+
+setInterval(
+    refreshSecurityLockdownBanner,
+    15000
+);
 })();
