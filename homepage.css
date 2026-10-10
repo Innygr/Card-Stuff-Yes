@@ -866,4 +866,91 @@ html.reduce-flashing .flash-effect {
 
     }
 
+/* ============================================================
+   SECURITY LOCKDOWN BANNER
+   ============================================================ */
+
+.security-lockdown-banner {
+    width:
+        min(
+            calc(100% - 24px),
+            1000px
+        );
+
+    margin:
+        16px auto 0;
+
+    padding:
+        16px 18px;
+
+    border:
+        1px solid
+        var(--color-warning-border);
+
+    border-left:
+        6px solid
+        var(--color-warning-border);
+
+    border-radius: 8px;
+
+    background:
+        var(--color-warning-background);
+
+    color:
+        var(--color-warning-text);
+}
+
+
+.security-lockdown-banner[hidden] {
+    display: none;
+}
+
+
+.security-lockdown-banner strong {
+    display: block;
+
+    margin-bottom: 6px;
+
+    letter-spacing: 0.04em;
+}
+
+
+.security-lockdown-banner p {
+    margin: 0;
+
+    line-height: 1.5;
+}
+
+
+.security-lockdown-banner span {
+    display: block;
+
+    margin-top: 8px;
+
+    font-size: 12px;
+
+    opacity: 0.85;
+}
+
+
+/* Confirmed security incident */
+
+.security-lockdown-banner[data-state="confirmed_breach"] {
+    border-color:
+        var(--color-error);
+
+    border-left-color:
+        var(--color-error);
+}
+
+
+/* Recovery in progress */
+
+.security-lockdown-banner[data-state="recovery"] {
+    border-color:
+        var(--color-info);
+
+    border-left-color:
+        var(--color-info);
+}
 }
