@@ -267,8 +267,8 @@ async function handleApi(req, res, url, player) {
         if (!match) { sendJson(res, 404, { error: "Match not found." }); return; }
         if (match.status !== "waiting") { sendJson(res, 409, { error: "That match has already started." }); return; }
         if (match.players[0].playerId === player.id) { sendJson(res, 400, { error: "You cannot join your own match." }); return; }
-        if ([...matches.values()].some(other => other.status === "active" && other.players.some(item => item && item.playerId === player.id))) {
-            sendJson(res, 409, { error: "You are already in an active match." }); return;
+        if ([...matches.values()].some(other => other.status !== "finished" && other.players.some(item => item && item.playerId === player.id))) {
+            sendJson(res, 409, { error: "You are already in another match. Leave it before joining this one." }); return;
         }
         match.players[1] = newCombatant(player);
         match.players.forEach(item => draw(item, 5));
@@ -328,7 +328,7 @@ async function handleApi(req, res, url, player) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".ico": "image/x-icon" };
-const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "security=lockdown-api.js"]);
+const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "security=lockdown-api.js", "admin.html", "admin.js"]);
 
 function serveStatic(req, res, pathname) {
     if (req.method !== "GET" && req.method !== "HEAD") { sendJson(res, 405, { error: "Method not allowed." }, { Allow: "GET, HEAD" }); return; }
