@@ -585,3 +585,10 @@ button {
         animation-iteration-count: 1 !important;
     }
 }
+
+
+/* Entry point for the online multiplayer prototype. */
+.online-entry {
+    width: min(calc(100% - 32px), 1180px);
+    margin: 16px auto 0;
+}
