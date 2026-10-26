@@ -496,3 +496,9 @@ test("players and unfinished matches survive a server restart", async () => {
     assert.equal(guestAfterRestart.data.match.status, "active");
     assert.equal(guestAfterRestart.data.match.yourHand.length, 5);
 });
+
+
+test("private multiplayer state snapshot is never served as a static file", async () => {
+    const response = await fetch(baseUrl + "/private-data/multiplayer-state.json");
+    assert.equal(response.status, 404);
+});
