@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - Server
+      - feature/multiplayer-integration-tests
   push:
     branches:
       - Server
