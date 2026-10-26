@@ -494,7 +494,8 @@ test("players and unfinished matches survive a server restart", async () => {
     assert.equal(guestAfterRestart.status, 200);
     assert.equal(guestAfterRestart.data.match.id, matchId);
     assert.equal(guestAfterRestart.data.match.status, "active");
-    assert.equal(guestAfterRestart.data.match.yourHand.length, 5);
+    // The guest starts turn 2 and automatically draws one card.
+    assert.equal(guestAfterRestart.data.match.yourHand.length, 6);
 });
 
 
