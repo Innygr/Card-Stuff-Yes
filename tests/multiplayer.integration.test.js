@@ -378,3 +378,54 @@ test("simultaneous end-turn requests cannot advance two turns", async () => {
     assert.equal(finalView.data.match.turn, 2);
     assert.equal(finalView.data.match.activePlayerId, finalView.data.match.you.playerId);
 });
+
+
+test("current-match endpoint restores only the caller's unfinished match", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+    const stranger = new ApiClient();
+
+    const noMatch = await host.request("/api/multiplayer/current");
+    assert.equal(noMatch.status, 200);
+    assert.equal(noMatch.data.match, null);
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const hostResume = await host.request("/api/multiplayer/current");
+    assert.equal(hostResume.status, 200);
+    assert.equal(hostResume.data.match.id, matchId);
+    assert.equal(hostResume.data.match.status, "waiting");
+
+    const strangerResume = await stranger.request("/api/multiplayer/current");
+    assert.equal(strangerResume.status, 200);
+    assert.equal(strangerResume.data.match, null);
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const guestResume = await guest.request("/api/multiplayer/current");
+    assert.equal(guestResume.status, 200);
+    assert.equal(guestResume.data.match.id, matchId);
+    assert.equal(guestResume.data.match.status, "active");
+    assert.equal(guestResume.data.match.yourHand.length, 5);
+
+    const hostActiveResume = await host.request("/api/multiplayer/current");
+    assert.equal(hostActiveResume.status, 200);
+    assert.equal(hostActiveResume.data.match.id, matchId);
+    assert.equal(hostActiveResume.data.match.status, "active");
+
+    const left = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/leave",
+        { method: "POST" }
+    );
+    assert.equal(left.status, 200);
+
+    const finishedResume = await guest.request("/api/multiplayer/current");
+    assert.equal(finishedResume.status, 200);
+    assert.equal(finishedResume.data.match, null);
+});
