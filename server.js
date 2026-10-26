@@ -122,7 +122,7 @@ function loadState() {
     // snapshot if validation rejected any entries, so corrupt records do not
     // linger on disk and get reconsidered at every restart.
     const expiredChanged = pruneExpiredMatches();
-    if (expiredChanged || matches.size !== snapshot.matches.length) saveState();
+    if (expiredChanged || players.size !== snapshot.players.length || matches.size !== snapshot.matches.length) saveState();
 }
 
 function pruneExpiredMatches(now = Date.now()) {
