@@ -503,3 +503,27 @@ test("private multiplayer state snapshot is never served as a static file", asyn
     const response = await fetch(baseUrl + "/private-data/multiplayer-state.json");
     assert.equal(response.status, 404);
 });
+
+
+test("stale matches are pruned immediately when the server starts", async () => {
+    const host = new ApiClient();
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    const savedMatch = snapshot.matches.find(match => match.id === matchId);
+    assert.ok(savedMatch, "created match should be in the snapshot");
+    savedMatch.updatedAt = new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const resumed = await host.request("/api/multiplayer/current");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.match, null);
+
+    const cleanedSnapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    assert.equal(cleanedSnapshot.matches.some(match => match.id === matchId), false);
+});
