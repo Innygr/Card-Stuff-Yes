@@ -18,6 +18,7 @@ const MAX_HEALTH = 30;
 const MAX_ENERGY = 6;
 const MAX_HAND = 10;
 const COOKIE = "csyPlayerId";
+const MATCH_TTL_MS = 12 * 60 * 60 * 1000;
 const players = new Map();
 const matches = new Map();
 
@@ -92,6 +93,23 @@ function loadState() {
 
         matches.set(match.id, match);
     }
+
+    // Expire old matches before the server accepts requests. Otherwise a stale
+    // snapshot could briefly expose a match until the periodic cleanup runs.
+    if (pruneExpiredMatches()) saveState();
+}
+
+function pruneExpiredMatches(now = Date.now()) {
+    const cutoff = now - MATCH_TTL_MS;
+    let changed = false;
+    for (const [id, match] of matches) {
+        const updatedAt = Date.parse(match.updatedAt || match.createdAt || "");
+        if (!Number.isFinite(updatedAt) || updatedAt < cutoff) {
+            matches.delete(id);
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 const CARDS = [
@@ -466,13 +484,5 @@ const server = http.createServer(async (req, res) => {
 });
 server.listen(PORT, HOST, () => console.log("Card Stuff Yes listening on http://" + HOST + ":" + PORT));
 setInterval(() => {
-    const cutoff = Date.now() - 12 * 60 * 60 * 1000;
-    let changed = false;
-    for (const [id, match] of matches) {
-        if (new Date(match.updatedAt).getTime() < cutoff) {
-            matches.delete(id);
-            changed = true;
-        }
-    }
-    if (changed) saveState();
+    if (pruneExpiredMatches()) saveState();
 }, 15 * 60 * 1000).unref();
