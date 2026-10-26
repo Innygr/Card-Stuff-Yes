@@ -503,3 +503,83 @@ test("private multiplayer state snapshot is never served as a static file", asyn
     const response = await fetch(baseUrl + "/private-data/multiplayer-state.json");
     assert.equal(response.status, 404);
 });
+
+
+test("stale matches are pruned immediately when the server starts", async () => {
+    const host = new ApiClient();
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    const savedMatch = snapshot.matches.find(match => match.id === matchId);
+    assert.ok(savedMatch, "created match should be in the snapshot");
+    savedMatch.updatedAt = new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const resumed = await host.request("/api/multiplayer/current");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.match, null);
+
+    const cleanedSnapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    assert.equal(cleanedSnapshot.matches.some(match => match.id === matchId), false);
+});
+
+
+test("startup rejects a corrupt active match with a missing combatant", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    const savedMatch = snapshot.matches.find(match => match.id === matchId);
+    assert.ok(savedMatch);
+    savedMatch.players[1] = null;
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const hostResume = await host.request("/api/multiplayer/current");
+    assert.equal(hostResume.status, 200);
+    assert.equal(hostResume.data.match, null);
+    const guestResume = await guest.request("/api/multiplayer/current");
+    assert.equal(guestResume.status, 200);
+    assert.equal(guestResume.data.match, null);
+});
+
+test("startup removes invalid player records from the saved snapshot", async () => {
+    const player = new ApiClient();
+    const profile = await player.request("/api/multiplayer/name", {
+        method: "POST", body: { name: "Snapshot Player" }
+    });
+    assert.equal(profile.status, 200);
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    snapshot.players.push({ id: 42, name: "Invalid Player Record" });
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const cleanedSnapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    assert.equal(
+        cleanedSnapshot.players.some(item => item.id === 42),
+        false,
+        "invalid player record should be removed from the persisted snapshot"
+    );
+    const resumed = await player.request("/api/multiplayer/me");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.player.name, "Snapshot Player");
+});
