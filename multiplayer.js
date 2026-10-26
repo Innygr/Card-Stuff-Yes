@@ -402,6 +402,23 @@
         try {
             await loadMe();
             setConnection(true);
+
+            // Restore a waiting or active match after a page refresh. The
+            // server ties this lookup to the existing HttpOnly guest cookie.
+            const current = await request("/api/multiplayer/current");
+            if (current.match) {
+                if (current.match.status === "waiting") {
+                    showWaiting(current.match);
+                    setStatus("Reconnected to your waiting match.", "success");
+                } else {
+                    showBattle(current.match);
+                    setStatus(current.match.activePlayerId === currentPlayer.id
+                        ? "Reconnected. It is your turn."
+                        : "Reconnected. Waiting for your opponent.", "success");
+                }
+                return;
+            }
+
             setStatus("Connected. Create a match or join an open one.", "success");
             await refreshLobby();
         } catch (error) {
