@@ -224,3 +224,86 @@ test("private server source is not served as a static file", async () => {
     const response = await fetch(baseUrl + "/server.js");
     assert.equal(response.status, 404);
 });
+
+
+test("leaving a waiting match cancels it and makes it unavailable", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const left = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/leave",
+        { method: "POST" }
+    );
+    assert.equal(left.status, 200);
+
+    const viewAfterLeave = await host.request("/api/multiplayer/matches/" + matchId);
+    assert.equal(viewAfterLeave.status, 404);
+
+    const lobby = await guest.request("/api/multiplayer/matches");
+    assert.equal(lobby.status, 200);
+    assert.equal(lobby.data.matches.some(match => match.id === matchId), false);
+});
+
+test("leaving an active match awards the opponent a forfeit win", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const hostProfile = await host.request("/api/multiplayer/me");
+    const guestProfile = await guest.request("/api/multiplayer/me");
+
+    const left = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/leave",
+        { method: "POST" }
+    );
+    assert.equal(left.status, 200);
+
+    const guestView = await guest.request("/api/multiplayer/matches/" + matchId);
+    assert.equal(guestView.status, 200);
+    assert.equal(guestView.data.match.status, "finished");
+    assert.equal(guestView.data.match.result, guestProfile.data.player.id);
+    assert.equal(guestView.data.match.activePlayerId, null);
+    assert.match(guestView.data.match.log[0].message, /wins by forfeit/i);
+
+    const actionAfterForfeit = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/action",
+        { method: "POST", body: { type: "end_turn" } }
+    );
+    assert.equal(actionAfterForfeit.status, 409);
+    assert.match(actionAfterForfeit.data.error, /not active/i);
+
+    assert.equal(hostProfile.data.player.id, guestView.data.match.result === hostProfile.data.player.id ? guestView.data.match.result : hostProfile.data.player.id);
+});
+
+test("player names are sanitized and length-limited", async () => {
+    const client = new ApiClient();
+
+    const tooShort = await client.request("/api/multiplayer/name", {
+        method: "POST",
+        body: { name: " <>" }
+    });
+    assert.equal(tooShort.status, 400);
+
+    const updated = await client.request("/api/multiplayer/name", {
+        method: "POST",
+        body: { name: "  <b>Astral   Player</b>  " + "x".repeat(40) }
+    });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.player.name.includes("<"), false);
+    assert.equal(updated.data.player.name.includes(">"), false);
+    assert.ok(updated.data.player.name.length <= 20);
+    assert.match(updated.data.player.name, /^bAstral Playerb/);
+});
