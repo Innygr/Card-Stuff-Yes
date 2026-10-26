@@ -6,6 +6,7 @@ on:
       - Server
       - feature/multiplayer-integration-tests
       - feature/multiplayer-reconnect
+      - feature/multiplayer-persistence
   push:
     branches:
       - Server
