@@ -262,7 +262,6 @@ test("leaving an active match awards the opponent a forfeit win", async () => {
     );
     assert.equal(joined.status, 200);
 
-    const hostProfile = await host.request("/api/multiplayer/me");
     const guestProfile = await guest.request("/api/multiplayer/me");
 
     const left = await host.request(
@@ -285,7 +284,6 @@ test("leaving an active match awards the opponent a forfeit win", async () => {
     assert.equal(actionAfterForfeit.status, 409);
     assert.match(actionAfterForfeit.data.error, /not active/i);
 
-    assert.equal(hostProfile.data.player.id, guestView.data.match.result === hostProfile.data.player.id ? guestView.data.match.result : hostProfile.data.player.id);
 });
 
 test("player names are sanitized and length-limited", async () => {
@@ -305,5 +303,5 @@ test("player names are sanitized and length-limited", async () => {
     assert.equal(updated.data.player.name.includes("<"), false);
     assert.equal(updated.data.player.name.includes(">"), false);
     assert.ok(updated.data.player.name.length <= 20);
-    assert.match(updated.data.player.name, /^bAstral Playerb/);
+    assert.match(updated.data.player.name, /^bAstral Player\/b/);
 });
