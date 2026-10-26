@@ -6,7 +6,7 @@ on:
       - Server
   push:
     branches:
-      - feature/turn-based-multiplayer
+      - Server
 
 jobs:
   syntax:
@@ -20,3 +20,5 @@ jobs:
           node-version: 20
       - name: Check server and multiplayer client syntax
         run: npm run check
+      - name: Run multiplayer API integration tests
+        run: npm test
