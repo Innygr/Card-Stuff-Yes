@@ -108,6 +108,9 @@ test("two guests can create and join a match; turns are enforced", async () => {
     );
     assert.equal(forbiddenView.status, 403);
 
+    const guestProfile = await guest.request("/api/multiplayer/me");
+    assert.equal(guestProfile.status, 200);
+
     const joined = await guest.request(
         "/api/multiplayer/matches/" + created.data.match.id + "/join",
         { method: "POST" }
@@ -137,8 +140,8 @@ test("two guests can create and join a match; turns are enforced", async () => {
     );
     assert.equal(endedTurn.status, 200);
     assert.equal(endedTurn.data.match.turn, 2);
-    assert.equal(endedTurn.data.match.activePlayerId, guest.cookie ? endedTurn.data.match.activePlayerId : "");
-    assert.equal(endedTurn.data.match.opponent.name, "Guest-" + guest.cookie.split("=")[1].slice(0, 4).toUpperCase());
+    assert.equal(endedTurn.data.match.activePlayerId, guestProfile.data.player.id);
+    assert.equal(endedTurn.data.match.opponent.name, guestProfile.data.player.name);
 });
 
 test("server rejects cards not owned by the active player's hand", async () => {
