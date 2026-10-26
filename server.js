@@ -79,17 +79,41 @@ function loadState() {
         }
 
         // A saved hand/deck must only reference known card definitions.
-        const combatantsValid = match.players.every(item => !item || (
-            typeof item.playerId === "string" &&
-            players.has(item.playerId) &&
-            Array.isArray(item.deck) &&
-            Array.isArray(item.hand) &&
-            Array.isArray(item.discard) &&
-            [...item.deck, ...item.hand, ...item.discard].every(card =>
+        const [first, second] = match.players;
+        const statusShapeValid =
+            (match.status === "waiting" && first && !second) ||
+            (match.status === "active" && first && second) ||
+            (match.status === "finished" && first && second);
+        if (!statusShapeValid) continue;
+
+        const playerIds = match.players.filter(Boolean).map(item => item.playerId);
+        if (new Set(playerIds).size !== playerIds.length) continue;
+
+        const combatantsValid = match.players.every(item => {
+            if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
+                !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
+                return false;
+            }
+            const cards = [...item.deck, ...item.hand, ...item.discard];
+            return cards.every(card =>
                 card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
-            )
-        ));
+            );
+        });
         if (!combatantsValid) continue;
+
+        if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
+        if (match.status !== "active" && match.activePlayerId !== null) continue;
+
+        // A card instance can occupy only one zone across the whole match.
+        const instanceIds = match.players
+            .flatMap(item => [...item.deck, ...item.hand, ...item.discard])
+            .map(card => card.instanceId);
+        if (new Set(instanceIds).size !== instanceIds.length) continue;
+
+        const timestampsValid = [match.createdAt, match.updatedAt].every(value =>
+            typeof value === "string" && Number.isFinite(Date.parse(value))
+        );
+        if (!timestampsValid) continue;
 
         matches.set(match.id, match);
     }
