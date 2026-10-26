@@ -527,3 +527,34 @@ test("stale matches are pruned immediately when the server starts", async () => 
     const cleanedSnapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
     assert.equal(cleanedSnapshot.matches.some(match => match.id === matchId), false);
 });
+
+
+test("startup rejects a corrupt active match with a missing combatant", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    const savedMatch = snapshot.matches.find(match => match.id === matchId);
+    assert.ok(savedMatch);
+    savedMatch.players[1] = null;
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const hostResume = await host.request("/api/multiplayer/current");
+    assert.equal(hostResume.status, 200);
+    assert.equal(hostResume.data.match, null);
+    const guestResume = await guest.request("/api/multiplayer/current");
+    assert.equal(guestResume.status, 200);
+    assert.equal(guestResume.data.match, null);
+});
