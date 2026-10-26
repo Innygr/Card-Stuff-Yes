@@ -1,0 +1,223 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const { spawn } = require("node:child_process");
+const { once } = require("node:events");
+const net = require("node:net");
+const path = require("node:path");
+const { after, before, test } = require("node:test");
+
+const ROOT = path.resolve(__dirname, "..");
+let child;
+let baseUrl;
+let serverOutput = "";
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function findFreePort() {
+    const probe = net.createServer();
+    await new Promise((resolve, reject) => {
+        probe.once("error", reject);
+        probe.listen(0, "127.0.0.1", resolve);
+    });
+    const address = probe.address();
+    const port = address.port;
+    await new Promise((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
+    return port;
+}
+
+class ApiClient {
+    constructor() {
+        this.cookie = "";
+    }
+
+    async request(route, { method = "GET", body } = {}) {
+        const headers = {};
+        if (this.cookie) headers.cookie = this.cookie;
+        if (body !== undefined) headers["Content-Type"] = "application/json";
+
+        const response = await fetch(baseUrl + route, {
+            method,
+            headers,
+            body: body === undefined ? undefined : JSON.stringify(body)
+        });
+        const setCookie = response.headers.get("set-cookie");
+        if (setCookie) this.cookie = setCookie.split(";")[0];
+
+        const data = await response.json().catch(() => ({}));
+        return { status: response.status, data };
+    }
+}
+
+async function waitForServer() {
+    const deadline = Date.now() + 8000;
+    while (Date.now() < deadline) {
+        if (child.exitCode !== null) {
+            throw new Error("Server exited before becoming ready. Output: " + serverOutput);
+        }
+        try {
+            const response = await fetch(baseUrl + "/multiplayer.html");
+            if (response.ok) return;
+        } catch {
+            // The server may not have started listening yet.
+        }
+        await sleep(100);
+    }
+    throw new Error("Server did not become ready. Output: " + serverOutput);
+}
+
+before(async () => {
+    const port = await findFreePort();
+    baseUrl = "http://127.0.0.1:" + port;
+    child = spawn(process.execPath, [path.join(ROOT, "server.js")], {
+        cwd: ROOT,
+        env: { ...process.env, HOST: "127.0.0.1", PORT: String(port) },
+        stdio: ["ignore", "pipe", "pipe"]
+    });
+    child.stdout.on("data", chunk => { serverOutput += chunk.toString(); });
+    child.stderr.on("data", chunk => { serverOutput += chunk.toString(); });
+    await waitForServer();
+});
+
+after(async () => {
+    if (!child || child.exitCode !== null) return;
+    child.kill("SIGTERM");
+    await Promise.race([once(child, "exit"), sleep(2000)]);
+    if (child.exitCode === null) child.kill("SIGKILL");
+});
+
+test("two guests can create and join a match; turns are enforced", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const hostProfile = await host.request("/api/multiplayer/name", {
+        method: "POST", body: { name: "Host Player" }
+    });
+    assert.equal(hostProfile.status, 200);
+    assert.equal(hostProfile.data.player.name, "Host Player");
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    assert.equal(created.data.match.status, "waiting");
+    assert.match(created.data.match.id, /^[A-F0-9]{12}$/);
+
+    const forbiddenView = await guest.request(
+        "/api/multiplayer/matches/" + created.data.match.id
+    );
+    assert.equal(forbiddenView.status, 403);
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + created.data.match.id + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+    assert.equal(joined.data.match.status, "active");
+    assert.equal(joined.data.match.yourHand.length, 5);
+    assert.equal(joined.data.match.you.handCount, 5);
+    assert.equal(joined.data.match.opponent.handCount, 5);
+
+    const hostView = await host.request(
+        "/api/multiplayer/matches/" + created.data.match.id
+    );
+    assert.equal(hostView.status, 200);
+    assert.equal(hostView.data.match.activePlayerId, hostView.data.match.you.playerId);
+
+    const outOfTurn = await guest.request(
+        "/api/multiplayer/matches/" + created.data.match.id + "/action",
+        { method: "POST", body: { type: "end_turn" } }
+    );
+    assert.equal(outOfTurn.status, 409);
+    assert.match(outOfTurn.data.error, /not your turn/i);
+
+    const endedTurn = await host.request(
+        "/api/multiplayer/matches/" + created.data.match.id + "/action",
+        { method: "POST", body: { type: "end_turn" } }
+    );
+    assert.equal(endedTurn.status, 200);
+    assert.equal(endedTurn.data.match.turn, 2);
+    assert.equal(endedTurn.data.match.activePlayerId, guest.cookie ? endedTurn.data.match.activePlayerId : "");
+    assert.equal(endedTurn.data.match.opponent.name, "Guest-" + guest.cookie.split("=")[1].slice(0, 4).toUpperCase());
+});
+
+test("server rejects cards not owned by the active player's hand", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const before = await host.request("/api/multiplayer/matches/" + matchId);
+    const energyBefore = before.data.match.you.energy;
+
+    const forgedCard = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/action",
+        { method: "POST", body: { type: "play_card", instanceId: "not-a-real-card-instance" } }
+    );
+    assert.equal(forgedCard.status, 400);
+    assert.match(forgedCard.data.error, /not in your hand/i);
+
+    const afterState = await host.request("/api/multiplayer/matches/" + matchId);
+    assert.equal(afterState.data.match.you.energy, energyBefore);
+    assert.equal(afterState.data.match.you.handCount, before.data.match.you.handCount);
+});
+
+test("a player cannot create or join a second unfinished match", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const first = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(first.status, 201);
+
+    const second = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(second.status, 409);
+
+    const guestMatch = await guest.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(guestMatch.status, 201);
+
+    const joinExisting = await guest.request(
+        "/api/multiplayer/matches/" + first.data.match.id + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joinExisting.status, 409);
+});
+
+test("Magik draw is limited to once per turn", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    const matchId = created.data.match.id;
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const firstDraw = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/action",
+        { method: "POST", body: { type: "draw" } }
+    );
+    assert.equal(firstDraw.status, 200);
+    assert.equal(firstDraw.data.match.you.magik, 0);
+
+    const secondDraw = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/action",
+        { method: "POST", body: { type: "draw" } }
+    );
+    assert.equal(secondDraw.status, 400);
+    assert.match(secondDraw.data.error, /already used/i);
+});
+
+test("private server source is not served as a static file", async () => {
+    const response = await fetch(baseUrl + "/server.js");
+    assert.equal(response.status, 404);
+});
