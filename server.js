@@ -433,8 +433,12 @@ function serveStatic(req, res, pathname) {
     try { decoded = decodeURIComponent(pathname); } catch { sendJson(res, 400, { error: "Invalid URL path." }); return; }
     if (decoded.includes("\\") || decoded.split("/").some(part => part.startsWith("."))) { sendJson(res, 404, { error: "Not found." }); return; }
     const relative = decoded === "/" ? "index.html" : decoded.replace(/^\/+/, "");
-    if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/")) { sendJson(res, 404, { error: "Not found." }); return; }
     const filePath = path.resolve(ROOT, relative);
+    if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/") ||
+        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp") {
+        sendJson(res, 404, { error: "Not found." });
+        return;
+    }
     if (!filePath.startsWith(ROOT + path.sep)) { sendJson(res, 404, { error: "Not found." }); return; }
     const type = MIME[path.extname(filePath).toLowerCase()];
     if (!type) { sendJson(res, 404, { error: "Not found." }); return; }
