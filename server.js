@@ -118,9 +118,11 @@ function loadState() {
         matches.set(match.id, match);
     }
 
-    // Expire old matches before the server accepts requests. Otherwise a stale
-    // snapshot could briefly expose a match until the periodic cleanup runs.
-    if (pruneExpiredMatches()) saveState();
+    // Expire old matches before the server accepts requests. Also rewrite the
+    // snapshot if validation rejected any entries, so corrupt records do not
+    // linger on disk and get reconsidered at every restart.
+    const expiredChanged = pruneExpiredMatches();
+    if (expiredChanged || matches.size !== snapshot.matches.length) saveState();
 }
 
 function pruneExpiredMatches(now = Date.now()) {
