@@ -143,7 +143,7 @@
             <button id="return-lobby-button" class="button primary-button" type="button">Return to lobby</button>
         </section>
 
-        <p class="prototype-note">Prototype note: guest names and match state are stored in server memory for now. A server restart clears matches; accounts, persistent match history, and production security hardening are future work.</p>
+        <p class="prototype-note">Prototype note: guest names and matches are saved in a private server-side snapshot, so active matches can survive a server restart. Refreshing this page restores your unfinished match. Account-based login, database-backed storage, and production security hardening are future work.</p>
     </main>
 </body>
 </html>

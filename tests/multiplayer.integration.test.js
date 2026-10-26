@@ -5,13 +5,17 @@ const http = require("node:http");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
 const net = require("node:net");
+const os = require("node:os");
+const fs = require("node:fs");
 const path = require("node:path");
 const { after, before, test } = require("node:test");
 
 const ROOT = path.resolve(__dirname, "..");
 let child;
 let baseUrl;
+let serverPort;
 let serverOutput = "";
+const stateFile = path.join(os.tmpdir(), "csy-multiplayer-state-" + process.pid + "-" + Date.now() + ".json");
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -108,24 +112,43 @@ async function waitForServer() {
     throw new Error("Server did not become ready. Output: " + serverOutput);
 }
 
-before(async () => {
-    const port = await findFreePort();
-    baseUrl = "http://127.0.0.1:" + port;
+function startServer() {
     child = spawn(process.execPath, [path.join(ROOT, "server.js")], {
         cwd: ROOT,
-        env: { ...process.env, HOST: "127.0.0.1", PORT: String(port) },
+        env: {
+            ...process.env,
+            HOST: "127.0.0.1",
+            PORT: String(serverPort),
+            CSY_STATE_FILE: stateFile
+        },
         stdio: ["ignore", "pipe", "pipe"]
     });
     child.stdout.on("data", chunk => { serverOutput += chunk.toString(); });
     child.stderr.on("data", chunk => { serverOutput += chunk.toString(); });
-    await waitForServer();
+    return waitForServer();
+}
+
+async function stopServer() {
+    if (!child || child.exitCode !== null) return;
+    const exiting = once(child, "exit");
+    child.kill("SIGTERM");
+    await Promise.race([exiting, sleep(2000)]);
+    if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await Promise.race([once(child, "exit"), sleep(1000)]);
+    }
+}
+
+before(async () => {
+    serverPort = await findFreePort();
+    baseUrl = "http://127.0.0.1:" + serverPort;
+    await startServer();
 });
 
 after(async () => {
-    if (!child || child.exitCode !== null) return;
-    child.kill("SIGTERM");
-    await Promise.race([once(child, "exit"), sleep(2000)]);
-    if (child.exitCode === null) child.kill("SIGKILL");
+    await stopServer();
+    fs.rmSync(stateFile, { force: true });
+    fs.rmSync(stateFile + ".tmp", { force: true });
 });
 
 test("two guests can create and join a match; turns are enforced", async () => {
@@ -428,4 +451,55 @@ test("current-match endpoint restores only the caller's unfinished match", async
     const finishedResume = await guest.request("/api/multiplayer/current");
     assert.equal(finishedResume.status, 200);
     assert.equal(finishedResume.data.match, null);
+});
+
+
+test("players and unfinished matches survive a server restart", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const named = await host.request("/api/multiplayer/name", {
+        method: "POST",
+        body: { name: "Persistent Host" }
+    });
+    assert.equal(named.status, 200);
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const endedTurn = await host.request(
+        "/api/multiplayer/matches/" + matchId + "/action",
+        { method: "POST", body: { type: "end_turn" } }
+    );
+    assert.equal(endedTurn.status, 200);
+    assert.equal(endedTurn.data.match.turn, 2);
+
+    await stopServer();
+    await startServer();
+
+    const hostAfterRestart = await host.request("/api/multiplayer/current");
+    assert.equal(hostAfterRestart.status, 200);
+    assert.equal(hostAfterRestart.data.match.id, matchId);
+    assert.equal(hostAfterRestart.data.match.turn, 2);
+    assert.equal(hostAfterRestart.data.match.you.name, "Persistent Host");
+
+    const guestAfterRestart = await guest.request("/api/multiplayer/current");
+    assert.equal(guestAfterRestart.status, 200);
+    assert.equal(guestAfterRestart.data.match.id, matchId);
+    assert.equal(guestAfterRestart.data.match.status, "active");
+    // The guest starts turn 2 and automatically draws one card.
+    assert.equal(guestAfterRestart.data.match.yourHand.length, 6);
+});
+
+
+test("private multiplayer state snapshot is never served as a static file", async () => {
+    const response = await fetch(baseUrl + "/private-data/multiplayer-state.json");
+    assert.equal(response.status, 404);
 });
