@@ -232,6 +232,14 @@ async function handleApi(req, res, url, player) {
     if (url.pathname === "/api/multiplayer/me" && req.method === "GET") {
         sendJson(res, 200, { player: { id: player.id, name: player.name } }); return;
     }
+    if (url.pathname === "/api/multiplayer/current" && req.method === "GET") {
+        const match = [...matches.values()]
+            .filter(item => item.status !== "finished" && item.players.some(combatant => combatant && combatant.playerId === player.id))
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+
+        sendJson(res, 200, { match: match ? view(match, player.id) : null });
+        return;
+    }
     if (url.pathname === "/api/multiplayer/name" && req.method === "POST") {
         let body;
         try { body = await readJson(req); } catch (error) { sendJson(res, 400, { error: error.message }); return; }
