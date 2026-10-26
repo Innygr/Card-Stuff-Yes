@@ -558,3 +558,28 @@ test("startup rejects a corrupt active match with a missing combatant", async ()
     assert.equal(guestResume.status, 200);
     assert.equal(guestResume.data.match, null);
 });
+
+test("startup removes invalid player records from the saved snapshot", async () => {
+    const player = new ApiClient();
+    const profile = await player.request("/api/multiplayer/name", {
+        method: "POST", body: { name: "Snapshot Player" }
+    });
+    assert.equal(profile.status, 200);
+
+    const snapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    snapshot.players.push({ id: 42, name: "Invalid Player Record" });
+    fs.writeFileSync(stateFile, JSON.stringify(snapshot), { mode: 0o600 });
+
+    await stopServer();
+    await startServer();
+
+    const cleanedSnapshot = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+    assert.equal(
+        cleanedSnapshot.players.some(item => item.id === 42),
+        false,
+        "invalid player record should be removed from the persisted snapshot"
+    );
+    const resumed = await player.request("/api/multiplayer/me");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.player.name, "Snapshot Player");
+});
