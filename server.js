@@ -306,6 +306,12 @@ async function handleApi(req, res, url, player) {
         if (match.activePlayerId !== player.id) { sendJson(res, 409, { error: "It is not your turn." }); return; }
         let body;
         try { body = await readJson(req); } catch (error) { sendJson(res, 400, { error: error.message }); return; }
+
+        // Re-check after reading the request body. Another request from this
+        // player may have ended the turn while this request was awaiting I/O.
+        if (match.status !== "active") { sendJson(res, 409, { error: "This match is not active." }); return; }
+        if (match.activePlayerId !== player.id) { sendJson(res, 409, { error: "It is not your turn." }); return; }
+
         const own = combatantFor(match, player.id);
         const opponent = match.players.find(item => item.playerId !== player.id);
         let error = null;
