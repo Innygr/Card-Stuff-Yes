@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const http = require("node:http");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
 const net = require("node:net");
@@ -49,6 +50,45 @@ class ApiClient {
         const data = await response.json().catch(() => ({}));
         return { status: response.status, data };
     }
+}
+
+
+
+function beginPartialAction(client, matchId) {
+    const body = JSON.stringify({ type: "end_turn" });
+    let resolveResult;
+    let rejectResult;
+    const result = new Promise((resolve, reject) => {
+        resolveResult = resolve;
+        rejectResult = reject;
+    });
+    const request = http.request(
+        new URL("/api/multiplayer/matches/" + matchId + "/action", baseUrl),
+        {
+            method: "POST",
+            headers: {
+                Cookie: client.cookie,
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(body)
+            }
+        },
+        response => {
+            let raw = "";
+            response.setEncoding("utf8");
+            response.on("data", chunk => { raw += chunk; });
+            response.on("end", () => {
+                let data = {};
+                try { data = JSON.parse(raw); } catch {}
+                resolveResult({ status: response.statusCode, data });
+            });
+        }
+    );
+    request.on("error", rejectResult);
+    request.write('{"type":');
+    return {
+        finish() { request.end('"end_turn"}'); },
+        result
+    };
 }
 
 async function waitForServer() {
@@ -304,4 +344,37 @@ test("player names are sanitized and length-limited", async () => {
     assert.equal(updated.data.player.name.includes(">"), false);
     assert.ok(updated.data.player.name.length <= 20);
     assert.match(updated.data.player.name, /^bAstral Player\/b/);
+});
+
+
+test("simultaneous end-turn requests cannot advance two turns", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    const joined = await guest.request(
+        "/api/multiplayer/matches/" + matchId + "/join",
+        { method: "POST" }
+    );
+    assert.equal(joined.status, 200);
+
+    const first = beginPartialAction(host, matchId);
+    const second = beginPartialAction(host, matchId);
+
+    // Keep both requests inside readJson() simultaneously, after they have
+    // passed the initial turn check but before either action can execute.
+    await sleep(50);
+    first.finish();
+    second.finish();
+
+    const results = await Promise.all([first.result, second.result]);
+    assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
+
+    const finalView = await guest.request("/api/multiplayer/matches/" + matchId);
+    assert.equal(finalView.status, 200);
+    assert.equal(finalView.data.match.turn, 2);
+    assert.equal(finalView.data.match.activePlayerId, finalView.data.match.you.playerId);
 });
