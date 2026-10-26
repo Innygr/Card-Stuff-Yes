@@ -414,6 +414,11 @@ test("current-match endpoint restores only the caller's unfinished match", async
     assert.equal(guestResume.data.match.status, "active");
     assert.equal(guestResume.data.match.yourHand.length, 5);
 
+    const hostActiveResume = await host.request("/api/multiplayer/current");
+    assert.equal(hostActiveResume.status, 200);
+    assert.equal(hostActiveResume.data.match.id, matchId);
+    assert.equal(hostActiveResume.data.match.status, "active");
+
     const left = await host.request(
         "/api/multiplayer/matches/" + matchId + "/leave",
         { method: "POST" }
