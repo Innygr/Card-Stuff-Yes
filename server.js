@@ -18,6 +18,7 @@ const MAX_HEALTH = 30;
 const MAX_ENERGY = 6;
 const MAX_HAND = 10;
 const COOKIE = "csyPlayerId";
+const MATCH_TTL_MS = 12 * 60 * 60 * 1000;
 const players = new Map();
 const matches = new Map();
 
@@ -78,20 +79,63 @@ function loadState() {
         }
 
         // A saved hand/deck must only reference known card definitions.
-        const combatantsValid = match.players.every(item => !item || (
-            typeof item.playerId === "string" &&
-            players.has(item.playerId) &&
-            Array.isArray(item.deck) &&
-            Array.isArray(item.hand) &&
-            Array.isArray(item.discard) &&
-            [...item.deck, ...item.hand, ...item.discard].every(card =>
+        const [first, second] = match.players;
+        const statusShapeValid =
+            (match.status === "waiting" && first && !second) ||
+            (match.status === "active" && first && second) ||
+            (match.status === "finished" && first && second);
+        if (!statusShapeValid) continue;
+
+        const playerIds = match.players.filter(Boolean).map(item => item.playerId);
+        if (new Set(playerIds).size !== playerIds.length) continue;
+
+        const combatantsValid = match.players.every(item => {
+            if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
+                !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
+                return false;
+            }
+            const cards = [...item.deck, ...item.hand, ...item.discard];
+            return cards.every(card =>
                 card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
-            )
-        ));
+            );
+        });
         if (!combatantsValid) continue;
+
+        if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
+        if (match.status !== "active" && match.activePlayerId !== null) continue;
+
+        // A card instance can occupy only one zone across the whole match.
+        const instanceIds = match.players
+            .flatMap(item => [...item.deck, ...item.hand, ...item.discard])
+            .map(card => card.instanceId);
+        if (new Set(instanceIds).size !== instanceIds.length) continue;
+
+        const timestampsValid = [match.createdAt, match.updatedAt].every(value =>
+            typeof value === "string" && Number.isFinite(Date.parse(value))
+        );
+        if (!timestampsValid) continue;
 
         matches.set(match.id, match);
     }
+
+    // Expire old matches before the server accepts requests. Also rewrite the
+    // snapshot if validation rejected any entries, so corrupt records do not
+    // linger on disk and get reconsidered at every restart.
+    const expiredChanged = pruneExpiredMatches();
+    if (expiredChanged || players.size !== snapshot.players.length || matches.size !== snapshot.matches.length) saveState();
+}
+
+function pruneExpiredMatches(now = Date.now()) {
+    const cutoff = now - MATCH_TTL_MS;
+    let changed = false;
+    for (const [id, match] of matches) {
+        const updatedAt = Date.parse(match.updatedAt || match.createdAt || "");
+        if (!Number.isFinite(updatedAt) || updatedAt < cutoff) {
+            matches.delete(id);
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 const CARDS = [
@@ -466,13 +510,5 @@ const server = http.createServer(async (req, res) => {
 });
 server.listen(PORT, HOST, () => console.log("Card Stuff Yes listening on http://" + HOST + ":" + PORT));
 setInterval(() => {
-    const cutoff = Date.now() - 12 * 60 * 60 * 1000;
-    let changed = false;
-    for (const [id, match] of matches) {
-        if (new Date(match.updatedAt).getTime() < cutoff) {
-            matches.delete(id);
-            changed = true;
-        }
-    }
-    if (changed) saveState();
+    if (pruneExpiredMatches()) saveState();
 }, 15 * 60 * 1000).unref();
