@@ -4,9 +4,13 @@ on:
   pull_request:
     branches:
       - Server
+      - feature/multiplayer-integration-tests
+      - feature/multiplayer-reconnect
+      - feature/multiplayer-persistence
   push:
     branches:
       - Server
+      - feature/multiplayer-persistence
 
 jobs:
   syntax:

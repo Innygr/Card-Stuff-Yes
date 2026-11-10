@@ -18,8 +18,125 @@ const MAX_HEALTH = 30;
 const MAX_ENERGY = 6;
 const MAX_HAND = 10;
 const COOKIE = "csyPlayerId";
+const MATCH_TTL_MS = 12 * 60 * 60 * 1000;
 const players = new Map();
 const matches = new Map();
+
+// Match/player state survives server restarts. Keep the snapshot outside the
+// public site tree and replace it atomically so a crash cannot leave half JSON.
+const STATE_FILE = path.resolve(
+    process.env.CSY_STATE_FILE || path.join(ROOT, "private-data", "multiplayer-state.json")
+);
+
+function saveState() {
+    const snapshot = JSON.stringify({
+        version: 1,
+        savedAt: new Date().toISOString(),
+        players: [...players.values()],
+        matches: [...matches.values()]
+    });
+
+    const temporaryFile = STATE_FILE + ".tmp";
+    try {
+        fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true, mode: 0o700 });
+        fs.writeFileSync(temporaryFile, snapshot, { encoding: "utf8", mode: 0o600 });
+        fs.renameSync(temporaryFile, STATE_FILE);
+    } catch (error) {
+        console.error("Could not persist multiplayer state:", error.message);
+        try { fs.rmSync(temporaryFile, { force: true }); } catch {}
+    }
+}
+
+function loadState() {
+    let snapshot;
+    try {
+        snapshot = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+    } catch (error) {
+        if (error.code !== "ENOENT") {
+            console.error("Could not load multiplayer state:", error.message);
+        }
+        return;
+    }
+
+    if (!snapshot || snapshot.version !== 1 || !Array.isArray(snapshot.players) || !Array.isArray(snapshot.matches)) {
+        console.error("Ignoring invalid multiplayer state snapshot.");
+        return;
+    }
+
+    for (const player of snapshot.players) {
+        if (player && typeof player.id === "string" && typeof player.name === "string") {
+            players.set(player.id, { id: player.id, name: cleanName(player.name) || "Guest" });
+        }
+    }
+
+    for (const match of snapshot.matches) {
+        if (!match || typeof match.id !== "string" ||
+            !["waiting", "active", "finished"].includes(match.status) ||
+            !Array.isArray(match.players) || match.players.length !== 2 ||
+            !Array.isArray(match.log) ||
+            !match.players.some(item => item && players.has(item.playerId))) {
+            continue;
+        }
+
+        // A saved hand/deck must only reference known card definitions.
+        const [first, second] = match.players;
+        const statusShapeValid =
+            (match.status === "waiting" && first && !second) ||
+            (match.status === "active" && first && second) ||
+            (match.status === "finished" && first && second);
+        if (!statusShapeValid) continue;
+
+        const playerIds = match.players.filter(Boolean).map(item => item.playerId);
+        if (new Set(playerIds).size !== playerIds.length) continue;
+
+        const combatantsValid = match.players.every(item => {
+            if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
+                !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
+                return false;
+            }
+            const cards = [...item.deck, ...item.hand, ...item.discard];
+            return cards.every(card =>
+                card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
+            );
+        });
+        if (!combatantsValid) continue;
+
+        if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
+        if (match.status !== "active" && match.activePlayerId !== null) continue;
+
+        // A card instance can occupy only one zone across the whole match.
+        const instanceIds = match.players
+            .flatMap(item => [...item.deck, ...item.hand, ...item.discard])
+            .map(card => card.instanceId);
+        if (new Set(instanceIds).size !== instanceIds.length) continue;
+
+        const timestampsValid = [match.createdAt, match.updatedAt].every(value =>
+            typeof value === "string" && Number.isFinite(Date.parse(value))
+        );
+        if (!timestampsValid) continue;
+
+        matches.set(match.id, match);
+    }
+
+    // Expire old matches before the server accepts requests. Also rewrite the
+    // snapshot if validation rejected any entries, so corrupt records do not
+    // linger on disk and get reconsidered at every restart.
+    const expiredChanged = pruneExpiredMatches();
+    if (expiredChanged || players.size !== snapshot.players.length || matches.size !== snapshot.matches.length) saveState();
+}
+
+function pruneExpiredMatches(now = Date.now()) {
+    const cutoff = now - MATCH_TTL_MS;
+    let changed = false;
+    for (const [id, match] of matches) {
+        const updatedAt = Date.parse(match.updatedAt || match.createdAt || "");
+        if (!Number.isFinite(updatedAt) || updatedAt < cutoff) {
+            matches.delete(id);
+            changed = true;
+        }
+    }
+    return changed;
+}
 
 const CARDS = [
     { id: "spark", name: "Astral Spark", type: "attack", cost: 1, value: 3, symbol: "✦", description: "A quick burst of astral energy.", effect: "Deal 3 damage." },
@@ -39,6 +156,9 @@ const CARDS = [
     { id: "dark-surge", name: "Dark Surge", type: "attack", cost: 3, value: 7, symbol: "◐", description: "A steady hit with extra impact.", effect: "Deal 7 damage and gain 3 shield.", selfShield: 3 }
 ];
 const CARD_BY_ID = new Map(CARDS.map(card => [card.id, card]));
+
+// Load only after card definitions exist, so saved card instances can be checked.
+loadState();
 
 function sendJson(res, status, data, headers = {}) {
     res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...headers });
@@ -84,6 +204,7 @@ function getPlayer(req, res) {
         id = crypto.randomBytes(24).toString("hex");
         player = { id, name: "Guest-" + id.slice(0, 4).toUpperCase() };
         players.set(id, player);
+        saveState();
         const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
         const secure = req.socket.encrypted || proto === "https" ? "; Secure" : "";
         res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000" + secure);
@@ -250,6 +371,7 @@ async function handleApi(req, res, url, player) {
             const own = combatantFor(match, player.id);
             if (own) { own.name = name; match.updatedAt = new Date().toISOString(); }
         }
+        saveState();
         sendJson(res, 200, { player: { id: player.id, name } }); return;
     }
     if (url.pathname === "/api/multiplayer/matches" && req.method === "GET") {
@@ -263,6 +385,7 @@ async function handleApi(req, res, url, player) {
         const match = { id: crypto.randomBytes(6).toString("hex").toUpperCase(), status: "waiting", players: [newCombatant(player), null], activePlayerId: null, turn: 1, result: null, log: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         matches.set(match.id, match);
         log(match, player.name + " created a match. Waiting for another player.");
+        saveState();
         sendJson(res, 201, { match: view(match, player.id) }); return;
     }
     if (p[0] === "api" && p[1] === "multiplayer" && p[2] === "matches" && p[3] && p.length === 4 && req.method === "GET") {
@@ -284,6 +407,7 @@ async function handleApi(req, res, url, player) {
         startTurn(match, match.players[0], false);
         match.updatedAt = new Date().toISOString();
         log(match, player.name + " joined. The battle begins!");
+        saveState();
         sendJson(res, 200, { match: view(match, player.id) }); return;
     }
     if (p[0] === "api" && p[1] === "multiplayer" && p[2] === "matches" && p[3] && p[4] === "leave" && req.method === "POST") {
@@ -292,6 +416,7 @@ async function handleApi(req, res, url, player) {
         const match = found.match;
         if (match.status === "waiting") {
             matches.delete(match.id);
+            saveState();
             sendJson(res, 200, { message: "Waiting match cancelled." });
             return;
         }
@@ -303,6 +428,7 @@ async function handleApi(req, res, url, player) {
             log(match, player.name + " left the match. " + (other ? other.name + " wins by forfeit." : "The match ended."));
             match.updatedAt = new Date().toISOString();
         }
+        saveState();
         sendJson(res, 200, { message: "You left the match." });
         return;
     }
@@ -336,6 +462,7 @@ async function handleApi(req, res, url, player) {
             match.updatedAt = new Date().toISOString();
         } else error = "Unknown action.";
         if (error) { sendJson(res, 400, { error }); return; }
+        saveState();
         sendJson(res, 200, { match: view(match, player.id) }); return;
     }
     sendJson(res, 404, { error: "Multiplayer endpoint not found." });
@@ -350,8 +477,12 @@ function serveStatic(req, res, pathname) {
     try { decoded = decodeURIComponent(pathname); } catch { sendJson(res, 400, { error: "Invalid URL path." }); return; }
     if (decoded.includes("\\") || decoded.split("/").some(part => part.startsWith("."))) { sendJson(res, 404, { error: "Not found." }); return; }
     const relative = decoded === "/" ? "index.html" : decoded.replace(/^\/+/, "");
-    if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/")) { sendJson(res, 404, { error: "Not found." }); return; }
     const filePath = path.resolve(ROOT, relative);
+    if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/") ||
+        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp") {
+        sendJson(res, 404, { error: "Not found." });
+        return;
+    }
     if (!filePath.startsWith(ROOT + path.sep)) { sendJson(res, 404, { error: "Not found." }); return; }
     const type = MIME[path.extname(filePath).toLowerCase()];
     if (!type) { sendJson(res, 404, { error: "Not found." }); return; }
@@ -379,6 +510,5 @@ const server = http.createServer(async (req, res) => {
 });
 server.listen(PORT, HOST, () => console.log("Card Stuff Yes listening on http://" + HOST + ":" + PORT));
 setInterval(() => {
-    const cutoff = Date.now() - 12 * 60 * 60 * 1000;
-    for (const [id, match] of matches) if (new Date(match.updatedAt).getTime() < cutoff) matches.delete(id);
+    if (pruneExpiredMatches()) saveState();
 }, 15 * 60 * 1000).unref();
