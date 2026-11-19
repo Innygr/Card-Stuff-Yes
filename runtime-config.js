@@ -9,7 +9,7 @@
     window.CSY_CONFIG = Object.freeze({
         // Keep gameplay API calls same-origin until cross-subdomain CORS
         // and cookie behavior are enabled and verified in production.
-        apiBaseUrl: "",
+        apiBaseUrl: productionDomain ? "https://api.cardstuffyes.ca" : "",
         routes: Object.freeze({
             home: "https://cardstuffyes.ca/",
             play: "https://play.cardstuffyes.ca/",
