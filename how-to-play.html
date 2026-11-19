@@ -1,0 +1,354 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>How to Play — Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="./colors.css"
+    >
+
+    <style>
+
+        html {
+            box-sizing: border-box;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+
+            min-height: 100vh;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                var(--color-background);
+
+            color:
+                var(--color-text);
+        }
+
+        .page {
+            width: min(
+                100% - 32px,
+                900px
+            );
+
+            margin: 0 auto;
+
+            padding:
+                24px
+                0
+                60px;
+        }
+
+        .back-link {
+            display: inline-block;
+
+            margin-bottom: 30px;
+
+            color:
+                var(--color-link);
+
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color:
+                var(--color-link-hover);
+        }
+
+        header {
+            margin-bottom: 35px;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size:
+                clamp(
+                    32px,
+                    7vw,
+                    48px
+                );
+        }
+
+        .subtitle {
+            margin:
+                10px 0 0;
+
+            color:
+                var(--color-text-secondary);
+
+            font-size: 17px;
+        }
+
+        section {
+            margin-top: 30px;
+
+            padding-top: 25px;
+
+            border-top:
+                1px solid
+                var(--color-border);
+        }
+
+        h2 {
+            margin:
+                0 0 12px;
+
+            font-size: 24px;
+        }
+
+        h3 {
+            margin:
+                22px 0 8px;
+
+            font-size: 18px;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        ul,
+        ol {
+            padding-left: 24px;
+
+            line-height: 1.7;
+        }
+
+        .resource {
+            padding: 18px;
+
+            background:
+                var(--color-background-secondary);
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius: 8px;
+
+            margin-top: 15px;
+        }
+
+        .resource strong {
+            display: block;
+
+            margin-bottom: 6px;
+        }
+
+        .resource span {
+            color:
+                var(--color-text-secondary);
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <main class="page">
+
+        <a
+            class="back-link"
+            href="./homepage.html"
+        >
+            ← Back to Card Stuff Yes
+        </a>
+
+
+        <header>
+
+            <h1>How to Play</h1>
+
+            <p class="subtitle">
+                Learn the basics of Card Stuff Yes.
+            </p>
+
+        </header>
+
+
+        <section>
+
+            <h2>Getting Started</h2>
+
+            <p>
+                Card Stuff Yes is a multiplayer card game where
+                you build a deck, draw cards, manage your resources,
+                and battle your opponent.
+            </p>
+
+            <ol>
+
+                <li>
+                    Create or log into your account.
+                </li>
+
+                <li>
+                    Collect cards from packs.
+                </li>
+
+                <li>
+                    Build your deck.
+                </li>
+
+                <li>
+                    Enter a game.
+                </li>
+
+                <li>
+                    Use your cards and resources to defeat your opponent.
+                </li>
+
+            </ol>
+
+        </section>
+
+
+        <section>
+
+            <h2>Deck Building</h2>
+
+            <p>
+                Your deck contains
+                <strong>60 cards</strong>.
+            </p>
+
+            <p>
+                A base card can normally appear up to
+                <strong>4 times</strong>
+                in a deck.
+            </p>
+
+            <p>
+                Use the Deck Builder to add cards you own
+                and save your deck before entering a battle.
+            </p>
+
+        </section>
+
+
+        <section>
+
+            <h2>Resources</h2>
+
+            <p>
+                Card Stuff Yes uses several different resources.
+                Cards and abilities can require different resources
+                to use.
+            </p>
+
+            <div class="resource">
+                <strong>Magik</strong>
+                <span>
+                    Used for drawing cards.
+                </span>
+            </div>
+
+            <div class="resource">
+                <strong>Astral Magik</strong>
+                <span>
+                    Used to play cards.
+                </span>
+            </div>
+
+            <div class="resource">
+                <strong>Gilded Magik</strong>
+                <span>
+                    Used for effects.
+                </span>
+            </div>
+
+            <div class="resource">
+                <strong>Blood Magik</strong>
+                <span>
+                    Used for special damage effects.
+                    It can provide additional kill or bleed damage.
+                </span>
+            </div>
+
+            <div class="resource">
+                <strong>Dark Magik</strong>
+                <span>
+                    Used for discard-related effects.
+                </span>
+            </div>
+
+        </section>
+
+
+        <section>
+
+            <h2>Cards</h2>
+
+            <p>
+                Cards can have multiple abilities.
+                Each ability can have its own resource cost.
+            </p>
+
+            <p>
+                Card effects, costs, and other gameplay rules
+                are displayed by the game when available.
+            </p>
+
+        </section>
+
+
+        <section>
+
+            <h2>Winning</h2>
+
+            <p>
+                Use your deck, resources, and card abilities
+                to defeat your opponent.
+            </p>
+
+            <p>
+                More detailed battle rules will be added here
+                as the battle system is finalized.
+            </p>
+
+        </section>
+
+
+        <section>
+
+            <h2>More Coming Soon</h2>
+
+            <p>
+                Card Stuff Yes is still being developed.
+                New cards, game modes, social features,
+                and additional mechanics will be added over time.
+            </p>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>
+```

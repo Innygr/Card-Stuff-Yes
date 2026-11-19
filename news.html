@@ -1,0 +1,249 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>News — Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="./colors.css"
+    >
+
+    <style>
+
+        html {
+            box-sizing: border-box;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+
+            min-height: 100vh;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                var(--color-background);
+
+            color:
+                var(--color-text);
+        }
+
+        .page {
+            width: min(
+                100% - 32px,
+                900px
+            );
+
+            margin: 0 auto;
+
+            padding:
+                24px
+                0
+                60px;
+        }
+
+        .back-link {
+            display: inline-block;
+
+            margin-bottom: 30px;
+
+            color:
+                var(--color-link);
+
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color:
+                var(--color-link-hover);
+        }
+
+        header {
+            margin-bottom: 35px;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size:
+                clamp(
+                    32px,
+                    7vw,
+                    48px
+                );
+        }
+
+        .subtitle {
+            margin:
+                10px 0 0;
+
+            color:
+                var(--color-text-secondary);
+
+            font-size: 17px;
+        }
+
+        .news-list {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 18px;
+        }
+
+        .news-item {
+            padding: 22px;
+
+            background:
+                var(--color-background-secondary);
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius: 8px;
+        }
+
+        .news-date {
+            margin: 0 0 7px;
+
+            color:
+                var(--color-text-secondary);
+
+            font-size: 13px;
+        }
+
+        .news-title {
+            margin:
+                0 0 10px;
+
+            font-size: 21px;
+        }
+
+        .news-content {
+            margin: 0;
+
+            color:
+                var(--color-text-secondary);
+
+            line-height: 1.6;
+        }
+
+        .empty-news {
+            padding: 30px;
+
+            text-align: center;
+
+            color:
+                var(--color-text-secondary);
+
+            background:
+                var(--color-background-secondary);
+
+            border:
+                1px solid
+                var(--color-border);
+
+            border-radius: 8px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <main class="page">
+
+        <a
+            class="back-link"
+            href="./homepage.html"
+        >
+            ← Back to Card Stuff Yes
+        </a>
+
+
+        <header>
+
+            <h1>News</h1>
+
+            <p class="subtitle">
+                Updates, announcements, and development news.
+            </p>
+
+        </header>
+
+
+        <section class="news-list">
+
+
+            <!-- =================================================
+                 NEWS ITEM
+                 Copy this block for future announcements.
+                 ================================================= -->
+
+            <article class="news-item">
+
+                <p class="news-date">
+                    Development Update
+                </p>
+
+                <h2 class="news-title">
+                    Card Stuff Yes is in development
+                </h2>
+
+                <p class="news-content">
+                    The game is actively being developed.
+                    New cards, gameplay systems, account features,
+                    and other improvements are being added over time.
+                </p>
+
+            </article>
+
+
+            <article class="news-item">
+
+                <p class="news-date">
+                    Website Update
+                </p>
+
+                <h2 class="news-title">
+                    New information pages
+                </h2>
+
+                <p class="news-content">
+                    The How to Play and News pages are now available
+                    as part of the Card Stuff Yes website.
+                </p>
+
+            </article>
+
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>
+```

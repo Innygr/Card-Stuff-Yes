@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Settings - Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="/colors.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/settings.css"
+    >
+
+    <script
+        src="/settings.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <header class="settings-header">
+
+        <a
+            href="/homepage.html"
+            class="back-link"
+        >
+            ← Back
+        </a>
+
+        <h1>Settings</h1>
+
+        <p>
+            Customize Card Stuff Yes.
+        </p>
+
+    </header>
+
+
+    <main class="settings-container">
+
+
+        <!-- =====================================================
+             GAMEPLAY
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Gameplay</h2>
+
+                <p>
+                    Change how the game behaves.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Animations</span>
+
+                <select
+                    data-setting="animations"
+                >
+
+                    <option value="full">Full</option>
+                    <option value="reduced">Reduced</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Battle Animation Speed</span>
+
+                <select
+                    data-setting="battleAnimationSpeed"
+                >
+
+                    <option value="0.5">0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2">2×</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Card Zoom Behaviour</span>
+
+                <select
+                    data-setting="cardZoomBehaviour"
+                >
+
+                    <option value="hold">Hold</option>
+                    <option value="toggle">Toggle</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Auto-End Turn</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="autoEndTurn"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Confirm Actions</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="confirmActions"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Damage Numbers</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showDamageNumbers"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Resource Changes</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showResourceChanges"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Ability Names</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showAbilityNames"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             GRAPHICS
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Graphics</h2>
+
+                <p>
+                    Control rendering and visual quality.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Graphics Quality</span>
+
+                <select
+                    data-setting="graphicsQuality"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="ultra">Ultra</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Compatibility Mode</span>
+
+                <select
+                    data-setting="compatibilityMode"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="maximumCompatibility">
+                        Maximum Compatibility
+                    </option>
+                    <option value="balanced">
+                        Balanced
+                    </option>
+                    <option value="maximumQuality">
+                        Maximum Quality
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Rendering Engine</span>
+
+                <select
+                    data-setting="renderingEngine"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="webgpu">WebGPU</option>
+                    <option value="webgl2">WebGL 2</option>
+                    <option value="compatibility">
+                        Compatibility
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Texture Quality</span>
+
+                <select
+                    data-setting="textureQuality"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>3D Pack Quality</span>
+
+                <select
+                    data-setting="pack3DQuality"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Pack Display</span>
+
+                <select
+                    data-setting="packDisplay"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="3d">3D Packs</option>
+                    <option value="2d">2D Packs</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>VFX Quality</span>
+
+                <select
+                    data-setting="vfxQuality"
+                >
+
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Particle Effects</span>
+
+                <select
+                    data-setting="particleEffects"
+                >
+
+                    <option value="on">On</option>
+                    <option value="reduced">Reduced</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Screen Effects</span>
+
+                <select
+                    data-setting="screenEffects"
+                >
+
+                    <option value="on">On</option>
+                    <option value="reduced">Reduced</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Shadows</span>
+
+                <select
+                    data-setting="shadows"
+                >
+
+                    <option value="on">On</option>
+                    <option value="low">Low</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Anti-Aliasing</span>
+
+                <select
+                    data-setting="antiAliasing"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="low">Low</option>
+                    <option value="high">High</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Frame Rate Limit</span>
+
+                <select
+                    data-setting="frameRateLimit"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="30">30 FPS</option>
+                    <option value="60">60 FPS</option>
+                    <option value="120">120 FPS</option>
+                    <option value="unlimited">Unlimited</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Resolution Scale</span>
+
+                <select
+                    data-setting="resolutionScale"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="50">50%</option>
+                    <option value="75">75%</option>
+                    <option value="100">100%</option>
+
+                </select>
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             PERFORMANCE
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Performance</h2>
+
+                <p>
+                    Control memory and asset usage.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Memory / Asset Budget</span>
+
+                <select
+                    data-setting="memoryBudget"
+                >
+
+                    <option value="512">512 MB</option>
+                    <option value="768">768 MB</option>
+                    <option value="1024">1 GB</option>
+                    <option value="1536">1.5 GB</option>
+                    <option value="2048">2 GB</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Asset Caching</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="assetCaching"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Keep 3D Assets Cached</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="keep3DAssetsCached"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Background Rendering</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="backgroundRendering"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Performance Mode</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="performanceMode"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Low-Power Mode</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="lowPowerMode"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             AUDIO
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Audio</h2>
+
+                <p>
+                    Control music and sound effects.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Master Volume</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="masterVolume"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Music Volume</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="musicVolume"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>SFX Volume</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="sfxVolume"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Attack SFX Volume</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="attackSfxVolume"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>UI Volume</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="uiVolume"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Card / Pack Sounds</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="cardPackSounds"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Battle Sounds</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="battleSounds"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Mute When Tab Is Unfocused</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="muteWhenUnfocused"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             INTERFACE
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Interface</h2>
+
+                <p>
+                    Customize the game's interface.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>UI Scale</span>
+
+                <select
+                    data-setting="uiScale"
+                >
+
+                    <option value="75">75%</option>
+                    <option value="90">90%</option>
+                    <option value="100">100%</option>
+                    <option value="110">110%</option>
+                    <option value="125">125%</option>
+                    <option value="150">150%</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Compact UI</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="compactUI"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Card IDs</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showCardIDs"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Rarity on Cards</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showRarity"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Illustrator Credit</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showIllustrator"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ACCESSIBILITY
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Accessibility</h2>
+
+                <p>
+                    Make the game easier to see and use.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Reduced Motion</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="reducedMotion"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>High Contrast</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="highContrast"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Colorblind Assistance</span>
+
+                <select
+                    data-setting="colorblindMode"
+                >
+
+                    <option value="off">Off</option>
+                    <option value="protanopia">Protanopia</option>
+                    <option value="deuteranopia">Deuteranopia</option>
+                    <option value="tritanopia">Tritanopia</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Larger Text</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="largerText"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Screen Shake</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="screenShake"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Flashing Effects</span>
+
+                <select
+                    data-setting="flashingEffects"
+                >
+
+                    <option value="on">On</option>
+                    <option value="reduced">Reduced</option>
+                    <option value="off">Off</option>
+
+                </select>
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             NETWORK
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Network</h2>
+
+                <p>
+                    Configure connection behaviour.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Show Ping</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showPing"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Connection Status</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showConnectionStatus"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Reconnect Automatically</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="autoReconnect"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Download Assets Automatically</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="autoDownloadAssets"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             CONTROLS
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Controls</h2>
+
+                <p>
+                    Configure keyboard, touch, and controller input.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Input Device</span>
+
+                <select
+                    data-setting="inputDevice"
+                >
+
+                    <option value="auto">Auto</option>
+                    <option value="keyboard">Keyboard & Mouse</option>
+                    <option value="controller">Controller</option>
+                    <option value="touch">Touch</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Controller Vibration</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="controllerVibration"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Vibration Strength</span>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    data-setting="vibrationStrength"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Mouse Sensitivity</span>
+
+                <input
+                    type="range"
+                    min="25"
+                    max="200"
+                    data-setting="mouseSensitivity"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Gamepad Sensitivity</span>
+
+                <input
+                    type="range"
+                    min="25"
+                    max="200"
+                    data-setting="gamepadSensitivity"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Invert X Axis</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="invertX"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Invert Y Axis</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="invertY"
+                >
+
+            </label>
+
+
+            <button
+                type="button"
+                id="remap-controls-button"
+            >
+                Remap Controls
+            </button>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ACCOUNT / PRIVACY
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Account / Privacy</h2>
+
+                <p>
+                    Control what other players can see and do.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Online Status</span>
+
+                <select
+                    data-setting="onlineStatus"
+                >
+
+                    <option value="online">Online</option>
+                    <option value="away">Away</option>
+                    <option value="invisible">Invisible</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Friend Requests</span>
+
+                <select
+                    data-setting="friendRequests"
+                >
+
+                    <option value="everyone">Everyone</option>
+                    <option value="friendsOfFriends">
+                        Friends of Friends
+                    </option>
+                    <option value="nobody">Nobody</option>
+
+                </select>
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Trade Requests</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="tradeRequests"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Donation Requests</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="donationRequests"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Battle Invites</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="battleInvites"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show ELO to Other Players</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showElo"
+                >
+
+            </label>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ADVANCED
+             ===================================================== -->
+
+        <section class="settings-section">
+
+            <div class="section-heading">
+
+                <h2>Advanced</h2>
+
+                <p>
+                    Troubleshooting and diagnostic options.
+                </p>
+
+            </div>
+
+
+            <label class="setting-row">
+
+                <span>Show FPS</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showFPS"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Debug Information</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showDebug"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Renderer Information</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showRendererInfo"
+                >
+
+            </label>
+
+
+            <label class="setting-row">
+
+                <span>Show Asset / Memory Statistics</span>
+
+                <input
+                    type="checkbox"
+                    data-setting="showAssetStats"
+                >
+
+            </label>
+
+
+            <button
+                type="button"
+                id="clear-cache-button"
+            >
+                Clear Cached Assets
+            </button>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             RESET
+             ===================================================== -->
+
+        <section class="settings-section reset-section">
+
+            <div class="section-heading">
+
+                <h2>Reset</h2>
+
+                <p>
+                    Restore settings to their defaults.
+                </p>
+
+            </div>
+
+
+            <div class="reset-buttons">
+
+                <button
+                    type="button"
+                    id="reset-graphics-button"
+                >
+                    Reset Graphics Settings
+                </button>
+
+
+                <button
+                    type="button"
+                    id="reset-controls-button"
+                >
+                    Reset Controls
+                </button>
+
+
+                <button
+                    type="button"
+                    id="reset-all-button"
+                >
+                    Reset All Settings
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <p
+            id="settings-status"
+            class="settings-status"
+            aria-live="polite"
+        ></p>
+
+    </main>
+
+
+</body>
+
+</html>

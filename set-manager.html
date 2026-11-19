@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Set Manager — Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="./colors.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./set-manager.css"
+    >
+
+    <script
+        src="./set-manager.js"
+        defer
+    ></script>
+
+</head>
+
+
+<body>
+
+    <header class="set-header">
+
+        <a
+            class="back-link"
+            href="./homepage.html"
+        >
+            ← Back
+        </a>
+
+        <h1>Set Manager</h1>
+
+        <p>
+            Create and manage Card Stuff Yes card sets.
+        </p>
+
+    </header>
+
+
+    <main class="set-manager">
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <h2>Set Information</h2>
+
+                <p>
+                    Basic information about this card set.
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <label>
+                    Set ID
+
+                    <input
+                        id="set-id"
+                        type="text"
+                        placeholder="example-set"
+                    >
+                </label>
+
+
+                <label>
+                    Set Name
+
+                    <input
+                        id="set-name"
+                        type="text"
+                        placeholder="Example Set"
+                    >
+                </label>
+
+
+                <label>
+                    Set Version
+
+                    <input
+                        id="set-version"
+                        type="text"
+                        value="1.0.0"
+                    >
+                </label>
+
+
+                <label>
+                    Release Status
+
+                    <select id="set-status">
+
+                        <option value="development">
+                            Development
+                        </option>
+
+                        <option value="testing">
+                            Testing
+                        </option>
+
+                        <option value="released">
+                            Released
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Cards</h2>
+
+                    <p id="card-count">
+                        0 cards
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="add-card-button"
+                    type="button"
+                >
+                    + Add Card
+                </button>
+
+            </div>
+
+
+            <div
+                id="card-list"
+                class="card-list"
+            ></div>
+
+            <p
+                id="empty-message"
+                class="empty-message"
+            >
+                No cards have been added yet.
+            </p>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <h2>Import / Export</h2>
+
+                <p>
+                    Save the current set as JSON or load an existing set.
+                </p>
+
+            </div>
+
+
+            <div class="action-row">
+
+                <button
+                    id="export-button"
+                    type="button"
+                >
+                    Export JSON
+                </button>
+
+
+                <label class="file-button">
+
+                    Import JSON
+
+                    <input
+                        id="import-file"
+                        type="file"
+                        accept=".json,application/json"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <p
+                id="status-message"
+                class="status-message"
+            ></p>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         CARD EDITOR
+         ========================================================= -->
+
+    <div
+        id="card-editor"
+        class="modal hidden"
+    >
+
+        <div
+            class="modal-background"
+            data-close-editor
+        ></div>
+
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2 id="editor-title">
+                    Add Card
+                </h2>
+
+                <button
+                    id="close-editor"
+                    type="button"
+                    class="icon-button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="card-form">
+
+                <label>
+                    Card ID
+
+                    <input
+                        id="card-id"
+                        type="text"
+                        required
+                        placeholder="example-card-001"
+                    >
+                </label>
+
+
+                <label>
+                    Card Name
+
+                    <input
+                        id="card-name"
+                        type="text"
+                        required
+                        placeholder="Example Card"
+                    >
+                </label>
+
+
+                <div class="form-grid">
+
+                    <label>
+                        Type
+
+                        <select id="card-type">
+
+                            <option value="normal">
+                                Normal
+                            </option>
+
+                            <option value="creature">
+                                Creature
+                            </option>
+
+                            <option value="spell">
+                                Spell
+                            </option>
+
+                            <option value="effect">
+                                Effect
+                            </option>
+
+                            <option value="special">
+                                Special
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+                        Rarity
+
+                        <select id="card-rarity">
+
+                            <option value="common">
+                                Common
+                            </option>
+
+                            <option value="uncommon">
+                                Uncommon
+                            </option>
+
+                            <option value="rare">
+                                Rare
+                            </option>
+
+                            <option value="epic">
+                                Epic
+                            </option>
+
+                            <option value="legendary">
+                                Legendary
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+
+                <label>
+                    Artwork Path
+
+                    <input
+                        id="card-art"
+                        type="text"
+                        placeholder="./assets/cards/example.png"
+                    >
+                </label>
+
+
+                <label>
+                    Description
+
+                    <textarea
+                        id="card-description"
+                        rows="4"
+                        placeholder="What does this card do?"
+                    ></textarea>
+
+                </label>
+
+
+                <div class="form-grid">
+
+                    <label>
+                        Health
+
+                        <input
+                            id="card-health"
+                            type="number"
+                            min="0"
+                            value="0"
+                        >
+                    </label>
+
+
+                    <label>
+                        Attack
+
+                        <input
+                            id="card-attack"
+                            type="number"
+                            min="0"
+                            value="0"
+                        >
+                    </label>
+
+                </div>
+
+
+                <div class="abilities-heading">
+
+                    <div>
+
+                        <h3>Abilities</h3>
+
+                        <p>
+                            Each ability can have its own resource cost.
+                        </p>
+
+                    </div>
+
+                    <button
+                        id="add-ability-button"
+                        type="button"
+                    >
+                        + Ability
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="ability-list"
+                    class="ability-list"
+                ></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        id="cancel-card"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Save Card
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Stuff Yes</title>
+</head>
+
+<body>
+
+    <h1>Card Stuff Yes</h1>
+
+    <h2>Account</h2>
+
+    <input
+        id="username"
+        type="text"
+        placeholder="Username"
+        autocomplete="username"
+    >
+
+    <br><br>
+
+    <input
+        id="password"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+    >
+
+    <br><br>
+
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Sign In</button>
+
+    <h3>Result</h3>
+    <pre id="result">Not signed in.</pre>
+
+    <script>
+
+        async function register() {
+            const username =
+                document.getElementById("username").value;
+
+            const password =
+                document.getElementById("password").value;
+
+            if (!username || !password) {
+                showResult("Please enter a username and password.");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    "/api/auth/register",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(
+                        "Account created!\n\n" +
+                        JSON.stringify(data, null, 2)
+                    );
+                } else {
+                    showResult(
+                        "Registration failed:\n\n" +
+                        (data.error || "Unknown error")
+                    );
+                }
+
+            } catch (error) {
+                showResult(
+                    "Could not connect to the server:\n\n" +
+                    error
+                );
+            }
+        }
+
+
+        async function login() {
+            const username =
+                document.getElementById("username").value;
+
+            const password =
+                document.getElementById("password").value;
+
+            if (!username || !password) {
+                showResult("Please enter a username and password.");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    "/api/auth/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(
+                        "Signed in!\n\n" +
+                        JSON.stringify(data, null, 2)
+                    );
+                } else {
+                    showResult(
+                        "Sign in failed:\n\n" +
+                        (data.error || "Unknown error")
+                    );
+                }
+
+            } catch (error) {
+                showResult(
+                    "Could not connect to the server:\n\n" +
+                    error
+                );
+            }
+        }
+
+
+        function showResult(message) {
+            document.getElementById("result").textContent = message;
+        }
+
+    </script>
+
+</body>
+</html>

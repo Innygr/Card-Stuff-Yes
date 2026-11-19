@@ -1,0 +1,21 @@
+<!-- admin.html --> <!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0" > <title>Admin - Card Stuff Yes</title> <link rel="stylesheet" href="./colors.css" > <link rel="stylesheet" href="./admin.css" > <script src="./admin.js" defer ></script> </head> <body> <header class="admin-header"> <div> <a class="back-link" href="./homepage.html" > ← Back to Card Stuff Yes </a> <h1>Admin Panel</h1> <p id="admin-identity"> Loading admin account... </p> </div> <button id="logout-button" class="admin-button" type="button" > Log Out </button> </header> <main class="admin-container"> <p id="admin-status" class="status-message" aria-live="polite" ></p> <!-- ===================================================== PLAYERS ===================================================== --> <section class="admin-section"> <div class="section-heading"> <h2>Players</h2> <p> Manage player ranks and permissions. </p> </div> <div id="players-list" class="players-list" > <p class="loading-text"> Loading players... </p> </div> </section> <!-- ===================================================== NEWS ===================================================== --> <section class="admin-section"> <div class="section-heading"> <h2>News Manager</h2> <p> Create and manage Card Stuff Yes news posts. </p> </div> <form id="news-form" class="news-form" > <input id="news-id" type="hidden" > <label class="form-label" for="news-title" > Title </label> <input id="news-title" class="form-input" type="text" required > <label class="form-label" for="news-summary" > Summary </label> <input id="news-summary" class="form-input" type="text" > <label class="form-label" for="news-content" > Content </label> <textarea id="news-content" class="form-input news-content-input" rows="8" required ></textarea> <label class="checkbox-label"> <input id="news-published" type="checkbox" > Published </label> <label class="checkbox-label"> <input id="news-featured" type="checkbox" > Featured </label> <div class="form-actions"> <button class="admin-button" type="submit" > Save News Post </button> <button id="cancel-news-button" class="admin-button secondary-button" type="button" > Clear </button> </div> </form> <div id="news-list" class="news-list" > <p class="loading-text"> Loading news... </p> </div> </section> 
+<section class="admin-section" id="server-logs-section">
+  <div class="section-heading">
+    <h2>Server Logs</h2>
+    <p>Recent application container output. Visible to owner and admin accounts only.</p>
+  </div>
+  <div class="server-logs-toolbar">
+    <label for="server-logs-filter">Filter</label>
+    <select id="server-logs-filter" class="form-input">
+      <option value="all">All logs</option>
+      <option value="error">Errors</option>
+      <option value="warning">Warnings</option>
+    </select>
+    <button id="server-logs-refresh" class="admin-button" type="button">Refresh</button>
+    <button id="server-logs-copy" class="admin-button secondary-button" type="button">Copy</button>
+    <button id="server-logs-download" class="admin-button secondary-button" type="button">Download</button>
+  </div>
+  <p id="server-logs-updated" class="loading-text" aria-live="polite">Waiting for logs...</p>
+  <pre id="server-logs-output" class="server-logs-output" aria-live="polite">Loading...</pre>
+</section>
+</main> </body> </html>
