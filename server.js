@@ -203,20 +203,30 @@ function readJson(req) {
     return new Promise((resolve, reject) => {
         let body = "";
         let size = 0;
+        let failed = false;
+
         req.on("data", chunk => {
+            if (failed) return;
             size += chunk.length;
             if (size > 16384) {
+                failed = true;
                 reject(new Error("Request body is too large."));
-                req.destroy();
+                // Keep consuming the request so the server can return a 400
+                // response instead of destroying the socket mid-response.
                 return;
             }
             body += chunk.toString("utf8");
         });
+
         req.on("end", () => {
+            if (failed) return;
             if (!body.trim()) return resolve({});
             try { resolve(JSON.parse(body)); } catch { reject(new Error("Request body must be valid JSON.")); }
         });
-        req.on("error", reject);
+
+        req.on("error", error => {
+            if (!failed) reject(error);
+        });
     });
 }
 
@@ -543,7 +553,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
-            (req.method === "GET" || req.method === "HEAD")) {
+            req.method === "GET") {
             sendJson(res, 200, {
                 ok: true,
                 online: true,
