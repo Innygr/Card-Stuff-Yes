@@ -9,12 +9,19 @@ Docker socket or permission to execute host commands.
 Set `CSY_ADMIN_USERS` in the deployment environment to a JSON array. Each entry has
 `username`, `rank` (`owner` or `admin`), and a scrypt `passwordHash`.
 
-Generate a hash on the Ubuntu host with `node scripts/hash-admin-password.js`.
+Generate a hash on the Ubuntu host with a hidden terminal prompt:
+
+```bash
+read -s -p "New admin password: " CSY_NEW_ADMIN_PASSWORD; echo
+printf '%s' "$CSY_NEW_ADMIN_PASSWORD" | node scripts/hash-admin-password.js
+unset CSY_NEW_ADMIN_PASSWORD
+```
+
 Use a password of at least 12 characters. Configure the variable in the deployment's
 private environment file; do not commit credentials or hashes to Git. Example shape:
 
 ```json
-[{"username":"your-owner-login","rank":"owner","passwordHash":"scrypt$SALT_HEX$HASH_HEX"}]
+[{"username":"your-owner-login","rank":"owner","passwordHash":"scrypt:SALT_HEX:HASH_HEX"}]
 ```
 
 The login cookie is HttpOnly, SameSite=Strict, and expires after eight hours. Sessions
