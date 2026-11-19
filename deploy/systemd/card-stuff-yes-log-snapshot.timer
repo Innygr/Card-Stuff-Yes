@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Card Stuff Yes read-only log snapshot
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=card-stuff-yes-log-snapshot.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

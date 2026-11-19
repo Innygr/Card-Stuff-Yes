@@ -4,6 +4,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -518,7 +519,7 @@ async function handleApi(req, res, url, player) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".ico": "image/x-icon" };
-const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "server-set-manager-module.js", "security=lockdown-api.js", "admin.html", "admin.js"]);
+const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
 
 function serveStatic(req, res, pathname) {
     if (req.method !== "GET" && req.method !== "HEAD") { sendJson(res, 405, { error: "Method not allowed." }, { Allow: "GET, HEAD" }); return; }
@@ -604,6 +605,7 @@ const server = http.createServer(async (req, res) => {
         if (!applyDomainRouting(req, res, url)) return;
 
         if (url.pathname.startsWith("/api/")) {
+            if (await handleAdminLogs(req, res, url)) return;
             if (!applyCors(req, res)) {
                 sendJson(res, 403, { error: "Origin is not allowed." });
                 return;
@@ -636,6 +638,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
         if (url.pathname.startsWith("/api/")) { sendJson(res, 404, { error: "API endpoint not implemented on this server." }); return; }
+        if (serveAdminPage(req, res, url.pathname)) return;
         serveStatic(req, res, url.pathname);
     } catch (error) {
         console.error("Request failed:", error);
