@@ -30,7 +30,14 @@
             home: "https://cardstuffyes.ca/",
             play: "https://play.cardstuffyes.ca/",
             pvp: "https://pvp.cardstuffyes.ca/",
-            cards: "https://cards.cardstuffyes.ca/"
+            cards: "https://cards.cardstuffyes.ca/",
+            decks: "https://decks.cardstuffyes.ca/",
+            account: "https://account.cardstuffyes.ca/",
+            profile: "https://profile.cardstuffyes.ca/",
+            settings: "https://settings.cardstuffyes.ca/",
+            news: "https://news.cardstuffyes.ca/",
+            help: "https://help.cardstuffyes.ca/",
+            admin: "https://admin.cardstuffyes.ca/"
         })
     });
 })();
