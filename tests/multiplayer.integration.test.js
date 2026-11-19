@@ -283,9 +283,11 @@ test("Magik draw is limited to once per turn", async () => {
     assert.match(secondDraw.data.error, /already used/i);
 });
 
-test("private server source is not served as a static file", async () => {
-    const response = await fetch(baseUrl + "/server.js");
-    assert.equal(response.status, 404);
+test("private server-side source files are not served as static files", async () => {
+    for (const file of ["/server.js", "/server-set-manager-module.js", "/admin-server-patch.js"]) {
+        const response = await fetch(baseUrl + file);
+        assert.equal(response.status, 404, file + " should not be publicly served");
+    }
 });
 
 
