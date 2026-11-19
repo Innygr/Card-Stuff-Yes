@@ -16,6 +16,7 @@ on:
   push:
     branches:
       - Server
+      - feature/docker-ghcr
     paths:
       - "server.js"
       - "multiplayer.js"
