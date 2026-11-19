@@ -10,6 +10,8 @@ services:
       HOST: 0.0.0.0
       PORT: 6565
       CSY_STATE_FILE: /app/private-data/multiplayer-state.json
+      CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-}
+      CSY_COOKIE_SAMESITE: ${CSY_COOKIE_SAMESITE:-Lax}
 
     ports:
       - "6565:6565"
