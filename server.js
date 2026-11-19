@@ -148,23 +148,28 @@ function pruneExpiredMatches(now = Date.now()) {
     return changed;
 }
 
-const CARDS = [
-    { id: "spark", name: "Astral Spark", type: "attack", cost: 1, value: 3, symbol: "✦", description: "A quick burst of astral energy.", effect: "Deal 3 damage." },
-    { id: "flare", name: "Solar Flare", type: "attack", cost: 2, value: 6, symbol: "☀", description: "A concentrated blast of light.", effect: "Deal 6 damage." },
-    { id: "void-lance", name: "Void Lance", type: "attack", cost: 3, value: 9, symbol: "➶", description: "Pierce through the rival's guard.", effect: "Deal 9 damage." },
-    { id: "meteor", name: "Falling Meteor", type: "attack", cost: 4, value: 13, symbol: "☄", description: "A heavy strike from the sky.", effect: "Deal 13 damage." },
-    { id: "nova", name: "Nova Burst", type: "attack", cost: 5, value: 18, symbol: "✹", description: "Spend big for a huge hit.", effect: "Deal 18 damage." },
-    { id: "guard", name: "Astral Guard", type: "guard", cost: 1, value: 4, symbol: "⬡", description: "Shape energy into a shield.", effect: "Gain 4 shield." },
-    { id: "wall", name: "Prism Wall", type: "guard", cost: 2, value: 8, symbol: "▥", description: "A sturdy protective barrier.", effect: "Gain 8 shield." },
-    { id: "fortress", name: "Crystal Fortress", type: "guard", cost: 4, value: 14, symbol: "◈", description: "Brace for the rival's next turn.", effect: "Gain 14 shield." },
-    { id: "mend", name: "Gentle Mend", type: "heal", cost: 1, value: 4, symbol: "✚", description: "Recover a little health.", effect: "Restore 4 health." },
-    { id: "renew", name: "Renewal", type: "heal", cost: 3, value: 9, symbol: "❈", description: "Recover from a rough round.", effect: "Restore 9 health." },
-    { id: "lifebloom", name: "Life Bloom", type: "heal", cost: 4, value: 13, symbol: "❋", description: "A powerful wave of restoration.", effect: "Restore 13 health." },
-    { id: "insight", name: "Magik Insight", type: "draw", cost: 1, value: 2, symbol: "⌕", description: "Find two more options.", effect: "Draw 2 cards." },
-    { id: "study", name: "Deep Study", type: "draw", cost: 2, value: 3, symbol: "⌘", description: "Look deeper into your deck.", effect: "Draw 3 cards." },
-    { id: "blood-price", name: "Blood Price", type: "attack", cost: 2, value: 8, symbol: "♦", description: "A risky, forceful hit.", effect: "Deal 8 damage; lose 2 health.", selfDamage: 2 },
-    { id: "dark-surge", name: "Dark Surge", type: "attack", cost: 3, value: 7, symbol: "◐", description: "A steady hit with extra impact.", effect: "Deal 7 damage and gain 3 shield.", selfShield: 3 }
-];
+let CARDS;
+try {
+    const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
+    const validTypes = new Set(["attack", "guard", "heal", "draw"]);
+    if (!Array.isArray(catalog) || catalog.length === 0) throw new Error("cards.json must contain at least one card.");
+    const ids = new Set();
+    for (const card of catalog) {
+        if (!card || typeof card.id !== "string" || !/^[a-z0-9-]+$/.test(card.id) ||
+            ids.has(card.id) || typeof card.name !== "string" ||
+            !validTypes.has(card.type) || !Number.isInteger(card.cost) || card.cost < 0 ||
+            !Number.isInteger(card.value) || card.value < 0 ||
+            typeof card.symbol !== "string" || typeof card.description !== "string" ||
+            typeof card.effect !== "string") {
+            throw new Error("Invalid or duplicate card definition in cards.json.");
+        }
+        ids.add(card.id);
+    }
+    CARDS = catalog;
+} catch (error) {
+    console.error("Card catalog could not be loaded:", error.message);
+    process.exit(1);
+}
 const CARD_BY_ID = new Map(CARDS.map(card => [card.id, card]));
 
 // Load only after card definitions exist, so saved card instances can be checked.
@@ -560,6 +565,11 @@ const server = http.createServer(async (req, res) => {
                 service: "card-stuff-yes-api",
                 timestamp: new Date().toISOString()
             });
+            return;
+        }
+
+        if (url.pathname === "/api/cards" && req.method === "GET") {
+            sendJson(res, 200, { cards: CARDS, count: CARDS.length });
             return;
         }
 
