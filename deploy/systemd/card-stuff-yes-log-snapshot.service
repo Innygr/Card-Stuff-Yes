@@ -1,0 +1,9 @@
+[Unit]
+Description=Create a bounded Card Stuff Yes container log snapshot
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/card-stuff-yes-log-snapshot
+User=root
