@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 "use strict";
 const crypto = require("node:crypto");
-const readline = require("node:readline");
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-rl.question("Password for new Card Stuff Yes admin (input is visible): ", password => {
-  rl.close();
+let password = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => { password += chunk; if (password.length > 256) process.exit(1); });
+process.stdin.on("end", () => {
+  password = password.replace(/[\r\n]+$/, "");
   if (password.length < 12 || password.length > 256) {
-    console.error("Use a password between 12 and 256 characters.");
+    console.error("Password must be between 12 and 256 characters.");
     process.exitCode = 1;
     return;
   }
   const salt = crypto.randomBytes(16);
   const hash = crypto.scryptSync(password, salt, 64);
-  console.log("scrypt$" + salt.toString("hex") + "$" + hash.toString("hex"));
+  console.log("scrypt:" + salt.toString("hex") + ":" + hash.toString("hex"));
+  password = "";
 });
