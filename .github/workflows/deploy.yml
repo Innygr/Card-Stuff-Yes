@@ -2,6 +2,8 @@ name: Build and Deploy Pages
 
 on:
   push:
+    branches:
+      - Server
   workflow_dispatch:
 
 permissions:
@@ -29,9 +31,9 @@ jobs:
 
       - name: Build
         run: |
-          echo "Building Server branch..."
-          # Static site: nothing to compile.
-          # Put any build commands here if you add one later.
+          echo "Building the current Server-hosted compatibility site..."
+          # Deployment stays on Server until the frontend migration to main
+          # is complete and the Main deployment has been verified.
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
