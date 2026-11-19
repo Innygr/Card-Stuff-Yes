@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+tests
+private-data
+logs
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+npm-debug.log*
+Dockerfile*
+compose*.yaml
+compose*.yml
