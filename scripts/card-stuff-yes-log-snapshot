@@ -5,10 +5,15 @@ OUT_DIR="/opt/Card-Stuff-Yes/private-logs"
 TMP_FILE="$OUT_DIR/card-stuff-yes.log.tmp"
 FINAL_FILE="$OUT_DIR/card-stuff-yes.log"
 install -d -m 0755 "$OUT_DIR"
-if docker inspect "$APP_CONTAINER" >/dev/null 2>&1; then
-  docker logs --since 24h --tail 1000 "$APP_CONTAINER" > "$TMP_FILE" 2>&1 || true
-else
-  printf '%s\n' "Container $APP_CONTAINER is not present." > "$TMP_FILE"
-fi
+{
+  printf '=== Card Stuff Yes container (last 24h / 1000 lines) ===\n'
+  if docker inspect "$APP_CONTAINER" >/dev/null 2>&1; then
+    docker logs --since 24h --tail 1000 "$APP_CONTAINER" 2>&1 || true
+  else
+    printf 'Container %s is not present.\n' "$APP_CONTAINER"
+  fi
+  printf '\n=== Card Stuff Yes updater service ===\n'
+  journalctl -u card-stuff-yes-update.service -n 100 --no-pager 2>&1 || true
+} > "$TMP_FILE"
 chmod 0644 "$TMP_FILE"
 mv -f "$TMP_FILE" "$FINAL_FILE"
