@@ -33,7 +33,7 @@ are accepted by the log endpoint.
 Install `scripts/card-stuff-yes-log-snapshot` as
 `/usr/local/sbin/card-stuff-yes-log-snapshot`, then install the two systemd unit files
 from `deploy/systemd` into `/etc/systemd/system/`. The script snapshots at most the
-last 1,000 lines / 24 hours from the named container. It writes a regular file with
+last 1,000 lines / 24 hours from the named container, plus the latest 100 lines from the Ubuntu updater service. It writes a regular file with
 read-only permissions for the app container.
 
 Add this read-only volume to the app service:
@@ -41,6 +41,8 @@ Add this read-only volume to the app service:
 ```yaml
 - ./private-logs:/app/private-logs:ro
 ```
+
+Add the generated hash to the private deployment environment as a JSON value, for example `CSY_ADMIN_USERS='[{"username":"your-owner-login","rank":"owner","passwordHash":"scrypt:SALT:HASH"}]'`. Keep that file private.
 
 Then run `systemctl daemon-reload`, enable and start
 `card-stuff-yes-log-snapshot.timer`, and recreate the app container. Keep the
