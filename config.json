@@ -1,5 +1,4 @@
 {
     "host": "127.0.0.1",
-    "port": 6565,
-    "maxPlayersPerGame": 4
+    "port": 6565
 }
