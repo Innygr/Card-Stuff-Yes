@@ -115,7 +115,7 @@ function loadState() {
         if (match.status !== "active" && match.activePlayerId !== null) continue;
 
         // A card instance can occupy only one zone across the whole match.
-        const instanceIds = match.players
+        const instanceIds = combatants
             .flatMap(item => [...item.deck, ...item.hand, ...item.discard])
             .map(card => card.instanceId);
         if (new Set(instanceIds).size !== instanceIds.length) continue;
