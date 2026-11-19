@@ -4,22 +4,49 @@
  * Shared API client for Card Stuff Yes frontend pages.
  *
  * Load runtime-config.js first, then this file, before page-specific scripts.
- * All requests include cookies for guest/account session continuity. The
- * backend must separately allow the exact frontend origin with credentialed
- * CORS; this client does not weaken or bypass browser security controls.
+ * The current backend supports cross-origin GET and POST only. Account/admin
+ * endpoints and write methods such as PATCH/DELETE are not available yet.
  */
 (function () {
     const config = window.CSY_CONFIG || {};
-    const apiBaseUrl = String(config.apiBaseUrl || "").replace(/\/+$/, "");
+    const configuredBase = String(config.apiBaseUrl || "").trim();
+    let apiBaseUrl = "";
+
+    if (configuredBase) {
+        let parsed;
+        try {
+            parsed = new URL(configuredBase);
+        } catch {
+            throw new Error("Card Stuff Yes API origin is not a valid URL.");
+        }
+
+        const localHttp = parsed.protocol === "http:" &&
+            (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
+        if ((parsed.protocol !== "https:" && !localHttp) ||
+            parsed.username || parsed.password ||
+            parsed.pathname !== "/" || parsed.search || parsed.hash) {
+            throw new Error("Card Stuff Yes API origin must be an HTTPS origin (HTTP is allowed only for localhost).");
+        }
+        apiBaseUrl = parsed.origin;
+    }
 
     async function request(path, options = {}) {
+        if (!apiBaseUrl) {
+            throw new Error("Card Stuff Yes API is not configured for this host.");
+        }
         if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//")) {
             throw new TypeError("API paths must be root-relative paths beginning with one slash.");
+        }
+
+        const method = String(options.method || "GET").toUpperCase();
+        if (method !== "GET" && method !== "POST") {
+            throw new TypeError("The current Card Stuff Yes API supports GET and POST requests only.");
         }
 
         const headers = new Headers(options.headers || {});
         const init = {
             ...options,
+            method,
             headers,
             credentials: "include",
             cache: "no-store"
@@ -52,9 +79,6 @@
     window.CSY_API = Object.freeze({
         request,
         get: path => request(path, { method: "GET" }),
-        post: (path, body) => request(path, { method: "POST", body }),
-        put: (path, body) => request(path, { method: "PUT", body }),
-        patch: (path, body) => request(path, { method: "PATCH", body }),
-        delete: path => request(path, { method: "DELETE" })
+        post: (path, body) => request(path, { method: "POST", body })
     });
 })();
