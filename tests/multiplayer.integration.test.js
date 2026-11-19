@@ -206,6 +206,17 @@ test("waiting matches survive a server restart", async () => {
     assert.equal(resumed.data.match.opponent, null);
 });
 
+test("solo and multiplayer games receive the same shared card catalog", async () => {
+    const response = await fetch(baseUrl + "/api/cards");
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    const sourceCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
+    assert.equal(payload.count, sourceCatalog.length);
+    assert.deepEqual(payload.cards, sourceCatalog);
+    assert.equal(payload.cards.length, 15);
+    assert.equal(new Set(payload.cards.map(card => card.id)).size, payload.cards.length);
+});
+
 test("two guests can create and join a match; turns are enforced", async () => {
     const host = new ApiClient();
     const guest = new ApiClient();
