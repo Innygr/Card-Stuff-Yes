@@ -14,6 +14,15 @@ try {
 }
 const HOST = process.env.HOST || config.host || "127.0.0.1";
 const PORT = Number(process.env.PORT || config.port || 6565);
+const ALLOWED_ORIGINS = new Set(
+    String(process.env.CSY_ALLOWED_ORIGINS || "")
+        .split(",")
+        .map(origin => origin.trim())
+        .filter(Boolean)
+);
+const COOKIE_SAMESITE = ["Strict", "Lax", "None"].includes(process.env.CSY_COOKIE_SAMESITE)
+    ? process.env.CSY_COOKIE_SAMESITE
+    : "Lax";
 const MAX_HEALTH = 30;
 const MAX_ENERGY = 6;
 const MAX_HAND = 10;
@@ -73,32 +82,33 @@ function loadState() {
         if (!match || typeof match.id !== "string" ||
             !["waiting", "active", "finished"].includes(match.status) ||
             !Array.isArray(match.players) || match.players.length !== 2 ||
-            !Array.isArray(match.log) ||
-            !match.players.some(item => item && players.has(item.playerId))) {
+            !Array.isArray(match.log)) {
             continue;
         }
 
-        // A saved hand/deck must only reference known card definitions.
+        // Waiting matches intentionally have one empty player slot. Active and
+        // finished matches must contain both combatants.
         const [first, second] = match.players;
         const statusShapeValid =
-            (match.status === "waiting" && first && !second) ||
-            (match.status === "active" && first && second) ||
-            (match.status === "finished" && first && second);
+            (match.status === "waiting" && first && second === null) ||
+            ((match.status === "active" || match.status === "finished") && first && second);
         if (!statusShapeValid) continue;
 
-        const playerIds = match.players.filter(Boolean).map(item => item.playerId);
+        const combatants = match.players.filter(Boolean);
+        const playerIds = combatants.map(item => item.playerId);
         if (new Set(playerIds).size !== playerIds.length) continue;
 
-        const combatantsValid = match.players.every(item => {
-            if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
-                !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
-                return false;
-            }
-            const cards = [...item.deck, ...item.hand, ...item.discard];
-            return cards.every(card =>
-                card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
-            );
-        });
+        const combatantsValid = combatants.length === (match.status === "waiting" ? 1 : 2) &&
+            combatants.every(item => {
+                if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
+                    !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
+                    return false;
+                }
+                const cards = [...item.deck, ...item.hand, ...item.discard];
+                return cards.every(card =>
+                    card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
+                );
+            });
         if (!combatantsValid) continue;
 
         if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
@@ -165,6 +175,30 @@ function sendJson(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
+function applyCors(req, res) {
+    const origin = req.headers.origin;
+    if (!origin) return true;
+
+    // Same-origin requests do not need CORS headers.
+    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const requestProtocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+    try {
+        const parsedOrigin = new URL(origin);
+        if (parsedOrigin.origin === requestProtocol + "//" + req.headers.host) return true;
+    } catch {
+        return false;
+    }
+
+    if (!ALLOWED_ORIGINS.has(origin)) return false;
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Max-Age", "600");
+    res.setHeader("Vary", "Origin");
+    return true;
+}
+
 function readJson(req) {
     return new Promise((resolve, reject) => {
         let body = "";
@@ -206,8 +240,8 @@ function getPlayer(req, res) {
         players.set(id, player);
         saveState();
         const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-        const secure = req.socket.encrypted || proto === "https" ? "; Secure" : "";
-        res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000" + secure);
+        const secure = req.socket.encrypted || proto === "https" || COOKIE_SAMESITE === "None" ? "; Secure" : "";
+        res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=" + COOKIE_SAMESITE + "; Path=/; Max-Age=2592000" + secure);
     }
     return player;
 }
@@ -496,6 +530,29 @@ function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     try {
+        if (url.pathname.startsWith("/api/")) {
+            if (!applyCors(req, res)) {
+                sendJson(res, 403, { error: "Origin is not allowed." });
+                return;
+            }
+            if (req.method === "OPTIONS") {
+                res.writeHead(204, { "Cache-Control": "no-store" });
+                res.end();
+                return;
+            }
+        }
+
+        if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
+            (req.method === "GET" || req.method === "HEAD")) {
+            sendJson(res, 200, {
+                ok: true,
+                online: true,
+                service: "card-stuff-yes-api",
+                timestamp: new Date().toISOString()
+            });
+            return;
+        }
+
         if (url.pathname.startsWith("/api/multiplayer/")) {
             await handleApi(req, res, url, getPlayer(req, res));
             return;
