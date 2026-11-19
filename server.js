@@ -542,9 +542,67 @@ function serveStatic(req, res, pathname) {
     });
 }
 
+const DOMAIN = String(process.env.CSY_DOMAIN || "cardstuffyes.ca").trim().toLowerCase();
+const SUBDOMAIN_ENTRYPOINTS = Object.freeze({
+    play: "/cardgame.html",
+    pvp: "/multiplayer.html",
+    cards: "/set-manager.html",
+    decks: "/deckbuild.html",
+    account: "/account.html",
+    profile: "/profile.html",
+    settings: "/settings.html",
+    news: "/news.html",
+    help: "/how-to-play.html",
+    admin: "/admin-login.html"
+});
+
+function applyDomainRouting(req, res, url) {
+    const rawHost = String(req.headers.host || "").toLowerCase();
+    const host = rawHost.replace(/:\d+$/, "");
+    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const protocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+
+    if (host === "www." + DOMAIN) {
+        res.writeHead(308, {
+            Location: protocol + "//" + DOMAIN + url.pathname + url.search,
+            "Cache-Control": "no-store"
+        });
+        res.end();
+        return false;
+    }
+
+    if (host === DOMAIN) {
+        if (url.pathname === "/") url.pathname = "/homepage.html";
+        return true;
+    }
+
+    const suffix = "." + DOMAIN;
+    if (!host.endsWith(suffix)) return true;
+
+    const subdomain = host.slice(0, -suffix.length);
+    if (subdomain === "api") {
+        if (!url.pathname.startsWith("/api/")) {
+            sendJson(res, 404, { error: "The API subdomain only serves API routes." });
+            return false;
+        }
+        return true;
+    }
+
+    const entrypoint = SUBDOMAIN_ENTRYPOINTS[subdomain];
+    if (!entrypoint) {
+        sendJson(res, 404, { error: "Unknown Card Stuff Yes subdomain." });
+        return false;
+    }
+
+    if (url.pathname === "/") url.pathname = entrypoint;
+    return true;
+}
+
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     try {
+        if (!applyDomainRouting(req, res, url)) return;
+
         if (url.pathname.startsWith("/api/")) {
             if (!applyCors(req, res)) {
                 sendJson(res, 403, { error: "Origin is not allowed." });
