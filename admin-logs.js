@@ -83,7 +83,7 @@ function clearCookie(res) {
 
 function sameOrigin(req) {
     const origin = req.headers.origin;
-    if (!origin) return true;
+    if (!origin) return false;
     try { return new URL(origin).host === String(req.headers.host || "").toLowerCase(); }
     catch { return false; }
 }
