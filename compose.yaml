@@ -11,7 +11,7 @@ services:
       PORT: 6565
       CSY_STATE_FILE: /app/private-data/multiplayer-state.json
       CSY_DOMAIN: ${CSY_DOMAIN:-cardstuffyes.ca}
-      CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-}
+      CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-https://cardstuffyes.ca,https://www.cardstuffyes.ca,https://play.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://cards.cardstuffyes.ca,https://decks.cardstuffyes.ca,https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://news.cardstuffyes.ca,https://help.cardstuffyes.ca,https://admin.cardstuffyes.ca}
       CSY_COOKIE_SAMESITE: ${CSY_COOKIE_SAMESITE:-Lax}
 
     ports:
