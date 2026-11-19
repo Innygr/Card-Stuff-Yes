@@ -52,8 +52,9 @@
     let requestBusy = false;
 
     async function request(url, options) {
-        const response = await fetch(url, {
-            credentials: "same-origin",
+        const apiBase = window.CSY_CONFIG && window.CSY_CONFIG.apiBaseUrl || "";
+        const response = await fetch(apiBase + url, {
+            credentials: "include",
             cache: "no-store",
             ...options
         });
@@ -399,6 +400,10 @@
     });
 
     async function init() {
+        const soloLink = document.getElementById("solo-practice-link");
+        if (soloLink && window.CSY_CONFIG && window.CSY_CONFIG.routes) {
+            soloLink.href = window.CSY_CONFIG.routes.play;
+        }
         try {
             await loadMe();
             setConnection(true);

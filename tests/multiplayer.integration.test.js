@@ -119,7 +119,8 @@ function startServer() {
             ...process.env,
             HOST: "127.0.0.1",
             PORT: String(serverPort),
-            CSY_STATE_FILE: stateFile
+            CSY_STATE_FILE: stateFile,
+            CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca"
         },
         stdio: ["ignore", "pipe", "pipe"]
     });
@@ -149,6 +150,136 @@ after(async () => {
     await stopServer();
     fs.rmSync(stateFile, { force: true });
     fs.rmSync(stateFile + ".tmp", { force: true });
+});
+
+function requestWithHost(route, host, headers = {}, method = "GET") {
+    return new Promise((resolve, reject) => {
+        const request = http.request(new URL(route, baseUrl), {
+            method,
+            headers: { Host: host, ...headers }
+        }, response => {
+            let body = "";
+            response.setEncoding("utf8");
+            response.on("data", chunk => { body += chunk; });
+            response.on("end", () => resolve({
+                status: response.statusCode,
+                headers: response.headers,
+                body
+            }));
+        });
+        request.on("error", reject);
+        request.end();
+    });
+}
+
+test("subdomains route to their intended application pages", async () => {
+    const solo = await requestWithHost("/", "play.cardstuffyes.ca");
+    assert.equal(solo.status, 200);
+    assert.match(solo.body, /Battle Arena/);
+
+    const pvp = await requestWithHost("/", "pvp.cardstuffyes.ca");
+    assert.equal(pvp.status, 200);
+    assert.match(pvp.body, /Online Battle/);
+
+    const cards = await requestWithHost("/", "cards.cardstuffyes.ca");
+    assert.equal(cards.status, 200);
+    assert.match(cards.body, /Set Manager/);
+    assert.ok(!cards.body.startsWith(String.fromCharCode(96).repeat(3)));
+
+    const api = await requestWithHost("/api/health", "api.cardstuffyes.ca");
+    assert.equal(api.status, 200);
+    assert.equal(JSON.parse(api.body).ok, true);
+
+    const blockedApiPage = await requestWithHost("/", "api.cardstuffyes.ca");
+    assert.equal(blockedApiPage.status, 404);
+
+    const unknown = await requestWithHost("/", "unknown.cardstuffyes.ca");
+    assert.equal(unknown.status, 404);
+
+    const www = await requestWithHost("/play?mode=solo", "www.cardstuffyes.ca", {
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(www.status, 308);
+    assert.equal(www.headers.location, "https://cardstuffyes.ca/play?mode=solo");
+});
+
+test("API subdomain allows the PvP frontend origin and rejects others", async () => {
+    const allowed = await requestWithHost("/api/multiplayer/me", "api.cardstuffyes.ca", {
+        Origin: "https://pvp.cardstuffyes.ca"
+    });
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.headers["access-control-allow-origin"], "https://pvp.cardstuffyes.ca");
+    assert.equal(allowed.headers["access-control-allow-credentials"], "true");
+
+    const denied = await requestWithHost("/api/multiplayer/me", "api.cardstuffyes.ca", {
+        Origin: "https://untrusted.example"
+    });
+    assert.equal(denied.status, 403);
+});
+
+test("API health and allowlisted cross-origin preflight work", async () => {
+    const health = await fetch(baseUrl + "/api/health");
+    assert.equal(health.status, 200);
+    const healthData = await health.json();
+    assert.equal(healthData.ok, true);
+    assert.equal(healthData.online, true);
+    assert.equal(healthData.service, "card-stuff-yes-api");
+
+    const preflight = await fetch(baseUrl + "/api/multiplayer/matches", {
+        method: "OPTIONS",
+        headers: {
+            Origin: "https://frontend.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type"
+        }
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-origin"), "https://frontend.example");
+    assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
+
+    const denied = await fetch(baseUrl + "/api/multiplayer/matches", {
+        method: "OPTIONS",
+        headers: { Origin: "https://not-allowed.example" }
+    });
+    assert.equal(denied.status, 403);
+});
+
+test("oversized JSON requests receive a 400 response", async () => {
+    const response = await fetch(baseUrl + "/api/multiplayer/name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "x".repeat(20000) })
+    });
+    assert.equal(response.status, 400);
+    const data = await response.json();
+    assert.match(data.error, /too large/i);
+});
+
+test("waiting matches survive a server restart", async () => {
+    const host = new ApiClient();
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    await stopServer();
+    await startServer();
+
+    const resumed = await host.request("/api/multiplayer/current");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.match.id, matchId);
+    assert.equal(resumed.data.match.status, "waiting");
+    assert.equal(resumed.data.match.opponent, null);
+});
+
+test("solo and multiplayer games receive the same shared card catalog", async () => {
+    const response = await fetch(baseUrl + "/api/cards");
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    const sourceCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
+    assert.equal(payload.count, sourceCatalog.length);
+    assert.deepEqual(payload.cards, sourceCatalog);
+    assert.equal(payload.cards.length, 15);
+    assert.equal(new Set(payload.cards.map(card => card.id)).size, payload.cards.length);
 });
 
 test("two guests can create and join a match; turns are enforced", async () => {

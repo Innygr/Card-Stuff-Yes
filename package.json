@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check multiplayer.js",
+    "check": "node --check server.js && node --check multiplayer.js && node --check cardgame.js && node --check homepage.js && node --check runtime-config.js",
     "test": "node --test"
   },
   "dependencies": {}

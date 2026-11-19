@@ -10,6 +10,9 @@ services:
       HOST: 0.0.0.0
       PORT: 6565
       CSY_STATE_FILE: /app/private-data/multiplayer-state.json
+      CSY_DOMAIN: ${CSY_DOMAIN:-cardstuffyes.ca}
+      CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-https://cardstuffyes.ca,https://www.cardstuffyes.ca,https://play.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://cards.cardstuffyes.ca,https://decks.cardstuffyes.ca,https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://news.cardstuffyes.ca,https://help.cardstuffyes.ca,https://admin.cardstuffyes.ca}
+      CSY_COOKIE_SAMESITE: ${CSY_COOKIE_SAMESITE:-Lax}
 
     ports:
       - "6565:6565"
@@ -33,7 +36,7 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:6565/multiplayer.html').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        - "fetch('http://127.0.0.1:6565/api/health').then(async r => process.exit(r.ok && (await r.json()).ok ? 0 : 1)).catch(() => process.exit(1))"
       interval: 30s
       timeout: 5s
       start_period: 10s

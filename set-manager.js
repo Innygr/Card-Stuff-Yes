@@ -1,4 +1,3 @@
-```javascript
 /*
  * ============================================================
  * CARD STUFF YES
@@ -1259,4 +1258,3 @@ document.querySelector(
 updateSetFromInputs();
 
 renderCards();
-```

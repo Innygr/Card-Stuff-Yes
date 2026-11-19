@@ -14,6 +14,15 @@ try {
 }
 const HOST = process.env.HOST || config.host || "127.0.0.1";
 const PORT = Number(process.env.PORT || config.port || 6565);
+const ALLOWED_ORIGINS = new Set(
+    String(process.env.CSY_ALLOWED_ORIGINS || "")
+        .split(",")
+        .map(origin => origin.trim())
+        .filter(Boolean)
+);
+const COOKIE_SAMESITE = ["Strict", "Lax", "None"].includes(process.env.CSY_COOKIE_SAMESITE)
+    ? process.env.CSY_COOKIE_SAMESITE
+    : "Lax";
 const MAX_HEALTH = 30;
 const MAX_ENERGY = 6;
 const MAX_HAND = 10;
@@ -73,39 +82,40 @@ function loadState() {
         if (!match || typeof match.id !== "string" ||
             !["waiting", "active", "finished"].includes(match.status) ||
             !Array.isArray(match.players) || match.players.length !== 2 ||
-            !Array.isArray(match.log) ||
-            !match.players.some(item => item && players.has(item.playerId))) {
+            !Array.isArray(match.log)) {
             continue;
         }
 
-        // A saved hand/deck must only reference known card definitions.
+        // Waiting matches intentionally have one empty player slot. Active and
+        // finished matches must contain both combatants.
         const [first, second] = match.players;
         const statusShapeValid =
-            (match.status === "waiting" && first && !second) ||
-            (match.status === "active" && first && second) ||
-            (match.status === "finished" && first && second);
+            (match.status === "waiting" && first && second === null) ||
+            ((match.status === "active" || match.status === "finished") && first && second);
         if (!statusShapeValid) continue;
 
-        const playerIds = match.players.filter(Boolean).map(item => item.playerId);
+        const combatants = match.players.filter(Boolean);
+        const playerIds = combatants.map(item => item.playerId);
         if (new Set(playerIds).size !== playerIds.length) continue;
 
-        const combatantsValid = match.players.every(item => {
-            if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
-                !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
-                return false;
-            }
-            const cards = [...item.deck, ...item.hand, ...item.discard];
-            return cards.every(card =>
-                card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
-            );
-        });
+        const combatantsValid = combatants.length === (match.status === "waiting" ? 1 : 2) &&
+            combatants.every(item => {
+                if (!item || typeof item.playerId !== "string" || !players.has(item.playerId) ||
+                    !Array.isArray(item.deck) || !Array.isArray(item.hand) || !Array.isArray(item.discard)) {
+                    return false;
+                }
+                const cards = [...item.deck, ...item.hand, ...item.discard];
+                return cards.every(card =>
+                    card && typeof card.instanceId === "string" && CARD_BY_ID.has(card.cardId)
+                );
+            });
         if (!combatantsValid) continue;
 
         if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
         if (match.status !== "active" && match.activePlayerId !== null) continue;
 
         // A card instance can occupy only one zone across the whole match.
-        const instanceIds = match.players
+        const instanceIds = combatants
             .flatMap(item => [...item.deck, ...item.hand, ...item.discard])
             .map(card => card.instanceId);
         if (new Set(instanceIds).size !== instanceIds.length) continue;
@@ -138,23 +148,28 @@ function pruneExpiredMatches(now = Date.now()) {
     return changed;
 }
 
-const CARDS = [
-    { id: "spark", name: "Astral Spark", type: "attack", cost: 1, value: 3, symbol: "✦", description: "A quick burst of astral energy.", effect: "Deal 3 damage." },
-    { id: "flare", name: "Solar Flare", type: "attack", cost: 2, value: 6, symbol: "☀", description: "A concentrated blast of light.", effect: "Deal 6 damage." },
-    { id: "void-lance", name: "Void Lance", type: "attack", cost: 3, value: 9, symbol: "➶", description: "Pierce through the rival's guard.", effect: "Deal 9 damage." },
-    { id: "meteor", name: "Falling Meteor", type: "attack", cost: 4, value: 13, symbol: "☄", description: "A heavy strike from the sky.", effect: "Deal 13 damage." },
-    { id: "nova", name: "Nova Burst", type: "attack", cost: 5, value: 18, symbol: "✹", description: "Spend big for a huge hit.", effect: "Deal 18 damage." },
-    { id: "guard", name: "Astral Guard", type: "guard", cost: 1, value: 4, symbol: "⬡", description: "Shape energy into a shield.", effect: "Gain 4 shield." },
-    { id: "wall", name: "Prism Wall", type: "guard", cost: 2, value: 8, symbol: "▥", description: "A sturdy protective barrier.", effect: "Gain 8 shield." },
-    { id: "fortress", name: "Crystal Fortress", type: "guard", cost: 4, value: 14, symbol: "◈", description: "Brace for the rival's next turn.", effect: "Gain 14 shield." },
-    { id: "mend", name: "Gentle Mend", type: "heal", cost: 1, value: 4, symbol: "✚", description: "Recover a little health.", effect: "Restore 4 health." },
-    { id: "renew", name: "Renewal", type: "heal", cost: 3, value: 9, symbol: "❈", description: "Recover from a rough round.", effect: "Restore 9 health." },
-    { id: "lifebloom", name: "Life Bloom", type: "heal", cost: 4, value: 13, symbol: "❋", description: "A powerful wave of restoration.", effect: "Restore 13 health." },
-    { id: "insight", name: "Magik Insight", type: "draw", cost: 1, value: 2, symbol: "⌕", description: "Find two more options.", effect: "Draw 2 cards." },
-    { id: "study", name: "Deep Study", type: "draw", cost: 2, value: 3, symbol: "⌘", description: "Look deeper into your deck.", effect: "Draw 3 cards." },
-    { id: "blood-price", name: "Blood Price", type: "attack", cost: 2, value: 8, symbol: "♦", description: "A risky, forceful hit.", effect: "Deal 8 damage; lose 2 health.", selfDamage: 2 },
-    { id: "dark-surge", name: "Dark Surge", type: "attack", cost: 3, value: 7, symbol: "◐", description: "A steady hit with extra impact.", effect: "Deal 7 damage and gain 3 shield.", selfShield: 3 }
-];
+let CARDS;
+try {
+    const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
+    const validTypes = new Set(["attack", "guard", "heal", "draw"]);
+    if (!Array.isArray(catalog) || catalog.length === 0) throw new Error("cards.json must contain at least one card.");
+    const ids = new Set();
+    for (const card of catalog) {
+        if (!card || typeof card.id !== "string" || !/^[a-z0-9-]+$/.test(card.id) ||
+            ids.has(card.id) || typeof card.name !== "string" ||
+            !validTypes.has(card.type) || !Number.isInteger(card.cost) || card.cost < 0 ||
+            !Number.isInteger(card.value) || card.value < 0 ||
+            typeof card.symbol !== "string" || typeof card.description !== "string" ||
+            typeof card.effect !== "string") {
+            throw new Error("Invalid or duplicate card definition in cards.json.");
+        }
+        ids.add(card.id);
+    }
+    CARDS = catalog;
+} catch (error) {
+    console.error("Card catalog could not be loaded:", error.message);
+    process.exit(1);
+}
 const CARD_BY_ID = new Map(CARDS.map(card => [card.id, card]));
 
 // Load only after card definitions exist, so saved card instances can be checked.
@@ -165,24 +180,58 @@ function sendJson(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
+function applyCors(req, res) {
+    const origin = req.headers.origin;
+    if (!origin) return true;
+
+    // Same-origin requests do not need CORS headers.
+    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const requestProtocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+    try {
+        const parsedOrigin = new URL(origin);
+        if (parsedOrigin.origin === requestProtocol + "//" + req.headers.host) return true;
+    } catch {
+        return false;
+    }
+
+    if (!ALLOWED_ORIGINS.has(origin)) return false;
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Max-Age", "600");
+    res.setHeader("Vary", "Origin");
+    return true;
+}
+
 function readJson(req) {
     return new Promise((resolve, reject) => {
         let body = "";
         let size = 0;
+        let failed = false;
+
         req.on("data", chunk => {
+            if (failed) return;
             size += chunk.length;
             if (size > 16384) {
+                failed = true;
                 reject(new Error("Request body is too large."));
-                req.destroy();
+                // Keep consuming the request so the server can return a 400
+                // response instead of destroying the socket mid-response.
                 return;
             }
             body += chunk.toString("utf8");
         });
+
         req.on("end", () => {
+            if (failed) return;
             if (!body.trim()) return resolve({});
             try { resolve(JSON.parse(body)); } catch { reject(new Error("Request body must be valid JSON.")); }
         });
-        req.on("error", reject);
+
+        req.on("error", error => {
+            if (!failed) reject(error);
+        });
     });
 }
 
@@ -206,8 +255,8 @@ function getPlayer(req, res) {
         players.set(id, player);
         saveState();
         const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-        const secure = req.socket.encrypted || proto === "https" ? "; Secure" : "";
-        res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000" + secure);
+        const secure = req.socket.encrypted || proto === "https" || COOKIE_SAMESITE === "None" ? "; Secure" : "";
+        res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=" + COOKIE_SAMESITE + "; Path=/; Max-Age=2592000" + secure);
     }
     return player;
 }
@@ -493,9 +542,95 @@ function serveStatic(req, res, pathname) {
     });
 }
 
+const DOMAIN = String(process.env.CSY_DOMAIN || "cardstuffyes.ca").trim().toLowerCase();
+const SUBDOMAIN_ENTRYPOINTS = Object.freeze({
+    play: "/cardgame.html",
+    pvp: "/multiplayer.html",
+    cards: "/set-manager.html",
+    decks: "/deckbuild.html",
+    account: "/account.html",
+    profile: "/profile.html",
+    settings: "/settings.html",
+    news: "/news.html",
+    help: "/how-to-play.html",
+    admin: "/admin-login.html"
+});
+
+function applyDomainRouting(req, res, url) {
+    const rawHost = String(req.headers.host || "").toLowerCase();
+    const host = rawHost.replace(/:\d+$/, "");
+    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const protocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+
+    if (host === "www." + DOMAIN) {
+        res.writeHead(308, {
+            Location: protocol + "//" + DOMAIN + url.pathname + url.search,
+            "Cache-Control": "no-store"
+        });
+        res.end();
+        return false;
+    }
+
+    if (host === DOMAIN) {
+        if (url.pathname === "/") url.pathname = "/homepage.html";
+        return true;
+    }
+
+    const suffix = "." + DOMAIN;
+    if (!host.endsWith(suffix)) return true;
+
+    const subdomain = host.slice(0, -suffix.length);
+    if (subdomain === "api") {
+        if (!url.pathname.startsWith("/api/")) {
+            sendJson(res, 404, { error: "The API subdomain only serves API routes." });
+            return false;
+        }
+        return true;
+    }
+
+    const entrypoint = SUBDOMAIN_ENTRYPOINTS[subdomain];
+    if (!entrypoint) {
+        sendJson(res, 404, { error: "Unknown Card Stuff Yes subdomain." });
+        return false;
+    }
+
+    if (url.pathname === "/") url.pathname = entrypoint;
+    return true;
+}
+
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     try {
+        if (!applyDomainRouting(req, res, url)) return;
+
+        if (url.pathname.startsWith("/api/")) {
+            if (!applyCors(req, res)) {
+                sendJson(res, 403, { error: "Origin is not allowed." });
+                return;
+            }
+            if (req.method === "OPTIONS") {
+                res.writeHead(204, { "Cache-Control": "no-store" });
+                res.end();
+                return;
+            }
+        }
+
+        if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
+            req.method === "GET") {
+            sendJson(res, 200, {
+                ok: true,
+                online: true,
+                service: "card-stuff-yes-api",
+                timestamp: new Date().toISOString()
+            });
+            return;
+        }
+
+        if (url.pathname === "/api/cards" && req.method === "GET") {
+            sendJson(res, 200, { cards: CARDS, count: CARDS.length });
+            return;
+        }
+
         if (url.pathname.startsWith("/api/multiplayer/")) {
             await handleApi(req, res, url, getPlayer(req, res));
             return;
