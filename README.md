@@ -2,6 +2,18 @@
 
 Card Stuff Yes is a browser-based card game project.
 
+## Repository organization
+
+The active application and Node.js backend live on the `Server` branch.
+The `main` branch is kept separate for the public project landing content.
+Asset source branches (`Cards`, `Badges`, and `SFX`) are preserved while
+their files are reviewed and transferred into `assets/`. The separate
+`modules` branch is reference/experimental backend code, not a bulk
+replacement for the current server.
+
+See [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md) for the branch
+map, asset inventory, and intended folder layout.
+
 ## Running the multiplayer prototype locally
 
 The turn-based PvP prototype uses Node.js built-in modules only.
