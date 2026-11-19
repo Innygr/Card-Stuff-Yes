@@ -17,15 +17,6 @@ on:
     branches:
       - Server
       - feature/docker-ghcr
-    paths:
-      - "server.js"
-      - "multiplayer.js"
-      - "package.json"
-      - "tests/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "compose.yaml"
-      - ".github/workflows/container-image.yml"
 
 permissions:
   contents: read
