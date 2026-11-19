@@ -179,6 +179,17 @@ test("API health and allowlisted cross-origin preflight work", async () => {
     assert.equal(denied.status, 403);
 });
 
+test("oversized JSON requests receive a 400 response", async () => {
+    const response = await fetch(baseUrl + "/api/multiplayer/name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "x".repeat(20000) })
+    });
+    assert.equal(response.status, 400);
+    const data = await response.json();
+    assert.match(data.error, /too large/i);
+});
+
 test("waiting matches survive a server restart", async () => {
     const host = new ApiClient();
     const created = await host.request("/api/multiplayer/matches", { method: "POST" });
