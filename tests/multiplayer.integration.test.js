@@ -119,7 +119,8 @@ function startServer() {
             ...process.env,
             HOST: "127.0.0.1",
             PORT: String(serverPort),
-            CSY_STATE_FILE: stateFile
+            CSY_STATE_FILE: stateFile,
+            CSY_ALLOWED_ORIGINS: "https://frontend.example"
         },
         stdio: ["ignore", "pipe", "pipe"]
     });
@@ -149,6 +150,49 @@ after(async () => {
     await stopServer();
     fs.rmSync(stateFile, { force: true });
     fs.rmSync(stateFile + ".tmp", { force: true });
+});
+
+test("API health and allowlisted cross-origin preflight work", async () => {
+    const health = await fetch(baseUrl + "/api/health");
+    assert.equal(health.status, 200);
+    const healthData = await health.json();
+    assert.equal(healthData.ok, true);
+    assert.equal(healthData.online, true);
+    assert.equal(healthData.service, "card-stuff-yes-api");
+
+    const preflight = await fetch(baseUrl + "/api/multiplayer/matches", {
+        method: "OPTIONS",
+        headers: {
+            Origin: "https://frontend.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type"
+        }
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-origin"), "https://frontend.example");
+    assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
+
+    const denied = await fetch(baseUrl + "/api/multiplayer/matches", {
+        method: "OPTIONS",
+        headers: { Origin: "https://not-allowed.example" }
+    });
+    assert.equal(denied.status, 403);
+});
+
+test("waiting matches survive a server restart", async () => {
+    const host = new ApiClient();
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(created.status, 201);
+    const matchId = created.data.match.id;
+
+    await stopServer();
+    await startServer();
+
+    const resumed = await host.request("/api/multiplayer/current");
+    assert.equal(resumed.status, 200);
+    assert.equal(resumed.data.match.id, matchId);
+    assert.equal(resumed.data.match.status, "waiting");
+    assert.equal(resumed.data.match.opponent, null);
 });
 
 test("two guests can create and join a match; turns are enforced", async () => {
