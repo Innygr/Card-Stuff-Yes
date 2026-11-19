@@ -22,7 +22,7 @@ function configuredAdmins() {
 }
 
 function parseHash(value) {
-    const parts = String(value).split("$");
+    const parts = String(value).split(":");
     if (parts.length !== 3 || parts[0] !== "scrypt") return null;
     try {
         const salt = Buffer.from(parts[1], "hex");
