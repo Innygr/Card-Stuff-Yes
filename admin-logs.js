@@ -111,7 +111,7 @@ async function handleAdminLogs(req, res, url) {
 
     if (url.pathname === "/api/admin/login" && req.method === "POST") {
         if (!sameOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
-        const ip = String(req.socket.remoteAddress || "unknown");
+        const ip = String(req.headers["cf-connecting-ip"] || String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "unknown");
         const now = Date.now();
         const attempt = loginAttempts.get(ip) || { count: 0, until: now + 60000 };
         if (attempt.until < now) { attempt.count = 0; attempt.until = now + 60000; }
