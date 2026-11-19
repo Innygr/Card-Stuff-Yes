@@ -175,7 +175,7 @@
             await fetch(
                 url,
                 {
-                    credentials: "same-origin",
+                    credentials: "include",
                     ...requestOptions
                 }
             );
@@ -280,7 +280,7 @@
          * Set this to your actual backend URL when available.
          */
 
-        const SERVER_API = "";
+        const SERVER_API = window.CSY_CONFIG && window.CSY_CONFIG.apiBaseUrl || window.location.origin;
 
 
         if (!SERVER_API) {
@@ -960,7 +960,16 @@
 
         setupButton(
             "play-button",
-            "cardgame.html"
+            window.CSY_CONFIG && window.CSY_CONFIG.routes
+                ? window.CSY_CONFIG.routes.play
+                : "cardgame.html"
+        );
+
+        setupButton(
+            "pvp-button",
+            window.CSY_CONFIG && window.CSY_CONFIG.routes
+                ? window.CSY_CONFIG.routes.pvp
+                : "multiplayer.html"
         );
 
 
@@ -1108,10 +1117,10 @@ async function refreshSecurityLockdownBanner() {
     try {
         const response =
             await fetch(
-                "/api/security/status",
+                (window.CSY_CONFIG && window.CSY_CONFIG.apiBaseUrl || "") + "/api/security/status",
                 {
                     method: "GET",
-                    credentials: "same-origin",
+                    credentials: "include",
                     cache: "no-store",
                     headers: {
                         "Accept": "application/json"
