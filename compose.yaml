@@ -1,0 +1,44 @@
+services:
+  card-stuff-yes:
+    image: ghcr.io/innygr/card-stuff-yes:server
+    container_name: card-stuff-yes
+    init: true
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 6565
+      CSY_STATE_FILE: /app/private-data/multiplayer-state.json
+
+    ports:
+      - "6565:6565"
+
+    volumes:
+      - card-stuff-yes-data:/app/private-data
+
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    stop_grace_period: 20s
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:6565/multiplayer.html').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  card-stuff-yes-data:
+    name: card-stuff-yes-data
