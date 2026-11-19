@@ -16,6 +16,16 @@ The current turn-based PvP prototype uses Node.js built-in modules only.
 
 Run `npm test` to run the automated tests. Run `npm run check` for the configured syntax checks.
 
+## API runtime configuration
+
+- `HOST` and `PORT` control the listen address and port. Containers should bind to `0.0.0.0`.
+- `CSY_STATE_FILE` selects the private multiplayer-state snapshot path.
+- `CSY_ALLOWED_ORIGINS` is a comma-separated exact-origin allowlist for a frontend hosted on a different origin. Leave it empty when the API is same-origin only.
+- `CSY_COOKIE_SAMESITE` accepts `Strict`, `Lax`, or `None`. Use `None` only with HTTPS and a trusted frontend origin; the server automatically adds `Secure` for this setting.
+- `GET /api/health` and `GET /api/status` return API liveness information.
+
+The current API implements the multiplayer prototype routes and health/status routes. Account login, profile, deck, and admin APIs are not implemented yet; the existing browser pages must not be treated as proof those services exist.
+
 ## Multiplayer prototype scope
 
 - Two-player, turn-based matches with create/join codes.
