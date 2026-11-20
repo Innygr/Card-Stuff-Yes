@@ -5,16 +5,35 @@ const crypto = require("node:crypto");
 const MAX_TICKET_LIFETIME_SECONDS = 120;
 const CLOCK_SKEW_SECONDS = 5;
 const TOKEN_TYPE = "CSY-JOIN";
+const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 function encode(value) {
     return Buffer.from(value).toString("base64url");
 }
 
-function decodeJson(value) {
-    if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) {
+function decodeSegment(value) {
+    if (typeof value !== "string" || !BASE64URL_PATTERN.test(value)) {
         throw new Error("Malformed ticket encoding.");
     }
-    return JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    const decoded = Buffer.from(value, "base64url");
+    if (decoded.toString("base64url") !== value) {
+        throw new Error("Non-canonical ticket encoding.");
+    }
+    return decoded;
+}
+
+function decodeJson(value) {
+    const decoded = JSON.parse(decodeSegment(value).toString("utf8"));
+    if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+        throw new Error("Ticket segment must contain a JSON object.");
+    }
+    return decoded;
+}
+
+function requireNonEmptyString(value, label, maxLength = 256) {
+    if (typeof value !== "string" || value.length < 1 || value.length > maxLength) {
+        throw new TypeError(label + " must be a non-empty string of at most " + maxLength + " characters.");
+    }
 }
 
 function issueJoinTicket({
@@ -27,11 +46,14 @@ function issueJoinTicket({
     lifetimeSeconds = 60,
     ticketId = crypto.randomUUID()
 }) {
-    if (!privateKey || !keyId || !issuer || !audience || !subject) {
-        throw new TypeError("Signing key, key ID, issuer, audience, and opaque subject are required.");
-    }
+    if (!privateKey) throw new TypeError("A signing private key is required.");
+    requireNonEmptyString(keyId, "Key ID", 128);
+    requireNonEmptyString(issuer, "Issuer");
+    requireNonEmptyString(audience, "Audience", 128);
+    requireNonEmptyString(subject, "Opaque subject", 128);
     if (!Number.isSafeInteger(now) || !Number.isInteger(lifetimeSeconds) ||
-        lifetimeSeconds < 1 || lifetimeSeconds > MAX_TICKET_LIFETIME_SECONDS) {
+        lifetimeSeconds < 1 || lifetimeSeconds > MAX_TICKET_LIFETIME_SECONDS ||
+        !Number.isSafeInteger(now + lifetimeSeconds)) {
         throw new RangeError("Join ticket lifetime must be between 1 and 120 seconds.");
     }
     if (typeof ticketId !== "string" || !/^[A-Za-z0-9_-]{16,128}$/.test(ticketId)) {
@@ -62,18 +84,28 @@ function verifyJoinTicket(token, {
     clockSkewSeconds = CLOCK_SKEW_SECONDS
 }) {
     if (typeof token !== "string" || token.length > 4096) throw new Error("Invalid join ticket.");
+    if (!Number.isSafeInteger(now) || !Number.isInteger(clockSkewSeconds) ||
+        clockSkewSeconds < 0 || clockSkewSeconds > 60) {
+        throw new TypeError("Verification time and clock skew are invalid.");
+    }
+    requireNonEmptyString(issuer, "Expected issuer");
+    requireNonEmptyString(audience, "Expected audience", 128);
+
     const parts = token.split(".");
     if (parts.length !== 3) throw new Error("Malformed join ticket.");
 
     const header = decodeJson(parts[0]);
     const payload = decodeJson(parts[1]);
-    if (!header || header.alg !== "EdDSA" || header.typ !== TOKEN_TYPE ||
-        typeof header.kid !== "string" || !publicKeys || !publicKeys[header.kid]) {
+    if (header.alg !== "EdDSA" || header.typ !== TOKEN_TYPE ||
+        typeof header.kid !== "string" || !publicKeys ||
+        !Object.prototype.hasOwnProperty.call(publicKeys, header.kid) ||
+        !publicKeys[header.kid]) {
         throw new Error("Untrusted join ticket signing key.");
     }
-    if (!/^[A-Za-z0-9_-]+$/.test(parts[2])) throw new Error("Malformed ticket signature.");
+
+    const signature = decodeSegment(parts[2]);
+    if (signature.length !== 64) throw new Error("Malformed ticket signature.");
     const signingInput = parts[0] + "." + parts[1];
-    const signature = Buffer.from(parts[2], "base64url");
     if (!crypto.verify(null, Buffer.from(signingInput), publicKeys[header.kid], signature)) {
         throw new Error("Invalid join ticket signature.");
     }
@@ -89,7 +121,7 @@ function verifyJoinTicket(token, {
     }
     if (payload.exp <= payload.iat || payload.exp - payload.iat > MAX_TICKET_LIFETIME_SECONDS ||
         payload.nbf > payload.exp || payload.iat > now + clockSkewSeconds ||
-        payload.nbf > now + clockSkewSeconds || payload.exp < now - clockSkewSeconds) {
+        payload.nbf > now + clockSkewSeconds || payload.exp <= now - clockSkewSeconds) {
         throw new Error("Join ticket is expired or outside its validity window.");
     }
     return Object.freeze({
@@ -117,9 +149,9 @@ class JoinTicketReplayGuard {
             throw new TypeError("A verified join ticket and valid time are required.");
         }
         for (const [id, expiry] of this.used) {
-            if (expiry < now) this.used.delete(id);
+            if (expiry <= now) this.used.delete(id);
         }
-        if (ticket.expiresAt < now || this.used.has(ticket.ticketId)) return false;
+        if (ticket.expiresAt <= now || this.used.has(ticket.ticketId)) return false;
         if (this.used.size >= this.maxEntries) return false;
         this.used.set(ticket.ticketId, ticket.expiresAt);
         return true;
