@@ -320,6 +320,10 @@ async function handleEmailAccountRoutes(req, res, url) {
     }
 
     if (route === "/api/account/email/verify") {
+        if (rateLimited(req, "email-verify")) {
+            setJson(res, 429, { error: "Too many verification attempts. Try again later." });
+            return true;
+        }
         let body;
         try { body = await readJson(req); }
         catch (error) { setJson(res, 400, { error: error.message }); return true; }
@@ -396,8 +400,16 @@ async function handleEmailAccountRoutes(req, res, url) {
                     const accountId = found.rows[0].id;
                     const token = await createEmailToken(accountId, "password_reset", email, RESET_TTL_MS);
                     const link = publicBaseUrl() + "/reset-password.html?token=" + encodeURIComponent(token);
-                    const result = await sendEmail(email, buildPasswordResetEmail(link));
-                    if (!result.sent) throw new Error("Email delivery unavailable.");
+                    try {
+                        const result = await sendEmail(email, buildPasswordResetEmail(link));
+                        if (!result.sent) throw new Error("Email delivery unavailable.");
+                    } catch (error) {
+                        await getPool().query(
+                            "DELETE FROM csy_private.account_email_tokens WHERE token_hash = $1",
+                            [tokenHash(token)]
+                        ).catch(() => {});
+                        throw error;
+                    }
                 } catch {
                     console.error("Password reset email delivery failed.");
                 }
@@ -477,5 +489,6 @@ module.exports = {
     emailActionsReady,
     tokenHash,
     createToken,
-    rateLimited
+    rateLimited,
+    trustedOrigin
 };
