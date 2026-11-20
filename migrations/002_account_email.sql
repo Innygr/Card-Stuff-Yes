@@ -31,3 +31,8 @@ CREATE INDEX IF NOT EXISTS account_email_tokens_expiry_idx
     ON csy_private.account_email_tokens(expires_at);
 
 REVOKE ALL ON TABLE csy_private.account_email_tokens FROM PUBLIC;
+
+-- At most one live token per account and purpose, including concurrent requests.
+CREATE UNIQUE INDEX IF NOT EXISTS account_email_tokens_one_active_purpose
+    ON csy_private.account_email_tokens(account_id, purpose)
+    WHERE consumed_at IS NULL;
