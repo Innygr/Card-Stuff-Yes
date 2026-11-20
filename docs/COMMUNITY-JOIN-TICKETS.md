@@ -46,6 +46,30 @@ treat the in-memory guard as a production substitute.
   redemption.
 - Do not forward official account cookies or general-purpose API credentials.
 
+
+## Official issuer primitive
+
+`community-join-ticket-issuer.js` adds an isolated issuer factory. It accepts
+an Ed25519 private key, a key ID, an issuer identifier, and a separate
+high-entropy HMAC secret. The environment factory reads:
+
+- `CSY_JOIN_SIGNING_PRIVATE_KEY`: PEM-encoded Ed25519 private key.
+- `CSY_JOIN_SIGNING_KEY_ID`: active key identifier.
+- `CSY_JOIN_ISSUER`: stable issuer identifier.
+- `CSY_JOIN_SUBJECT_SECRET`: independent secret of at least 32 characters.
+
+The issuer derives a server-specific opaque subject using HMAC-SHA-256, so the
+account's internal database identifier is not placed in the ticket and the
+same account receives unrelated subjects at different community servers. It
+issues 60-second tickets and exposes a public-only Ed25519 JWK set containing
+no private key material.
+
+This remains a library primitive: no HTTP issuer or public-key endpoint is
+enabled, no account session is currently consulted by a route, and key
+rotation/discovery policy is not yet implemented. Keep the private signing key
+and HMAC secret only in the official account authority's secret store. Never
+copy them to community hosts or commit them.
+
 ## Not implemented yet
 
 The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking or account authentication. There is
