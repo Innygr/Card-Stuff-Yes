@@ -34,6 +34,10 @@ The current API implements the multiplayer prototype routes and health/status ro
 - Refreshing the multiplayer page restores the guest's unfinished waiting or active match using the existing HttpOnly guest cookie.
 - This lightweight JSON snapshot is for the prototype, not a substitute for a transactional database or multi-process locking. Player accounts, database-backed storage, online matchmaking beyond the open lobby, and production deployment/security hardening remain future work.
 
+## Server container release
+
+See [docs/SERVER-CONTAINER-RELEASE.md](docs/SERVER-CONTAINER-RELEASE.md) for local container testing, runtime safety, and the version-tagged GHCR publication process.
+
 ## Domain routing
 
 The server maps the apex domain and approved subdomains to their app pages using the HTTP Host header. See [docs/DNS-MAP.md](docs/DNS-MAP.md) for the hostname map, DNS records, TLS requirements, and deployment limitations. DNS and hosting settings still need to be configured at the provider.
