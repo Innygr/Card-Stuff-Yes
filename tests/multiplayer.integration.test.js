@@ -8,6 +8,7 @@ const net = require("node:net");
 const os = require("node:os");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const { after, before, test } = require("node:test");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -16,6 +17,13 @@ let baseUrl;
 let serverPort;
 let serverOutput = "";
 const stateFile = path.join(os.tmpdir(), "csy-multiplayer-state-" + process.pid + "-" + Date.now() + ".json");
+const adminSalt = crypto.randomBytes(16);
+const adminPassword = "test-only-admin-password";
+const adminPasswordHash = "scrypt:" + adminSalt.toString("hex") + ":" +
+    crypto.scryptSync(adminPassword, adminSalt, 64).toString("hex");
+const adminUsers = JSON.stringify([
+    { username: "integration-owner", rank: "owner", passwordHash: adminPasswordHash }
+]);
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -120,7 +128,8 @@ function startServer() {
             HOST: "127.0.0.1",
             PORT: String(serverPort),
             CSY_STATE_FILE: stateFile,
-            CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca"
+            CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca,https://admin.cardstuffyes.ca",
+            CSY_ADMIN_USERS: adminUsers,
         },
         stdio: ["ignore", "pipe", "pipe"]
     });
@@ -152,7 +161,7 @@ after(async () => {
     fs.rmSync(stateFile + ".tmp", { force: true });
 });
 
-function requestWithHost(route, host, headers = {}, method = "GET") {
+function requestWithHost(route, host, headers = {}, method = "GET", body) {
     return new Promise((resolve, reject) => {
         const request = http.request(new URL(route, baseUrl), {
             method,
@@ -168,7 +177,7 @@ function requestWithHost(route, host, headers = {}, method = "GET") {
             }));
         });
         request.on("error", reject);
-        request.end();
+        request.end(body);
     });
 }
 
@@ -215,6 +224,100 @@ test("API subdomain allows the PvP frontend origin and rejects others", async ()
         Origin: "https://untrusted.example"
     });
     assert.equal(denied.status, 403);
+});
+
+
+test("admin frontend can authenticate against the API subdomain with a host-only secure session", async () => {
+    const origin = "https://admin.cardstuffyes.ca";
+    const preflight = await requestWithHost("/api/admin/login", "api.cardstuffyes.ca", {
+        Origin: origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type"
+    }, "OPTIONS");
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers["access-control-allow-origin"], origin);
+    assert.equal(preflight.headers["access-control-allow-credentials"], "true");
+    assert.match(preflight.headers["access-control-allow-methods"], /POST/);
+
+    const deniedPreflight = await requestWithHost("/api/admin/login", "api.cardstuffyes.ca", {
+        Origin: "https://untrusted.example",
+        "Access-Control-Request-Method": "POST"
+    }, "OPTIONS");
+    assert.equal(deniedPreflight.status, 403);
+
+    const login = await requestWithHost("/api/admin/login", "api.cardstuffyes.ca", {
+        Origin: origin,
+        "X-Forwarded-Proto": "https",
+        "Content-Type": "application/json"
+    }, "POST", JSON.stringify({ username: "integration-owner", password: adminPassword }));
+    assert.equal(login.status, 200);
+    assert.equal(login.headers["access-control-allow-origin"], origin);
+    const setCookie = Array.isArray(login.headers["set-cookie"])
+        ? login.headers["set-cookie"][0]
+        : login.headers["set-cookie"];
+    assert.doesNotMatch(setCookie, /Domain=/i);
+    assert.match(setCookie, /HttpOnly/i);
+    assert.match(setCookie, /SameSite=Strict/i);
+    assert.match(setCookie, /Secure/i);
+    const cookie = setCookie.split(";")[0];
+
+    const session = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(session.status, 200);
+    assert.equal(JSON.parse(session.body).admin.username, "integration-owner");
+
+    const logs = await requestWithHost("/api/admin/server-logs", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(logs.status, 200);
+    assert.ok(Array.isArray(JSON.parse(logs.body).lines));
+
+    // A simple cross-origin POST must not be able to sign the owner out.
+    const csrfLogout = await requestWithHost("/api/admin/logout", "api.cardstuffyes.ca", {
+        Origin: "https://untrusted.example",
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    }, "POST", "{}");
+    assert.equal(csrfLogout.status, 403);
+    const stillSignedIn = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(stillSignedIn.status, 200);
+
+    // The admin page is only a static shell. The host-only API cookie is not
+    // exposed to the admin subdomain; privileged data stays behind /api/admin.
+    const adminPage = await requestWithHost("/admin.html", "admin.cardstuffyes.ca", {
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(adminPage.status, 200);
+    assert.match(adminPage.body, /Admin Panel/);
+
+    const noSession = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(noSession.status, 401);
+
+    const logout = await requestWithHost("/api/admin/logout", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    }, "POST", "{}");
+    assert.equal(logout.status, 200);
+
+    const expired = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(expired.status, 401);
 });
 
 test("API health and allowlisted cross-origin preflight work", async () => {

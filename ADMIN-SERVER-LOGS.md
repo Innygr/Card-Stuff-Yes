@@ -24,7 +24,12 @@ private environment file; do not commit credentials or hashes to Git. Example sh
 [{"username":"your-owner-login","rank":"owner","passwordHash":"scrypt:SALT_HEX:HASH_HEX"}]
 ```
 
-The login cookie is HttpOnly, SameSite=Strict, and expires after eight hours. Sessions
+The login cookie is host-only to the API hostname, HttpOnly, SameSite=Strict, Secure
+behind HTTPS, and expires after eight hours. The admin HTML/JavaScript are a public
+application shell; the browser checks `/api/admin/me` before displaying admin data.
+The cookie is not shared with the admin or other frontend subdomains. Admin
+login/logout requests must come from the same origin or an exact origin in
+`CSY_ALLOWED_ORIGINS`; API CORS runs before admin route dispatch. Sessions
 are held in memory and are invalidated when the app restarts. Only owner/admin entries
 are accepted by the log endpoint.
 

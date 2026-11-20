@@ -18,7 +18,7 @@ DNS sends each hostname to the application ingress. The Node server then uses th
 | `settings.cardstuffyes.ca` | `/settings.html` | Settings page |
 | `news.cardstuffyes.ca` | `/news.html` | News page |
 | `help.cardstuffyes.ca` | `/how-to-play.html` | Rules/help page |
-| `admin.cardstuffyes.ca` | `/admin-login.html` | Admin sign-in page; admin auth API remains unfinished |
+| `admin.cardstuffyes.ca` | `/admin-login.html` | Admin sign-in page; owner/admin login and server-log APIs are implemented |
 
 Unlisted subdomains return 404. The API hostname rejects non-API paths. Page subdomains continue to serve CSS, JavaScript, images, and other static assets at their existing paths.
 
@@ -36,7 +36,7 @@ If the DNS provider supports apex CNAME flattening, the apex may point at the pr
 
 ## API and session configuration
 
-Production browser pages call `https://api.cardstuffyes.ca`. Set `CSY_ALLOWED_ORIGINS` to the exact frontend HTTPS origins listed in `compose.yaml`. The API uses credentialed CORS and an HttpOnly, SameSite cookie. Keep HTTPS enabled and test session continuity from the PvP page before launch. The default SameSite setting is Lax; the server adds Secure when the reverse proxy forwards `X-Forwarded-Proto: https`.
+Production browser pages call `https://api.cardstuffyes.ca`. Set `CSY_ALLOWED_ORIGINS` to the exact frontend HTTPS origins listed in `compose.yaml`. The API uses exact-origin credentialed CORS. Admin login and logout accept only same-origin or explicitly allowlisted frontend origins. Admin sessions use a host-only HttpOnly, SameSite=Strict cookie on the API hostname. The admin page is a static shell; its JavaScript checks the protected API session before showing admin data. Keep HTTPS enabled and test session continuity from the PvP page before launch. The default SameSite setting is Lax; the server adds Secure when the reverse proxy forwards `X-Forwarded-Proto: https`.
 
 ## Hosting and TLS requirements
 
@@ -53,4 +53,4 @@ A wildcard record generally covers one subdomain label such as `play.cardstuffye
 
 This change adds host-based routing and documents the DNS plan. It does **not** modify registrar DNS, provision hosting, configure the reverse proxy, issue certificates, or prove the domain is live. Those actions require access to the DNS and hosting provider.
 
-The account, profile, and admin pages are addressable but their complete backend workflows are not implemented yet.
+The account and profile workflows, plus admin player/news management APIs, are not implemented yet. Admin owner/admin login, session lookup, logout, and server-log reads are implemented. The admin session cookie is host-only to `api.cardstuffyes.ca`, avoiding exposure of the session to unrelated project subdomains.

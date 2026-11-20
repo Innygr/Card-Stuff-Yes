@@ -605,7 +605,9 @@ const server = http.createServer(async (req, res) => {
         if (!applyDomainRouting(req, res, url)) return;
 
         if (url.pathname.startsWith("/api/")) {
-            if (await handleAdminLogs(req, res, url)) return;
+            // Apply the API's exact-origin CORS policy before any API handler,
+            // including admin login. Otherwise cross-origin preflights never
+            // reach this layer and admin login can bypass the shared policy.
             if (!applyCors(req, res)) {
                 sendJson(res, 403, { error: "Origin is not allowed." });
                 return;
@@ -615,6 +617,7 @@ const server = http.createServer(async (req, res) => {
                 res.end();
                 return;
             }
+            if (await handleAdminLogs(req, res, url)) return;
         }
 
         if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
