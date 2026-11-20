@@ -22,10 +22,10 @@ class PostgresJoinTicketReplayStore {
         // Database errors deliberately propagate: callers must fail closed.
         const result = await this.pool.query(
             `WITH expired AS (
-                DELETE FROM community_join_ticket_uses
+                DELETE FROM csy_private.community_join_ticket_uses
                 WHERE expires_at <= to_timestamp($2)
             )
-            INSERT INTO community_join_ticket_uses (ticket_id, expires_at)
+            INSERT INTO csy_private.community_join_ticket_uses (ticket_id, expires_at)
             VALUES ($1, to_timestamp($3))
             ON CONFLICT (ticket_id) DO NOTHING
             RETURNING ticket_id`,
