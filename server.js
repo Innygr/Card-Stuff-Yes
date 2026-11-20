@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
+const { handleAccountAuth } = require("./account-auth");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -519,7 +520,7 @@ async function handleApi(req, res, url, player) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".ico": "image/x-icon" };
-const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
+const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "account-auth.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
 
 function serveStatic(req, res, pathname) {
     if (req.method !== "GET" && req.method !== "HEAD") { sendJson(res, 405, { error: "Method not allowed." }, { Allow: "GET, HEAD" }); return; }
