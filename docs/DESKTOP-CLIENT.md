@@ -15,6 +15,8 @@ Set `CSY_DESKTOP_URL` to a reachable HTTPS staging site to test. HTTP is accepte
 
 ## Local development
 
+See [`desktop/README.md`](../desktop/README.md) for the standalone setup and troubleshooting guide.
+
 From `desktop/`:
 
 ```sh
@@ -46,14 +48,15 @@ On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="
 
 ## Security controls
 
-- Renderer Node.js integration is disabled.
+- Renderer Node.js integration is disabled; the preload script intentionally exposes no privileged bridge.
 - Context isolation, sandboxing, and web security are enabled.
 - Top-level navigation and redirects are restricted to the configured origin.
 - External HTTPS links open in the system browser; failed browser launches are handled without crashing the app.
 - A single-instance lock prevents duplicate app processes and focuses the existing window.
 - Loopback development URLs support localhost, IPv4, and IPv6.
 - Non-HTTPS external links and script/data URLs are blocked.
-- Automated Node.js tests cover IPv6 loopback, origin/port confinement, rejected non-HTTPS external schemes, platform packaging targets, non-publishing build scripts, and Electron security settings.
+- A recoverable Retry/Quit dialog handles main-frame load failures and makes the network dependency explicit.
+- Automated Node.js tests cover IPv6 loopback, origin/port confinement, rejected non-HTTPS external schemes, platform packaging targets, non-publishing build scripts, Electron security settings, preload isolation, and load-failure recovery.
 
 ## Release gates
 
