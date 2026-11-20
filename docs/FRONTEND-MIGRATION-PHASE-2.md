@@ -31,7 +31,8 @@ migration. Page-specific API integration is still pending:
 
 - Homepage and multiplayer already load runtime configuration and use the
   configured API origin.
-- Account and profile scripts still call same-origin account endpoints.
+- Account and profile pages now use the configured API origin. PR #24 adds persistent account profiles, settings, and saved-deck APIs; those features remain dependent on the backend PR being reviewed, merged, and deployed.
+- The deck builder is wired to the account deck API for catalog browsing and saved-deck create/load/update/delete. Card ownership/unlock inventory is still not implemented.
 - Admin and admin-login scripts now use the configured API origin and include
   credentials. Server PR #23 proposes the required CORS and host-only admin
   session integration; keep this path pending until that PR is merged and
@@ -39,7 +40,7 @@ migration. Page-specific API integration is still pending:
 - Owner/admin login, session lookup, logout, and bounded server-log reads
   already exist on Server. Player-management and news-management endpoints
   remain unfinished.
-- The Server DNS map documents account/profile workflows as unfinished.
+- Profile editing and settings synchronization require the profile and settings origins to be included in the API exact-origin allowlist.
 - Cookie/CORS/CSRF behavior must be tested from each final HTTPS subdomain
   before any production route is switched.
 - Some pages are informational/static and do not need API access.
