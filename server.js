@@ -7,6 +7,7 @@ const crypto = require("node:crypto");
 const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 const { handleAccountAuth } = require("./account-auth");
 const { handlePostgresAccountAuth, postgresAccountStorageEnabled } = require("./postgres-account-auth");
+const { handleEmailAccountRoutes } = require("./email-account");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -624,6 +625,7 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
             if (await handleAdminLogs(req, res, url)) return;
+            if (await handleEmailAccountRoutes(req, res, url)) return;
         }
 
         if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
