@@ -102,6 +102,41 @@ test("admin sessions can be checked and revoked", async () => {
     assert.equal(revoked.status, 401);
 });
 
+test("admin logout clears the session cookie with matching security attributes", async () => {
+    const secureOrigin = "https://" + new URL(base).host;
+    const login = await fetch(base + "/api/admin/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Origin: secureOrigin,
+            "X-Forwarded-Proto": "https"
+        },
+        body: JSON.stringify({ username: "site-owner", password: "correct horse battery staple" })
+    });
+    assert.equal(login.status, 200);
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+
+    const logout = await fetch(base + "/api/admin/logout", {
+        method: "POST",
+        headers: {
+            Origin: secureOrigin,
+            "X-Forwarded-Proto": "https",
+            Cookie: cookie
+        }
+    });
+    assert.equal(logout.status, 200);
+    const cleared = logout.headers.get("set-cookie");
+    assert.match(cleared, /^csyAdminSession=;/);
+    assert.match(cleared, /; HttpOnly(?:;|$)/);
+    assert.match(cleared, /; SameSite=Strict(?:;|$)/);
+    assert.match(cleared, /; Path=\/(?:;|$)/);
+    assert.match(cleared, /; Max-Age=0(?:;|$)/);
+    assert.match(cleared, /; Secure(?:;|$)/);
+
+    const revoked = await fetch(base + "/api/admin/me", { headers: { Cookie: cookie } });
+    assert.equal(revoked.status, 401);
+});
+
 test("rejects users whose configured rank is not admin or owner", async () => {
     const login = await fetch(base + "/api/admin/login", {
         method: "POST",
