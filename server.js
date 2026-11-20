@@ -83,12 +83,14 @@ function loadState() {
     }
 
     for (const player of snapshot.players) {
+        if (players.size >= MAX_GUEST_PLAYERS) break;
         if (player && typeof player.id === "string" && typeof player.name === "string") {
             players.set(player.id, { id: player.id, name: cleanName(player.name) || "Guest" });
         }
     }
 
     for (const match of snapshot.matches) {
+        if (matches.size >= MAX_MATCHES) break;
         if (!match || typeof match.id !== "string" ||
             !["waiting", "active", "finished"].includes(match.status) ||
             !Array.isArray(match.players) || match.players.length !== 2 ||
