@@ -80,9 +80,11 @@ domain, DNS, or production delivery is configured.
 | DELETE | `/api/admin/news/:id` | Delete a news post |
 | GET | `/api/news` | List published news for the public News page |
 
-Owner status cannot be granted through the player-role endpoint. News and
-player management require an authenticated owner/admin session. Player
-management currently lists registered accounts, not anonymous guest IDs.
+Owner status cannot be granted through the player-role endpoint. The account
+rank is player metadata; it does not itself create an admin session or grant
+admin API access. Privileged routes still require the separately configured
+owner/admin session. Player management currently lists registered accounts,
+not anonymous guest IDs.
 
 ## Cross-origin and browser-client behavior
 
