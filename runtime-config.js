@@ -7,8 +7,8 @@
         hostname.endsWith(".cardstuffyes.ca");
 
     window.CSY_CONFIG = Object.freeze({
-        // Keep gameplay API calls same-origin until cross-subdomain CORS
-        // and cookie behavior are enabled and verified in production.
+        // Production account and gameplay requests use the dedicated API subdomain.
+        // The API must allowlist each frontend origin in CSY_ALLOWED_ORIGINS.
         apiBaseUrl: productionDomain ? "https://api.cardstuffyes.ca" : "",
         routes: Object.freeze({
             home: "https://cardstuffyes.ca/",
