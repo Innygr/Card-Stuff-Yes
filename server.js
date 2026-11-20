@@ -38,6 +38,9 @@ const matches = new Map();
 const STATE_FILE = path.resolve(
     process.env.CSY_STATE_FILE || path.join(ROOT, "private-data", "multiplayer-state.json")
 );
+const ACCOUNT_FILE = path.resolve(
+    process.env.CSY_ACCOUNT_FILE || path.join(ROOT, "private-data", "accounts.json")
+);
 
 function saveState() {
     const snapshot = JSON.stringify({
@@ -530,7 +533,8 @@ function serveStatic(req, res, pathname) {
     const relative = decoded === "/" ? "index.html" : decoded.replace(/^\/+/, "");
     const filePath = path.resolve(ROOT, relative);
     if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/") ||
-        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp") {
+        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp" ||
+        filePath === ACCOUNT_FILE || filePath === ACCOUNT_FILE + ".tmp") {
         sendJson(res, 404, { error: "Not found." });
         return;
     }
