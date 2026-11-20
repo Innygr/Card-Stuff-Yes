@@ -32,8 +32,14 @@ migration. Page-specific API integration is still pending:
 - Homepage and multiplayer already load runtime configuration and use the
   configured API origin.
 - Account and profile scripts still call same-origin account endpoints.
-- Admin and admin-login scripts still call same-origin admin endpoints.
-- The Server DNS map documents account/profile/admin workflows as unfinished.
+- Admin and admin-login scripts now use the configured API origin and include
+  credentials. Server PR #23 proposes the required CORS and host-only admin
+  session integration; keep this path pending until that PR is merged and
+  deployed.
+- Owner/admin login, session lookup, logout, and bounded server-log reads
+  already exist on Server. Player-management and news-management endpoints
+  remain unfinished.
+- The Server DNS map documents account/profile workflows as unfinished.
 - Cookie/CORS/CSRF behavior must be tested from each final HTTPS subdomain
   before any production route is switched.
 - Some pages are informational/static and do not need API access.
