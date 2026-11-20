@@ -842,3 +842,26 @@ test("guest capacity is enforced and reported as service unavailable", async () 
     assert.equal(existingSession.status, 200);
     assert.equal(existingSession.data.player.id, admitted.data.player.id);
 });
+
+
+test("match capacity rejects additional matches without disturbing the existing match", async () => {
+    await stopServer();
+    stateFile = path.join(os.tmpdir(), "csy-match-capacity-" + process.pid + "-" + Date.now() + ".json");
+    await startServer({ CSY_MAX_MATCHES: "1" });
+
+    const firstHost = new ApiClient();
+    const secondHost = new ApiClient();
+
+    const first = await firstHost.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(first.status, 201);
+    const matchId = first.data.match.id;
+
+    const rejected = await secondHost.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(rejected.status, 503);
+    assert.match(rejected.data.error, /capacity/i);
+
+    const stillAvailable = await firstHost.request("/api/multiplayer/matches/" + matchId);
+    assert.equal(stillAvailable.status, 200);
+    assert.equal(stillAvailable.data.match.id, matchId);
+    assert.equal(stillAvailable.data.match.status, "waiting");
+});
