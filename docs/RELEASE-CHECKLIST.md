@@ -49,6 +49,7 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 - [ ] Verify runtime configuration validation and that secrets are external to the image/repository.
 - [ ] Test health checks, logs, backup/restore, and recovery procedures.
 - [ ] Review authentication, authorization, input validation, rate limits, CORS/CSRF, and TLS deployment.
+- [ ] Confirm reverse proxies overwrite forwarded-client headers and cannot be bypassed; replace or supplement the process-local login limiter with shared/upstream controls for multi-instance deployments.
 - [ ] Review and document every database migration, including backup and rollback; do not apply migrations automatically during release.
 - [ ] Clearly document which APIs and game features are implemented versus planned.
 - [ ] Do not claim community-hosted account federation or private standalone account isolation is ready until the requirements in [COMMUNITY-SERVERS.md](COMMUNITY-SERVERS.md) are implemented and tested.
