@@ -6,7 +6,7 @@ The canonical browser frontend belongs on the `main` branch. The frontend curren
 
 ## Running the current prototype locally
 
-The current turn-based PvP prototype uses Node.js built-in modules only.
+The server is a Node.js application. It includes the turn-based PvP prototype, account/authentication routes, account settings and deck APIs, administrative management routes, public news and collection APIs, and optional PostgreSQL-backed account storage. PostgreSQL support uses the `pg` dependency; the default local account store and multiplayer state are JSON files.
 
 1. Install a current Node.js LTS release.
 2. Clone the repository and switch to the `Server` branch.
@@ -20,11 +20,25 @@ Run `npm test` to run the automated tests. Run `npm run check` for the configure
 
 - `HOST` and `PORT` control the listen address and port. Containers should bind to `0.0.0.0`.
 - `CSY_STATE_FILE` selects the private multiplayer-state snapshot path.
+- `CSY_ACCOUNT_FILE` selects the private JSON account-store path when PostgreSQL mode is disabled.
+- `CSY_ACCOUNT_STORAGE=postgres` enables PostgreSQL account storage; configure `DATABASE_URL` as a protected runtime secret.
+- `RESEND_API_KEY` and `CSY_EMAIL_FROM` enable verification and password-reset email delivery; keep both outside source control.
 - `CSY_ALLOWED_ORIGINS` is a comma-separated exact-origin allowlist for a frontend hosted on a different origin. Leave it empty when the API is same-origin only.
 - `CSY_COOKIE_SAMESITE` accepts `Strict`, `Lax`, or `None`. Use `None` only with HTTPS and a trusted frontend origin; the server automatically adds `Secure` for this setting.
 - `GET /api/health` and `GET /api/status` return API liveness information.
 
-The current API implements the multiplayer prototype routes and health/status routes. Account login, profile, deck, and admin APIs are not implemented yet; the existing browser pages must not be treated as proof those services exist.
+### Implemented API areas
+
+- Health/status: `GET /api/health`, `GET /api/status`.
+- Authentication: registration, login, current session, logout, and password change.
+- Account: profile, settings, deck management, and collection reads.
+- Email: verification and password-reset routes when Resend is configured; email delivery remains disabled until valid runtime credentials and a sender address are supplied.
+- Administration: player listing, owner-controlled rank changes, news management, and player collection updates.
+- Multiplayer: guest identity, match creation/joining, and turn-based match actions.
+
+Account persistence defaults to the local JSON account file. Set `CSY_ACCOUNT_STORAGE=postgres` and provide `DATABASE_URL` to use PostgreSQL-backed account storage. The PostgreSQL schema is managed separately through the migration scripts; do not run migrations against production without a reviewed backup and rollback plan. The multiplayer prototype still uses its separate JSON snapshot and is not a multi-process/high-availability store.
+
+These routes are implemented in the current codebase, but that does not mean the service is production-ready: real deployment still requires staging tests, secure runtime secrets, HTTPS, exact CORS/cookie configuration, backups, migration review, and security testing.
 
 ## Multiplayer prototype scope
 
