@@ -11,6 +11,7 @@ Set `CSY_DESKTOP_URL` to a reachable HTTPS staging site to test. HTTP is accepte
 - Windows x64: NSIS installer.
 - Linux x64: AppImage and Debian package.
 - Build artifacts are uploaded by GitHub Actions and retained for 14 days; they are not automatically published as a release. Each platform artifact includes `SHA256SUMS.txt` for corruption checks.
+- Local build scripts are platform-specific: `npm run dist:win` on Windows and `npm run dist:linux` on Linux. Both explicitly disable publishing.
 
 ## Local development
 
@@ -20,7 +21,18 @@ From `desktop/`:
 npm install
 CSY_DESKTOP_URL=https://your-staging-host.example npm start
 npm test
-npm run dist
+```
+
+Build on the matching operating system:
+
+```sh
+npm run dist:win
+```
+
+or:
+
+```sh
+npm run dist:linux
 ```
 
 On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="https://your-staging-host.example"`.
