@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
-    normalizeEmail, publicBaseUrl, emailActionsReady, tokenHash, createToken, rateLimited, trustedOrigin
+    normalizeEmail, publicBaseUrl, emailActionsReady, tokenHash, createToken, rateLimited, createScopedRateLimiter, trustedOrigin
 } = require("../email-account");
 
 test("email normalization trims, lowercases, and rejects malformed or oversized addresses", () => {
@@ -91,4 +91,27 @@ test("email action POSTs require same-origin or an exact configured allowlisted 
         if (original === undefined) delete process.env.CSY_ALLOWED_ORIGINS;
         else process.env.CSY_ALLOWED_ORIGINS = original;
     }
+});
+
+test("email action rate limiter bounds memory across many source addresses", () => {
+    const limiter = createScopedRateLimiter({ limit: 5, maxEntries: 12 });
+    for (let i = 0; i < 100; i += 1) {
+        const req = { headers: { "cf-connecting-ip": "192.0.2." + i }, socket: {} };
+        limiter(req, "password-reset");
+    }
+    assert.equal(limiter.size, 12);
+    limiter({ headers: { "cf-connecting-ip": "198.51.100.1" }, socket: {} }, "password-reset");
+    assert.equal(limiter.size, 12);
+});
+
+test("email action rate limiter expires old entries and keeps scopes independent", () => {
+    let clock = 1000;
+    const limiter = createScopedRateLimiter({ limit: 1, windowMs: 500, now: () => clock });
+    const req = { headers: { "cf-connecting-ip": "192.0.2.80" }, socket: {} };
+    assert.equal(limiter(req, "verify"), false);
+    assert.equal(limiter(req, "verify"), true);
+    assert.equal(limiter(req, "reset"), false);
+    clock += 500;
+    assert.equal(limiter(req, "verify"), false);
+    assert.equal(limiter.size, 1);
 });
