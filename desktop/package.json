@@ -46,10 +46,13 @@
       "target": [
         "AppImage",
         "deb"
-      ],
-      "maintainer": "Team Blacklight",
-      "desktopName": "Card Stuff Yes",
-      "syncDesktopName": true
+      ]
+    },
+    "deb": {
+      "maintainer": "Team Blacklight"
+    },
+    "appImage": {
+      "license": "MIT"
     }
   },
   "homepage": "https://github.com/Innygr/Card-Stuff-Yes",
