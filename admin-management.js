@@ -52,7 +52,7 @@ async function handleAdminManagement(req, res, url) {
         send(res, 403, { error: "Owner or admin access required." });
         return true;
     }
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) &&
+    if (["POST", "PUT", "PATCH"].includes(req.method) &&
         !["application/json", "application/json; charset=utf-8"].includes(
             String(req.headers["content-type"] || "").toLowerCase())) {
         send(res, 415, { error: "Content-Type must be application/json." });
