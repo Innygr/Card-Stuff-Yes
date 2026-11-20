@@ -15,7 +15,7 @@ Set `CSY_DESKTOP_URL` to a reachable HTTPS staging site to test. HTTP is accepte
 
 ## Local development
 
-See [`desktop/README.md`](../desktop/README.md) for the standalone setup and troubleshooting guide.
+See [`desktop/README.md`](../desktop/README.md) for the standalone setup and troubleshooting guide. Before release, follow the [Windows/Linux smoke-test plan](DESKTOP-SMOKE-TEST.md).
 
 From `desktop/`:
 
