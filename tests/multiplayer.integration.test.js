@@ -16,7 +16,7 @@ let child;
 let baseUrl;
 let serverPort;
 let serverOutput = "";
-const stateFile = path.join(os.tmpdir(), "csy-multiplayer-state-" + process.pid + "-" + Date.now() + ".json");
+let stateFile = path.join(os.tmpdir(), "csy-multiplayer-state-" + process.pid + "-" + Date.now() + ".json");
 const adminSalt = crypto.randomBytes(16);
 const adminPassword = "test-only-admin-password";
 const adminPasswordHash = "scrypt:" + adminSalt.toString("hex") + ":" +
@@ -120,7 +120,7 @@ async function waitForServer() {
     throw new Error("Server did not become ready. Output: " + serverOutput);
 }
 
-function startServer() {
+function startServer(extraEnv = {}) {
     child = spawn(process.execPath, [path.join(ROOT, "server.js")], {
         cwd: ROOT,
         env: {
@@ -130,6 +130,7 @@ function startServer() {
             CSY_STATE_FILE: stateFile,
             CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca,https://admin.cardstuffyes.ca",
             CSY_ADMIN_USERS: adminUsers,
+            ...extraEnv
         },
         stdio: ["ignore", "pipe", "pipe"]
     });
@@ -818,4 +819,26 @@ test("startup removes invalid player records from the saved snapshot", async () 
     const resumed = await player.request("/api/multiplayer/me");
     assert.equal(resumed.status, 200);
     assert.equal(resumed.data.player.name, "Snapshot Player");
+});
+
+
+test("guest capacity is enforced and reported as service unavailable", async () => {
+    await stopServer();
+    stateFile = path.join(os.tmpdir(), "csy-multiplayer-capacity-" + process.pid + "-" + Date.now() + ".json");
+    await startServer({ CSY_MAX_GUEST_PLAYERS: "1" });
+
+    const first = new ApiClient();
+    const second = new ApiClient();
+
+    const admitted = await first.request("/api/multiplayer/me");
+    assert.equal(admitted.status, 200);
+    assert.ok(admitted.data.player.id);
+
+    const rejected = await second.request("/api/multiplayer/me");
+    assert.equal(rejected.status, 503);
+    assert.match(rejected.data.error, /at capacity/i);
+
+    const existingSession = await first.request("/api/multiplayer/me");
+    assert.equal(existingSession.status, 200);
+    assert.equal(existingSession.data.player.id, admitted.data.player.id);
 });
