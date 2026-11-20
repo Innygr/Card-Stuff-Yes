@@ -20,6 +20,13 @@ function importCommunityJoinPublicKeys(document) {
             Object.prototype.hasOwnProperty.call(jwk, "d")) {
             throw new TypeError("The community join key set contains an invalid or private key.");
         }
+        const rawPublicKey = Buffer.from(jwk.x, "base64url");
+        if (rawPublicKey.length !== 32 || rawPublicKey.toString("base64url") !== jwk.x) {
+            throw new TypeError("The community join key set contains a non-canonical public key.");
+        }
+        if (Object.keys(jwk).some(name => !["kty", "crv", "x", "use", "alg", "kid"].includes(name))) {
+            throw new TypeError("The community join key set contains unsupported JWK fields.");
+        }
         if (Object.prototype.hasOwnProperty.call(keys, jwk.kid)) {
             throw new TypeError("The community join key set contains a duplicate key ID.");
         }
