@@ -16,6 +16,10 @@ Keep the two long-lived branches separate; do not merge either wholesale into th
 - Runtime secrets are injected into the server process from a protected environment file outside the repository.
 - CI-only secrets belong in GitHub Actions Secrets or protected Environments.
 
+## Multiplayer hosting modes
+
+See [COMMUNITY-SERVERS.md](COMMUNITY-SERVERS.md) for the community-hosted and private standalone server architecture. Community hosts must never receive official database access or reusable official account credentials. Official accounts remain on the Account Authority; private standalone servers own their separate accounts and database. The federation protocol is a target design, not yet implemented.
+
 ## Desktop client
 The Windows and Linux desktop client is maintained under `desktop/` on `main`. See [DESKTOP-CLIENT.md](DESKTOP-CLIENT.md) for build and release details.
 
