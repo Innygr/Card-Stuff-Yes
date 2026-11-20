@@ -49,6 +49,7 @@ Client address selection prefers `CF-Connecting-IP`, then the first address in `
 This limiter is process-local, not a distributed abuse-control system. Multi-instance deployments need a shared rate-limit store or an upstream gateway limit before being treated as production-ready. Restarting the process resets its counters.
 
 Email verification requests, verification-token attempts, password-reset requests, and password-reset completion use separate per-IP scopes with a limit of five attempts per 15-minute window. Their tracker is also capped at 10,000 source/scope entries, with expired entries cleaned up and oldest entries evicted when full. Password-reset requests continue to return the same generic response for known and unknown email addresses. These controls are also process-local and require shared/upstream controls for multi-instance deployments.
+Admin login separately permits eight attempts per source address per 60 seconds, then returns HTTP 429. It uses the same bounded limiter implementation as account login, with its own counter instance.
 
 ## Multiplayer prototype scope
 
