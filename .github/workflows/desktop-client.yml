@@ -29,10 +29,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: desktop/package.json
       - name: Install desktop dependencies
         run: npm install --no-audit --no-fund
+      - name: Test desktop URL security policy
+        run: npm test
       - name: Build Windows installer
         if: matrix.platform == 'windows'
         run: npx electron-builder --win nsis --x64
