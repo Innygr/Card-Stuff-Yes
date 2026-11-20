@@ -4,7 +4,8 @@ Last checked: 2026-11-20 against the current `Server` branch.
 
 This is a source-code capability inventory, not a claim that the production
 server has been deployed or that every browser workflow has passed staging
-validation.
+validation. The new 1.0 schema migration must be applied before the new
+collection, role, and news endpoints can run.
 
 ## Implemented API surface
 
@@ -25,11 +26,10 @@ validation.
 | POST | `/api/multiplayer/matches/:id/leave` | Leave/cancel a match |
 | POST | `/api/multiplayer/matches/:id/action` | Play a turn action |
 
-### Accounts, profiles, settings, and decks
+### Accounts, profiles, settings, decks, and collections
 
-The account handler supports registration, sign-in, session lookup, sign-out,
-and password changes. PostgreSQL-backed account storage is selected when
-configured; the legacy JSON handler remains in the codebase as a fallback.
+PostgreSQL-backed account storage is selected when configured; the legacy
+JSON handler remains in the codebase as a fallback.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -42,9 +42,12 @@ configured; the legacy JSON handler remains in the codebase as a fallback.
 | GET, PUT | `/api/account/settings` | Read or update account settings |
 | GET, POST | `/api/account/decks` | List or create saved decks |
 | GET, PUT, DELETE | `/api/account/decks/:id` | Read, update, or delete a saved deck |
+| GET | `/api/account/collection` | Read the signed-in account's card quantities |
 
-Saved-deck support is not the same as a card collection or inventory system.
-Card ownership, unlocks, and inventory endpoints are not implemented.
+Collection quantities are private to the account. Admins can set a quantity
+for a specific catalog card through the player collection endpoint below.
+The current model tracks quantities; it does not yet implement card unlock
+rules, trading, crafting, or a public marketplace.
 
 ### Email and password recovery
 
@@ -57,11 +60,10 @@ Card ownership, unlocks, and inventory endpoints are not implemented.
 | POST | `/api/auth/password-reset/complete` | Complete password recovery |
 
 The Server branch also contains a private durable transactional email outbox.
-That is backend infrastructure; successful source-level implementation does
-not by itself prove that a mail provider, sender domain, DNS, or production
-delivery is configured.
+Source-level implementation does not prove that a mail provider, sender
+domain, DNS, or production delivery is configured.
 
-### Admin
+### Admin and managed news
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -69,52 +71,54 @@ delivery is configured.
 | GET | `/api/admin/me` | Read current admin session |
 | POST | `/api/admin/logout` | End admin session |
 | GET | `/api/admin/server-logs` | Read a bounded owner/admin-only log snapshot |
+| GET | `/api/admin/players` | List account-backed players |
+| PATCH | `/api/admin/players/:id/rank` | Change player/mod/admin role (owner only) |
+| PUT | `/api/admin/players/:id/collection/:cardId` | Set a player's card quantity |
+| GET | `/api/admin/news` | List all news posts, including drafts |
+| POST | `/api/admin/news` | Create a news post |
+| PATCH | `/api/admin/news/:id` | Edit or publish/unpublish a news post |
+| DELETE | `/api/admin/news/:id` | Delete a news post |
+| GET | `/api/news` | List published news for the public News page |
 
-Player management and news management endpoints are not implemented.
+Owner status cannot be granted through the player-role endpoint. News and
+player management require an authenticated owner/admin session. Player
+management currently lists registered accounts, not anonymous guest IDs.
 
 ## Cross-origin and browser-client behavior
 
-The Server handler advertises `GET, POST, PUT, DELETE, OPTIONS` and permits
-the `Content-Type` request header. Credentialed CORS responses are restricted
-to exact origins in `CSY_ALLOWED_ORIGINS`. State-changing account/admin
-handlers perform trusted-origin checks; do not treat CORS as authorization.
+The Server handler advertises
+`GET, POST, PUT, PATCH, DELETE, OPTIONS` and permits the `Content-Type`
+request header. Credentialed CORS responses are restricted to exact origins
+in `CSY_ALLOWED_ORIGINS`. State-changing account/admin handlers perform
+trusted-origin checks; CORS is not authorization.
 
 The shared `api.js` client supports `GET`, `POST`, `PUT`, and `DELETE`.
-It rejects an unconfigured API origin rather than silently sending requests
-to the page's own origin, requires HTTPS in production (HTTP only for
-localhost), includes cookies, and disables caching.
+The admin page uses its own credentialed fetch helper for `PATCH` requests.
+The client rejects an unconfigured API origin, requires HTTPS in production
+(HTTP only for localhost), includes cookies, and disables caching.
 
 The client does not add a CSRF token. Keep the server's trusted-origin checks,
 cookie policy, HTTPS, and CORS allowlist aligned. Verify cookie behavior from
 each intended frontend origin before enabling production routing.
 
-## Remaining backend gaps
-
-- Card collection, ownership, unlocks, and inventory APIs.
-- Admin player-management APIs.
-- Admin news-management APIs.
-
-A page being present in the frontend or a hostname being present in DNS does
-not mean its backend workflow is implemented.
-
 ## Release and deployment checks still required
 
-1. Run the Server branch's complete automated test suite and database checks.
-2. Verify PostgreSQL-backed account mode and migration state in a non-production
-   environment.
-3. Configure and test transactional email delivery without exposing provider
+1. Apply and verify the new 1.0 PostgreSQL migration in a non-production
+   environment before enabling the new endpoints.
+2. Run the Server branch's complete automated test suite and database checks.
+3. Test account collection privacy, admin quantity changes, role restrictions,
+   news draft visibility, publishing, editing, and deletion end to end.
+4. Configure and test transactional email delivery without exposing provider
    credentials to the browser or repository.
-4. Test registration, login, session expiry, logout, profile/settings updates,
-   saved-deck CRUD, email verification, and password recovery end to end.
-5. Test CORS preflight, cookies, trusted-origin rejection, and unauthorized
+5. Test registration, login, session expiry, logout, profile/settings updates,
+   saved-deck CRUD, email verification, and password recovery.
+6. Test CORS preflight, cookies, trusted-origin rejection, and unauthorized
    responses from every intended HTTPS frontend origin.
-6. Keep missing inventory and admin-management workflows visibly unavailable;
-   do not present placeholder UI as working functionality.
 7. Complete staging and backup/rollback checks before changing production
-   routing.
+   routing. Do not switch live routing as part of this code change.
 
 ## Deployment boundary
 
-This document update does not alter the `Server` branch, DNS, Cloudflare
-Tunnel, Nginx, the Ubuntu host, or any live deployment. The Server-hosted
-frontend remains the compatibility site until staging validation is complete.
+These source changes do not alter DNS, Cloudflare Tunnel, Nginx, the Ubuntu
+host, or any live deployment. The Server-hosted frontend remains the
+compatibility site until staging validation is complete.
