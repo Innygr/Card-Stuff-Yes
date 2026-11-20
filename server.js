@@ -8,6 +8,7 @@ const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 const { handleAccountAuth } = require("./account-auth");
 const { handlePostgresAccountAuth, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 const { handleEmailAccountRoutes } = require("./email-account");
+const { handleAdminManagement, handlePublicNews, handleAccountCollection } = require("./admin-management");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -205,7 +206,7 @@ function applyCors(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "600");
     res.setHeader("Vary", "Origin");
     return true;
@@ -624,8 +625,11 @@ const server = http.createServer(async (req, res) => {
                 res.end();
                 return;
             }
+            if (await handleAdminManagement(req, res, url)) return;
             if (await handleAdminLogs(req, res, url)) return;
             if (await handleEmailAccountRoutes(req, res, url)) return;
+            if (await handlePublicNews(req, res, url)) return;
+            if (await handleAccountCollection(req, res, url)) return;
         }
 
         if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
