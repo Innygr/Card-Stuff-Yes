@@ -3,12 +3,19 @@
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const MAX_RECIPIENTS = 5;
 
+function validSender(value) {
+    if (typeof value !== "string" || !value.trim() || value.length > 254) return false;
+    const candidate = value.trim();
+    const match = candidate.match(/^(?:[^<>\\r\\n]{1,80}\\s*)?<([^<>\\s]+@[^<>\\s]+)>$/) ||
+        (candidate.includes("<") || candidate.includes(">") ? null : [null, candidate]);
+    return Boolean(match && /^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(match[1]));
+}
+
 function emailConfigured() {
     return Boolean(
         typeof process.env.RESEND_API_KEY === "string" &&
         process.env.RESEND_API_KEY.trim() &&
-        typeof process.env.CSY_EMAIL_FROM === "string" &&
-        /^[^<>\\s]+@[^<>\\s]+$/.test(process.env.CSY_EMAIL_FROM.trim())
+        validSender(process.env.CSY_EMAIL_FROM)
     );
 }
 
@@ -17,7 +24,6 @@ function emailStatus() {
         configured: emailConfigured(),
         provider: "resend",
         fromConfigured: Boolean(process.env.CSY_EMAIL_FROM),
-        // Never return the API key, sender address, or provider response.
         mode: emailConfigured() ? "ready" : "disabled"
     };
 }
@@ -30,7 +36,7 @@ function escapeHtml(value) {
 
 function validRecipient(value) {
     return typeof value === "string" && value.length <= 254 &&
-        /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(value);
+        /^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(value);
 }
 
 function validActionUrl(value) {
@@ -82,9 +88,7 @@ function buildPasswordResetEmail(actionUrl) {
 }
 
 async function sendTransactionalEmail({ to, subject, html, text, replyTo }) {
-    if (!emailConfigured()) {
-        return { sent: false, reason: "email_not_configured" };
-    }
+    if (!emailConfigured()) return { sent: false, reason: "email_not_configured" };
     const recipients = Array.isArray(to) ? to : [to];
     if (!recipients.length || recipients.length > MAX_RECIPIENTS || !recipients.every(validRecipient)) {
         throw new TypeError("Email recipient address is invalid.");
@@ -97,7 +101,6 @@ async function sendTransactionalEmail({ to, subject, html, text, replyTo }) {
     if (replyTo !== undefined && !validRecipient(replyTo)) {
         throw new TypeError("Reply-to address is invalid.");
     }
-
     const response = await fetch(RESEND_ENDPOINT, {
         method: "POST",
         headers: {
@@ -115,24 +118,14 @@ async function sendTransactionalEmail({ to, subject, html, text, replyTo }) {
         signal: AbortSignal.timeout(10_000)
     });
     if (!response.ok) {
-        // Do not surface provider response bodies, which may contain addresses or operational details.
         throw new Error("Transactional email provider rejected the request (HTTP " + response.status + ").");
     }
     let result;
     try { result = await response.json(); } catch { result = {}; }
-    return {
-        sent: true,
-        messageId: typeof result.id === "string" ? result.id : null
-    };
+    return { sent: true, messageId: typeof result.id === "string" ? result.id : null };
 }
 
 module.exports = {
-    emailConfigured,
-    emailStatus,
-    escapeHtml,
-    validRecipient,
-    validActionUrl,
-    buildVerificationEmail,
-    buildPasswordResetEmail,
-    sendTransactionalEmail
+    emailConfigured, emailStatus, escapeHtml, validRecipient, validSender, validActionUrl,
+    buildVerificationEmail, buildPasswordResetEmail, sendTransactionalEmail
 };
