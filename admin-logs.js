@@ -73,12 +73,6 @@ function send(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
-function cookieDomainAttribute() {
-    const domain = String(process.env.CSY_ADMIN_COOKIE_DOMAIN || "").trim();
-    if (!domain || !/^\.?[a-z0-9.-]+$/i.test(domain) || domain.includes("..")) return "";
-    return "; Domain=" + domain;
-}
-
 function isAllowedOrigin(req) {
     const origin = req.headers.origin;
     if (!origin) return false;
@@ -98,15 +92,13 @@ function setCookie(req, res, token, maxAge) {
     const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
     const secure = req.socket.encrypted || forwarded === "https" ? "; Secure" : "";
     res.setHeader("Set-Cookie", COOKIE + "=" + encodeURIComponent(token) +
-        "; HttpOnly; SameSite=Strict; Path=/; Max-Age=" + maxAge +
-        cookieDomainAttribute() + secure);
+        "; HttpOnly; SameSite=Strict; Path=/; Max-Age=" + maxAge + secure);
 }
 
 function clearCookie(req, res) {
     const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
     const secure = req.socket.encrypted || forwarded === "https" ? "; Secure" : "";
-    res.setHeader("Set-Cookie", COOKIE + "=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0" +
-        cookieDomainAttribute() + secure);
+    res.setHeader("Set-Cookie", COOKIE + "=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0" + secure);
 }
 
 function readLogs() {
@@ -207,11 +199,10 @@ async function handleAdminLogs(req, res, url) {
 
 function serveAdminPage(req, res, pathname) {
     if (!["/admin.html", "/admin.js"].includes(pathname)) return false;
-    if (!adminFor(req)) {
-        res.writeHead(302, { Location: "/admin-login.html", "Cache-Control": "no-store" });
-        res.end();
-        return true;
-    }
+    // The admin HTML/JS are a public application shell, not privileged data.
+    // Keep the session cookie host-only on the API hostname; admin.js checks
+    // /api/admin/me before showing account details. Every privileged API route
+    // continues to enforce the server-side session and rank.
     return false;
 }
 
