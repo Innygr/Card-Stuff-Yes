@@ -164,12 +164,12 @@ test("accounts securely link to an existing guest and survive restart", async ()
 
     const duplicateLogin = new Client();
     const wrongPassword = await duplicateLogin.request("/api/auth/login", {
-        body: { username: "CardPlayer", password: "not-the-password" }
+        method: "POST", body: { username: "CardPlayer", password: "not-the-password" }
     });
     assert.equal(wrongPassword.status, 401);
 
     const login = await duplicateLogin.request("/api/auth/login", {
-        body: { username: "cardplayer", password: "A-long-passphrase-2026!" }
+        method: "POST", body: { username: "cardplayer", password: "A-long-passphrase-2026!" }
     });
     assert.equal(login.status, 200);
     assert.equal(duplicateLogin.cookies.get("csyPlayerId"), guestId);
@@ -211,7 +211,7 @@ async function newPasswordClientLogout(result) {
     // Logout is verified below using a dedicated client so the cookie jar is explicit.
     const client = new Client();
     const login = await client.request("/api/auth/login", {
-        body: { username: "CardPlayer", password: "A-new-secure-passphrase-2026!" }
+        method: "POST", body: { username: "CardPlayer", password: "A-new-secure-passphrase-2026!" }
     });
     assert.equal(login.status, 200);
     const logout = await client.request("/api/auth/logout", { method: "POST" });
