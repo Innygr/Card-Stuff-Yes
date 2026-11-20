@@ -21,6 +21,9 @@ const allowedOrigins = new Set(
         .filter(Boolean)
 );
 const loginAttempts = new Map();
+const MAX_DECKS = 25;
+const MAX_DECK_CARDS = 60;
+const CARD_IDS = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, "cards.json"), "utf8")).map(card => card.id));
 
 function readStore() {
     try {
@@ -109,6 +112,28 @@ function sanitizeProfile(input) {
     };
 }
 
+function sanitizeDecks(input) {
+    if (!Array.isArray(input)) return [];
+    const seen = new Set();
+    return input.filter(deck => {
+        if (!deck || typeof deck !== "object" || Array.isArray(deck) ||
+            typeof deck.id !== "string" || !/^deck_[a-f0-9]{32}$/.test(deck.id) ||
+            seen.has(deck.id) || typeof deck.name !== "string" || !deck.name.trim() ||
+            deck.name.length > 40 || !Array.isArray(deck.cards) || deck.cards.length > MAX_DECK_CARDS ||
+            !deck.cards.every(cardId => typeof cardId === "string" && CARD_IDS.has(cardId)) ||
+            typeof deck.createdAt !== "string" || !Number.isFinite(Date.parse(deck.createdAt)) ||
+            typeof deck.updatedAt !== "string" || !Number.isFinite(Date.parse(deck.updatedAt))) return false;
+        seen.add(deck.id);
+        deck.name = deck.name.trim();
+        return true;
+    }).slice(0, MAX_DECKS);
+}
+
+function validDeckCards(cards) {
+    return Array.isArray(cards) && cards.length <= MAX_DECK_CARDS &&
+        cards.every(cardId => typeof cardId === "string" && CARD_IDS.has(cardId));
+}
+
 function sanitizeStore() {
     const originalAccounts = store.accounts.length;
     const originalSessions = store.sessions.length;
@@ -124,6 +149,7 @@ function sanitizeStore() {
     for (const account of store.accounts) {
         account.profile = sanitizeProfile(account.profile);
         account.settings = sanitizeSettings(account.settings);
+        account.decks = sanitizeDecks(account.decks);
     }
     const accountIds = new Set(store.accounts.map(account => account.id));
     store.sessions = store.sessions.filter(session =>
@@ -327,15 +353,16 @@ function rateLimited(req) {
 async function handleAccountAuth(req, res, url, guestPlayer) {
     const route = url.pathname;
     const isAccountRoute = route === "/api/me" ||
-        ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/change-password", "/api/account/profile", "/api/account/settings"].includes(route);
+        ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/change-password", "/api/account/profile", "/api/account/settings", "/api/account/decks"].includes(route) ||
+        /^\/api\/account\/decks\/deck_[a-f0-9]{32}$/.test(route);
     if (!isAccountRoute) return false;
 
-    if (req.method !== "GET" && req.method !== "POST" && req.method !== "PUT") {
-        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, POST, PUT" });
+    if (req.method !== "GET" && req.method !== "POST" && req.method !== "PUT" && req.method !== "DELETE") {
+        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, POST, PUT, DELETE" });
         return true;
     }
 
-    if ((req.method === "POST" || req.method === "PUT") && !trustedOrigin(req)) {
+    if ((req.method === "POST" || req.method === "PUT" || req.method === "DELETE") && !trustedOrigin(req)) {
         send(res, 403, { error: "A trusted website origin is required." });
         return true;
     }
@@ -422,6 +449,82 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
         clearCookie(req, res, ACCOUNT_COOKIE);
         clearCookie(req, res, PLAYER_COOKIE, "Lax");
         send(res, 200, { message: "Signed out." });
+        return true;
+    }
+
+    if (route === "/api/account/decks" || route.startsWith("/api/account/decks/")) {
+        const current = sessionFor(req);
+        if (!current) { send(res, 401, { error: "Sign in to manage saved decks." }); return true; }
+        const deckId = route === "/api/account/decks" ? null : route.slice("/api/account/decks/".length);
+        if (req.method === "GET" && !deckId) {
+            send(res, 200, { decks: sanitizeDecks(current.account.decks) });
+            return true;
+        }
+        if (req.method === "POST" && !deckId) {
+            let body;
+            try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
+            if (current.account.decks.length >= MAX_DECKS) {
+                send(res, 409, { error: "You have reached the saved deck limit." });
+                return true;
+            }
+            const name = typeof body.name === "string" ? body.name.trim() : "";
+            if (!name || name.length > 40 || !validDeckCards(body.cards)) {
+                send(res, 400, { error: "A deck needs a name of 1–40 characters and up to 60 valid card IDs." });
+                return true;
+            }
+            const now = new Date().toISOString();
+            const deck = {
+                id: "deck_" + crypto.randomBytes(16).toString("hex"),
+                name,
+                cards: body.cards.slice(),
+                createdAt: now,
+                updatedAt: now
+            };
+            current.account.decks.push(deck);
+            current.account.updatedAt = now;
+            saveStore();
+            send(res, 201, { deck });
+            return true;
+        }
+        if (!deckId || !/^deck_[a-f0-9]{32}$/.test(deckId)) {
+            send(res, 400, { error: "Invalid saved deck ID." });
+            return true;
+        }
+        const deck = current.account.decks.find(item => item.id === deckId);
+        if (!deck) { send(res, 404, { error: "Saved deck not found." }); return true; }
+        if (req.method === "GET") { send(res, 200, { deck }); return true; }
+        if (req.method === "PUT") {
+            let body;
+            try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
+            if (!body || typeof body !== "object" || Array.isArray(body) ||
+                Object.keys(body).some(key => !["name", "cards"].includes(key))) {
+                send(res, 400, { error: "Only deck name and cards can be updated." });
+                return true;
+            }
+            if (body.name !== undefined && (typeof body.name !== "string" || !body.name.trim() || body.name.trim().length > 40)) {
+                send(res, 400, { error: "Deck name must be 1–40 characters." });
+                return true;
+            }
+            if (body.cards !== undefined && !validDeckCards(body.cards)) {
+                send(res, 400, { error: "Deck cards must contain up to 60 valid card IDs." });
+                return true;
+            }
+            if (body.name !== undefined) deck.name = body.name.trim();
+            if (body.cards !== undefined) deck.cards = body.cards.slice();
+            deck.updatedAt = new Date().toISOString();
+            current.account.updatedAt = deck.updatedAt;
+            saveStore();
+            send(res, 200, { deck });
+            return true;
+        }
+        if (req.method === "DELETE") {
+            current.account.decks = current.account.decks.filter(item => item.id !== deckId);
+            current.account.updatedAt = new Date().toISOString();
+            saveStore();
+            send(res, 200, { message: "Saved deck deleted." });
+            return true;
+        }
+        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, PUT, DELETE" });
         return true;
     }
 
