@@ -27,8 +27,16 @@ test("Electron renderer keeps its security boundaries enabled", () => {
     assert.match(mainSource, /webSecurity:\s*true/);
 });
 
-test("desktop process enforces single-instance and redirect navigation guards", () => {
+test("desktop process enforces single-instance, navigation guards, and recoverable load failures", () => {
     assert.match(mainSource, /requestSingleInstanceLock\(\)/);
     assert.match(mainSource, /on\("will-redirect",\s*guardNavigation\)/);
     assert.match(mainSource, /on\("will-navigate",\s*guardNavigation\)/);
+    assert.match(mainSource, /did-fail-load/);
+    assert.match(mainSource, /buttons:\s*\["Retry",\s*"Quit"\]/);
+    assert.match(mainSource, /offline play is not available yet/i);
+});
+
+test("preload exposes no privileged renderer bridge", () => {
+    const preloadSource = fs.readFileSync(path.join(root, "preload.js"), "utf8");
+    assert.doesNotMatch(preloadSource, /contextBridge|ipcRenderer|require\s*\(/);
 });
