@@ -1,0 +1,48 @@
+name: Sync documentation to GitHub Wiki
+on:
+  push:
+    branches: [main, Server]
+    paths: ["docs/**", ".github/workflows/wiki-sync.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out documentation source
+        uses: actions/checkout@v4
+        with:
+          path: source
+          sparse-checkout: docs
+          sparse-checkout-cone-mode: true
+      - name: Check out Wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          token: ${{ secrets.WIKI_TOKEN }}
+          path: wiki
+      - name: Publish docs as Wiki pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(source/docs/*.md)
+          if (( ${#files[@]} == 0 )); then
+            echo "No Markdown files found in docs/."
+            exit 0
+          fi
+          for file in "${files[@]}"; do
+            name="$(basename "$file" .md)"
+            cp "$file" "wiki/$name.md"
+          done
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add -- *.md
+            git commit -m "docs: sync pages from docs/"
+            git push
+          else
+            echo "Wiki is already up to date."
+          fi
