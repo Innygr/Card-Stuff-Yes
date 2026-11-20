@@ -77,6 +77,33 @@ test("rejects malformed accounts, duplicate identities, invalid cards and orphan
     assert.throws(() => validateSource(orphan, now), /Invalid session/);
 });
 
+test("rejects an existing profile that conflicts with the source instead of silently skipping it", async () => {
+    const input = validateSource(sourceData(), now);
+    const sourceAccount = input.accounts[0];
+    const fakeClient = {
+        async query(sql) {
+            if (sql.includes("FROM csy_private.accounts")) {
+                return { rowCount: 1, rows: [{
+                    id: sourceAccount.id,
+                    player_id: sourceAccount.playerId,
+                    username: sourceAccount.username,
+                    username_key: sourceAccount.usernameKey,
+                    password_hash: sourceAccount.passwordHash
+                }] };
+            }
+            if (sql.includes("FROM csy_private.profiles")) {
+                return { rowCount: 1, rows: [{ display_name: "Different", bio: "Hello" }] };
+            }
+            if (sql.includes("FROM csy_private.player_settings")) return { rowCount: 0, rows: [] };
+            return { rowCount: 0, rows: [] };
+        }
+    };
+    await assert.rejects(
+        importSource(fakeClient, input, { apply: false }),
+        /Existing profile conflicts/
+    );
+});
+
 test("requires an explicit dry-run or apply mode", () => {
     assert.throws(() => parseArgs([]), /Choose exactly one mode/);
     assert.throws(() => parseArgs(["--apply", "--dry-run"]), /Choose exactly one mode/);
