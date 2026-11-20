@@ -6,6 +6,7 @@ const { createRateLimiter } = require("./login-rate-limit");
 
 const COOKIE = "csyAdminSession";
 const SESSION_MS = 8 * 60 * 60 * 1000;
+const MAX_ADMIN_SESSIONS = 10000;
 const sessions = new Map();
 const LOG_FILE = process.env.CSY_LOG_FILE || "/app/private-logs/card-stuff-yes.log";
 const ALLOWED_ORIGINS = new Set(
@@ -146,7 +147,14 @@ async function handleAdminLogs(req, res, url) {
         const token = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
         const rank = String(user.rank).toLowerCase();
-        sessions.set(tokenHash, { username: user.username, rank, expiresAt: Date.now() + SESSION_MS });
+        const issuedAt = Date.now();
+        for (const [key, session] of sessions) {
+            if (session.expiresAt <= issuedAt) sessions.delete(key);
+        }
+        while (sessions.size >= MAX_ADMIN_SESSIONS) {
+            sessions.delete(sessions.keys().next().value);
+        }
+        sessions.set(tokenHash, { username: user.username, rank, expiresAt: issuedAt + SESSION_MS });
         setCookie(req, res, token, Math.floor(SESSION_MS / 1000));
         send(res, 200, { admin: { username: user.username, rank } });
         return true;
