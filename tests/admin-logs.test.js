@@ -58,6 +58,29 @@ test("owner login can read and filter bounded server logs", async () => {
     assert.match(data.lines[0], /ERROR request failed/);
 });
 
+test("admin sessions can be checked and revoked", async () => {
+    const login = await fetch(base + "/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: base },
+        body: JSON.stringify({ username: "site-owner", password: "correct horse battery staple" })
+    });
+    assert.equal(login.status, 200);
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+
+    const current = await fetch(base + "/api/admin/me", { headers: { Cookie: cookie } });
+    assert.equal(current.status, 200);
+    assert.deepEqual((await current.json()).admin, { username: "site-owner", rank: "owner" });
+
+    const logout = await fetch(base + "/api/admin/logout", {
+        method: "POST",
+        headers: { Origin: base, Cookie: cookie }
+    });
+    assert.equal(logout.status, 200);
+
+    const revoked = await fetch(base + "/api/admin/me", { headers: { Cookie: cookie } });
+    assert.equal(revoked.status, 401);
+});
+
 test("rejects users whose configured rank is not admin or owner", async () => {
     const login = await fetch(base + "/api/admin/login", {
         method: "POST",
