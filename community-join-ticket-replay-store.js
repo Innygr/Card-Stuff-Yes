@@ -24,6 +24,7 @@ class PostgresJoinTicketReplayStore {
             `WITH expired AS (
                 DELETE FROM csy_private.community_join_ticket_uses
                 WHERE expires_at <= to_timestamp($2)
+                RETURNING ticket_id
             )
             INSERT INTO csy_private.community_join_ticket_uses (ticket_id, expires_at)
             VALUES ($1, to_timestamp($3))
