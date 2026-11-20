@@ -8,7 +8,7 @@ The canonical browser frontend belongs on the `main` branch. The frontend curren
 
 The server is a Node.js application. It includes the turn-based PvP prototype, account/authentication routes, account settings and deck APIs, administrative management routes, public news and collection APIs, and optional PostgreSQL-backed account storage. PostgreSQL support uses the `pg` dependency; the default local account store and multiplayer state are JSON files.
 
-1. Install a current Node.js LTS release.
+1. Install Node.js 22 LTS (the supported runtime for this server release track).
 2. Clone the repository and switch to the `Server` branch.
 3. From the repository folder, run `npm start`.
 4. During this migration phase, open `http://127.0.0.1:6565/multiplayer.html`.
