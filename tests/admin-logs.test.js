@@ -90,6 +90,21 @@ test("rejects users whose configured rank is not admin or owner", async () => {
     assert.equal(login.status, 401);
 });
 
+test("rejects cross-origin admin login and logout requests", async () => {
+    const rejectedLogin = await fetch(base + "/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://untrusted.example" },
+        body: JSON.stringify({ username: "site-owner", password: "correct horse battery staple" })
+    });
+    assert.equal(rejectedLogin.status, 403);
+
+    const rejectedLogout = await fetch(base + "/api/admin/logout", {
+        method: "POST",
+        headers: { Origin: "https://untrusted.example" }
+    });
+    assert.equal(rejectedLogout.status, 403);
+});
+
 test("admin login rate limit returns HTTP 429 after eight attempts", async () => {
     const headers = {
         "Content-Type": "application/json",
