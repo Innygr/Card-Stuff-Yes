@@ -634,6 +634,11 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
+        if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/")) {
+            const guestPlayer = getPlayer(req, res);
+            if (await handleAccountAuth(req, res, url, guestPlayer)) return;
+        }
+
         if (url.pathname.startsWith("/api/multiplayer/")) {
             await handleApi(req, res, url, getPlayer(req, res));
             return;
