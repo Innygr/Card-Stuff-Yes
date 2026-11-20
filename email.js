@@ -87,7 +87,7 @@ function buildPasswordResetEmail(actionUrl) {
     };
 }
 
-async function sendTransactionalEmail({ to, subject, html, text, replyTo }) {
+async function sendTransactionalEmail({ to, subject, html, text, replyTo, idempotencyKey }) {
     if (!emailConfigured()) return { sent: false, reason: "email_not_configured" };
     const recipients = Array.isArray(to) ? to : [to];
     if (!recipients.length || recipients.length > MAX_RECIPIENTS || !recipients.every(validRecipient)) {
@@ -105,7 +105,9 @@ async function sendTransactionalEmail({ to, subject, html, text, replyTo }) {
         method: "POST",
         headers: {
             Authorization: "Bearer " + process.env.RESEND_API_KEY.trim(),
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...(typeof idempotencyKey === "string" && /^[a-f0-9_]{16,80}$/.test(idempotencyKey)
+                ? { "Idempotency-Key": idempotencyKey } : {})
         },
         body: JSON.stringify({
             from: process.env.CSY_EMAIL_FROM.trim(),
