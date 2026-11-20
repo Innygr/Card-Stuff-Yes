@@ -8,6 +8,7 @@ const crypto = require("node:crypto");
 const salt = crypto.randomBytes(16);
 const passwordHash = "scrypt:" + salt.toString("hex") + ":" +
     crypto.scryptSync("test-owner-password", salt, 64).toString("hex");
+process.env.CSY_ACCOUNT_STORAGE = "postgres";
 process.env.CSY_ADMIN_USERS = JSON.stringify([
     { username: "test-owner", rank: "owner", passwordHash },
     { username: "test-admin", rank: "admin", passwordHash }
@@ -26,6 +27,12 @@ const posts = new Map();
 const db = require("../db");
 db.getPool = () => ({
     async query(sql, params = []) {
+        if (sql.includes("FROM csy_private.account_sessions s")) {
+            return { rows: [{ id: player.id, player_id: player.player_id, username: player.username, password_hash: "hash", rank: player.rank, created_at: player.created_at, display_name: "", bio: "", expires_at: new Date(Date.now() + 60000) }], rowCount: 1 };
+        }
+        if (sql.includes("FROM csy_private.account_card_inventory")) {
+            return { rows: [{ card_id: "spark", quantity: 4, updated_at: new Date() }], rowCount: 1 };
+        }
         if (sql.includes("SELECT id, player_id, username, rank, email")) {
             return { rows: [player], rowCount: 1 };
         }
@@ -168,6 +175,16 @@ test("admin can create, publish, edit, and delete news posts", async () => {
     assert.equal(deleted.response.status, 200);
     const afterDelete = await request("/api/news", {}, null);
     assert.equal(afterDelete.data.news.length, 0);
+});
+
+
+test("signed-in account can read only its private collection payload", async () => {
+    const token = "b".repeat(64);
+    const { response, data } = await request("/api/account/collection", {}, "csyAccountSession=" + token);
+    assert.equal(response.status, 200);
+    assert.equal(data.cards.length > 0, true);
+    assert.equal(data.cards.find(card => card.id === "spark").quantity, 4);
+    assert.equal(data.cards.find(card => card.id === "flare").quantity, 0);
 });
 
 test("news validation rejects unsafe or malformed payloads", async () => {
