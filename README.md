@@ -14,7 +14,7 @@ The server is a Node.js application. It includes the turn-based PvP prototype, a
 4. During this migration phase, open `http://127.0.0.1:6565/multiplayer.html`.
 5. Open that address in two separate browser sessions on the same computer, create a match in one, and join it from the other. For another device on your local network, start the server with `HOST=0.0.0.0` and use the host computer's LAN address. Do not expose the prototype directly to the public internet; use HTTPS behind a properly configured reverse proxy first.
 
-Run `npm test` to run the automated tests. Run `npm run check` for the configured syntax checks.
+Run `npm test` to run the automated tests, including HTTP-level checks that both JSON and PostgreSQL account registration/login paths enforce the 10-attempt rate limit. Run `npm run check` for the configured syntax checks.
 
 ## API runtime configuration
 
