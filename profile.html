@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="./mobile.css">
 
     <!-- Profile functionality -->
+    <script src="./runtime-config.js" defer></script>
     <script src="./profile.js" defer></script>
 
     <script src="./mobile.js" defer></script>
@@ -127,6 +128,8 @@
                         id="new-password"
                         name="newPassword"
                         autocomplete="new-password"
+                        minlength="12"
+                        maxlength="128"
                         required
                     >
                 </div>
@@ -138,6 +141,8 @@
                         id="confirm-password"
                         name="confirmPassword"
                         autocomplete="new-password"
+                        minlength="12"
+                        maxlength="128"
                         required
                     >
                 </div>
