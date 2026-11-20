@@ -11,6 +11,6 @@
     "db:migrate": "node scripts/migrate.js"
   },
   "dependencies": {
-    "pg": "^8.16.3"
+    "pg": "8.16.3"
   }
 }
