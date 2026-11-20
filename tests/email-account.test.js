@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
-    normalizeEmail, publicBaseUrl, emailActionsReady, tokenHash, createToken, rateLimited
+    normalizeEmail, publicBaseUrl, emailActionsReady, tokenHash, createToken, rateLimited, trustedOrigin
 } = require("../email-account");
 
 test("email normalization trims, lowercases, and rejects malformed or oversized addresses", () => {
@@ -70,4 +70,25 @@ test("email endpoint rate limiting is bounded by source IP and scope", () => {
     const scope = "email-account-test-" + require("node:crypto").randomBytes(8).toString("hex");
     for (let i = 0; i < 5; i += 1) assert.equal(rateLimited(req, scope), false);
     assert.equal(rateLimited(req, scope), true);
+});
+
+test("email action POSTs require same-origin or an exact configured allowlisted origin", () => {
+    const original = process.env.CSY_ALLOWED_ORIGINS;
+    const req = {
+        headers: { origin: "https://account.cardstuffyes.ca", host: "api.cardstuffyes.ca", "x-forwarded-proto": "https" },
+        socket: {}
+    };
+    try {
+        delete process.env.CSY_ALLOWED_ORIGINS;
+        assert.equal(trustedOrigin(req), false);
+        process.env.CSY_ALLOWED_ORIGINS = "https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca";
+        assert.equal(trustedOrigin(req), true);
+        req.headers.origin = "https://evil.example";
+        assert.equal(trustedOrigin(req), false);
+        req.headers.origin = "http://account.cardstuffyes.ca";
+        assert.equal(trustedOrigin(req), false);
+    } finally {
+        if (original === undefined) delete process.env.CSY_ALLOWED_ORIGINS;
+        else process.env.CSY_ALLOWED_ORIGINS = original;
+    }
 });
