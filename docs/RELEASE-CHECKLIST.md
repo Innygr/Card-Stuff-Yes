@@ -1,4 +1,6 @@
-# Card Stuff Yes 1.0 release checklist
+# Card Stuff Yes 1.0 release readiness checklist
+
+This checklist covers the initial desktop and server product releases. They are independently versioned and may ship at different times. See [RELEASE-CHANNELS.md](RELEASE-CHANNELS.md) for product tracks, versioning, and future mobile/console gates.
 
 This checklist is the release gate for the first public 1.0 release. A checked CI workflow is not, by itself, approval to deploy or publish.
 
@@ -25,7 +27,7 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 - [ ] Confirm admin authorization is enforced server-side and owner-only actions are tested.
 - [ ] Review rate limits, input validation, CORS allowlists, and security headers.
 
-## Desktop release
+## Desktop client release
 
 - [ ] Build Windows x64 NSIS installer on the Windows runner.
 - [ ] Build Linux x64 AppImage and Debian package on the Linux runner.
@@ -38,8 +40,20 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 - [ ] Decide whether code signing is required before distribution; unsigned builds must be clearly identified.
 - [ ] Define a secure update strategy before enabling automatic updates.
 
+## Server release
+
+- [ ] Confirm supported Node.js version, Linux targets, and container runtime.
+- [ ] Test clean installation, startup, shutdown, upgrade, and rollback.
+- [ ] Verify runtime configuration validation and that secrets are external to the image/repository.
+- [ ] Test health checks, logs, backup/restore, and recovery procedures.
+- [ ] Review authentication, authorization, input validation, rate limits, CORS/CSRF, and TLS deployment.
+- [ ] Review and document every database migration, including backup and rollback; do not apply migrations automatically during release.
+- [ ] Clearly document which APIs and game features are implemented versus planned.
+- [ ] Do not claim community-hosted account federation or private standalone account isolation is ready until the requirements in [COMMUNITY-SERVERS.md](COMMUNITY-SERVERS.md) are implemented and tested.
+
 ## Release publication
 
+- [ ] Select the product track (Desktop or Server); do not imply that releasing one also releases the other.
 - [ ] Freeze the exact source commit and record its full SHA.
 - [ ] Confirm all required CI workflows pass for that exact SHA.
 - [ ] Review generated wiki pages and ensure `docs/` remains the canonical source.
@@ -51,6 +65,10 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 ## Current known limitations
 
 - Desktop client is an Electron wrapper around the hosted web app; it is not an offline game client.
+- Desktop and server builds are separate product releases with separate version numbers.
+- Mobile is planned, not currently supported as a released application.
+- Console support is exploratory and has no committed platform or release date.
+- Community-hosted federation and private standalone account isolation are not implemented.
 - The default production URL is a future target until the website deployment is confirmed.
 - Desktop installers are unsigned CI test builds unless a later release explicitly adds signing.
 - Automatic updates and a public release-publishing workflow are not implemented.
