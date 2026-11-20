@@ -22,6 +22,16 @@ function isPlainObject(value) {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function stableJson(value) {
+    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+    if (isPlainObject(value)) {
+        return "{" + Object.keys(value).sort().map(key =>
+            JSON.stringify(key) + ":" + stableJson(value[key])
+        ).join(",") + "}";
+    }
+    return JSON.stringify(value);
+}
+
 function validDate(value) {
     return typeof value === "string" && Number.isFinite(Date.parse(value));
 }
@@ -222,7 +232,7 @@ async function importSource(client, source, { apply = false } = {}) {
             plan.profilesInserted += 1;
         }
         if (settings.rowCount) {
-            if (JSON.stringify(settings.rows[0].settings) !== JSON.stringify(account.settings)) {
+            if (stableJson(settings.rows[0].settings) !== stableJson(account.settings)) {
                 throw new Error("Existing settings conflict with source account: " + account.id);
             }
         } else {
