@@ -6,9 +6,9 @@ const MAX_RECIPIENTS = 5;
 function validSender(value) {
     if (typeof value !== "string" || !value.trim() || value.length > 254) return false;
     const candidate = value.trim();
-    const match = candidate.match(/^(?:[^<>\\r\\n]{1,80}\\s*)?<([^<>\\s]+@[^<>\\s]+)>$/) ||
+    const match = candidate.match(/^(?:[^<>\r\n]{1,80}\s*)?<([^<>\s]+@[^<>\s]+)>$/) ||
         (candidate.includes("<") || candidate.includes(">") ? null : [null, candidate]);
-    return Boolean(match && /^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(match[1]));
+    return Boolean(match && /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(match[1]));
 }
 
 function emailConfigured() {
@@ -36,7 +36,7 @@ function escapeHtml(value) {
 
 function validRecipient(value) {
     return typeof value === "string" && value.length <= 254 &&
-        /^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(value);
+        /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(value);
 }
 
 function validActionUrl(value) {
