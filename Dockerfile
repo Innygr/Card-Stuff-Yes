@@ -10,7 +10,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --chown=node:node package.json ./
-RUN npm install --omit=dev --no-package-lock
+RUN npm install --omit=dev
 
 COPY --chown=node:node . .
 
@@ -23,6 +23,6 @@ USER node
 EXPOSE 6565
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD node -e "fetch('http://127.0.0.1:6565/multiplayer.html').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+    CMD node -e "fetch('http://127.0.0.1:6565/api/health').then(async r => process.exit(r.ok && (await r.json()).ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "server.js"]
