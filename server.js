@@ -33,6 +33,8 @@ const MAX_ENERGY = 6;
 const MAX_HAND = 10;
 const COOKIE = "csyPlayerId";
 const MATCH_TTL_MS = 12 * 60 * 60 * 1000;
+const MAX_GUEST_PLAYERS = 10000;
+const MAX_MATCHES = 5000;
 const players = new Map();
 const matches = new Map();
 
@@ -253,11 +255,33 @@ function cookieMap(header) {
     return output;
 }
 
+function pruneUnreferencedPlayers() {
+    const activePlayerIds = new Set();
+    for (const match of matches.values()) {
+        if (match.status !== "finished") {
+            for (const combatant of match.players) {
+                if (combatant) activePlayerIds.add(combatant.playerId);
+            }
+        }
+    }
+    let changed = false;
+    for (const id of players.keys()) {
+        if (!activePlayerIds.has(id)) {
+            players.delete(id);
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 function getPlayer(req, res) {
     const cookies = cookieMap(req.headers.cookie);
     let id = cookies[COOKIE];
     let player = id && players.get(id);
     if (!id || !player) {
+        if (pruneExpiredMatches()) saveState();
+        if (players.size >= MAX_GUEST_PLAYERS && pruneUnreferencedPlayers()) saveState();
+        if (players.size >= MAX_GUEST_PLAYERS) return null;
         id = crypto.randomBytes(24).toString("hex");
         player = { id, name: "Guest-" + id.slice(0, 4).toUpperCase() };
         players.set(id, player);
@@ -436,6 +460,9 @@ async function handleApi(req, res, url, player) {
         sendJson(res, 200, { matches: open }); return;
     }
     if (url.pathname === "/api/multiplayer/matches" && req.method === "POST") {
+        if (matches.size >= MAX_MATCHES) {
+            sendJson(res, 503, { error: "The match service is at capacity. Please try again later." }); return;
+        }
         if ([...matches.values()].some(match => match.status !== "finished" && match.players.some(item => item && item.playerId === player.id))) {
             sendJson(res, 409, { error: "Finish or leave your current match before creating another." }); return;
         }
@@ -656,7 +683,12 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (url.pathname.startsWith("/api/multiplayer/")) {
-            await handleApi(req, res, url, getPlayer(req, res));
+            const player = getPlayer(req, res);
+            if (!player) {
+                sendJson(res, 503, { error: "The guest player service is at capacity. Please try again later." });
+                return;
+            }
+            await handleApi(req, res, url, player);
             return;
         }
         if (url.pathname.startsWith("/api/")) { sendJson(res, 404, { error: "API endpoint not implemented on this server." }); return; }
