@@ -43,6 +43,16 @@ jobs:
             name="$(basename "$file" .md)"
             cp "$file" "wiki/$name.md"
           done
+          {
+            echo "# Card Stuff Yes documentation"
+            echo
+            echo "This Wiki is generated from the repository's `docs/` directory. Edit the source files in `docs/`, not this page."
+            echo
+            for file in "${files[@]}"; do
+              name="$(basename "$file" .md)"
+              echo "- [$name]($name)"
+            done
+          } > wiki/Home.md
           cd wiki
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
