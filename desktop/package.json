@@ -11,8 +11,8 @@
     "dist:linux": "electron-builder --linux AppImage deb --x64 --publish never"
   },
   "devDependencies": {
-    "electron": "^39.2.0",
-    "electron-builder": "^26.0.12"
+    "electron": "39.2.0",
+    "electron-builder": "26.0.12"
   },
   "build": {
     "appId": "ca.cardstuffyes.desktop",
