@@ -295,7 +295,7 @@ function rateLimited(req) {
 async function handleAccountAuth(req, res, url, guestPlayer) {
     const route = url.pathname;
     const isAccountRoute = route === "/api/me" ||
-        ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/change-password"].includes(route);
+        ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/change-password", "/api/account/profile", "/api/account/settings"].includes(route);
     if (!isAccountRoute) return false;
 
     if (req.method !== "GET" && req.method !== "POST" && req.method !== "PUT") {
