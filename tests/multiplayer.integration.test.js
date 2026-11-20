@@ -227,7 +227,7 @@ test("API subdomain allows the PvP frontend origin and rejects others", async ()
 });
 
 
-test("admin frontend can authenticate against the API subdomain with a shared secure session", async () => {
+test("admin frontend can authenticate against the API subdomain with a host-only secure session", async () => {
     const origin = "https://admin.cardstuffyes.ca";
     const preflight = await requestWithHost("/api/admin/login", "api.cardstuffyes.ca", {
         Origin: origin,
