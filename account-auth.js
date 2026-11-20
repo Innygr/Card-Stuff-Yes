@@ -342,6 +342,7 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
             saveStore();
         }
         clearCookie(req, res, ACCOUNT_COOKIE);
+        clearCookie(req, res, PLAYER_COOKIE, "Lax");
         send(res, 200, { message: "Signed out." });
         return true;
     }
