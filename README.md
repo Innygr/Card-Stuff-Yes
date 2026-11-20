@@ -5,6 +5,7 @@ Card Stuff Yes is a browser-based multiplayer card game.<br>
 [![Frontend integrity](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/frontend-integrity.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/frontend-integrity.yml)
 [![Jekyll site CI](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/jekyll-docker.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/jekyll-docker.yml)
 [![Container Image](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml)
+[![Deploy Server to GitHub Pages](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/pages.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/pages.yml)
 
 ## Repository layout
 
