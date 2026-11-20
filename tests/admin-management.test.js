@@ -122,6 +122,35 @@ test.after(async () => {
     await new Promise(resolve => server.close(resolve));
 });
 
+test("admin mutations reject cross-origin requests", async () => {
+    const rankChange = await request("/api/admin/players/" + player.id + "/rank", {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Origin: "https://untrusted.example"
+        },
+        body: JSON.stringify({ rank: "mod" })
+    });
+    assert.equal(rankChange.response.status, 403);
+
+    const newsCreate = await request("/api/admin/news", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Origin: "https://untrusted.example"
+        },
+        body: JSON.stringify({
+            title: "Cross-origin attempt",
+            summary: "",
+            content: "Must not be stored.",
+            published: false,
+            featured: false
+        })
+    });
+    assert.equal(newsCreate.response.status, 403);
+    assert.equal(posts.size, 0);
+});
+
 test("admin can list account-backed players", async () => {
     const { response, data } = await request("/api/admin/players");
     assert.equal(response.status, 200);
