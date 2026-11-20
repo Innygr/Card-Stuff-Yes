@@ -12,7 +12,7 @@ Without that environment variable, the existing JSON account implementation rema
 
 This PR does not import existing `private-data/accounts.json` records. If the flag is enabled before the JSON accounts have been safely imported, existing accounts will not be visible to the PostgreSQL login handler.
 
-Settings and saved decks are also not migrated in this phase. In PostgreSQL mode, those endpoints deliberately return HTTP 501 with an explanatory message rather than silently reading or writing a second, inconsistent store.
+Player settings and saved decks now use PostgreSQL in this branch. Settings are stored as validated JSONB; saved decks and ordered card IDs use the private `decks` and `deck_cards` tables. Existing deck limits and catalog-ID validation are preserved.
 
 Therefore:
 - Keep `CSY_ACCOUNT_STORAGE` unset on the Ubuntu production host.
@@ -27,4 +27,4 @@ The adapter writes only to the private `csy_private` schema. It uses parameteriz
 
 ## Validation
 
-Automated tests cover route selection, profile normalization, scrypt hash compatibility, and the default-off feature flag. A separate test against a disposable Supabase database is still required before enabling the adapter in any deployed environment.
+Automated tests cover route selection, profile normalization, scrypt hash compatibility, the default-off feature flag, settings allowlists, and saved-deck validation. A separate test against a disposable Supabase database is still required before enabling the adapter in any deployed environment.
