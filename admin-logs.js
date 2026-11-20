@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const crypto = require("node:crypto");
+const { createRateLimiter } = require("./login-rate-limit");
 
 const COOKIE = "csyAdminSession";
 const SESSION_MS = 8 * 60 * 60 * 1000;
@@ -12,7 +13,7 @@ const ALLOWED_ORIGINS = new Set(
 );
 const MAX_LOG_BYTES = 512 * 1024;
 const MAX_LINES = 1000;
-const loginAttempts = new Map();
+const loginRateLimited = createRateLimiter({ windowMs: 60 * 1000, limit: 8, maxEntries: 10000 });
 
 function configuredAdmins() {
     let rows;
@@ -124,12 +125,10 @@ async function handleAdminLogs(req, res, url) {
 
     if (url.pathname === "/api/admin/login" && req.method === "POST") {
         if (!isAllowedOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
-        const ip = String(req.headers["cf-connecting-ip"] || String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "unknown");
-        const now = Date.now();
-        const attempt = loginAttempts.get(ip) || { count: 0, until: now + 60000 };
-        if (attempt.until < now) { attempt.count = 0; attempt.until = now + 60000; }
-        if (attempt.count >= 8) { send(res, 429, { error: "Too many login attempts. Try again in one minute." }); return true; }
-        attempt.count += 1; loginAttempts.set(ip, attempt);
+        if (loginRateLimited(req)) {
+            send(res, 429, { error: "Too many login attempts. Try again in one minute." });
+            return true;
+        }
 
         let body = "";
         for await (const chunk of req) {
