@@ -1046,3 +1046,55 @@ html.reduce-flashing .flash-effect {
     }
 
 }
+
+
+/* Saved deck controls */
+.saved-deck-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+}
+.saved-deck-controls select,
+#deck-name {
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-background-secondary);
+    color: var(--color-text);
+    font: inherit;
+}
+.saved-deck-controls select {
+    flex: 1 1 220px;
+}
+.saved-deck-controls button {
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font-weight: bold;
+    cursor: pointer;
+}
+.saved-deck-controls button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+#deck-name {
+    display: block;
+    width: min(100%, 420px);
+    margin-top: 8px;
+}
+.deck-section > label {
+    display: block;
+    margin-top: 12px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 700;
+}
+.deck-status[data-state="error"] {
+    border-color: #b84a4a;
+}
