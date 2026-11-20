@@ -9,6 +9,14 @@ const {
     verifyPassword,
     postgresAccountStorageEnabled
 } = require("../postgres-account-auth");
+const {
+    sanitizeSettings,
+    validDeckCards,
+    DEFAULT_SETTINGS,
+    MAX_DECKS,
+    MAX_DECK_CARDS
+} = require("../account-auth");
+const cardCatalog = require("../cards.json");
 
 test("PostgreSQL account routing recognizes only account API routes", () => {
     assert.equal(isAccountRoute("/api/auth/register"), true);
@@ -51,4 +59,28 @@ test("PostgreSQL account storage is opt-in and defaults to JSON mode", () => {
         if (original === undefined) delete process.env.CSY_ACCOUNT_STORAGE;
         else process.env.CSY_ACCOUNT_STORAGE = original;
     }
+});
+
+test("PostgreSQL settings use the same strict allowlist as JSON accounts", () => {
+    assert.deepEqual(sanitizeSettings({
+        masterVolume: 45,
+        reducedMotion: true,
+        onlineStatus: "away",
+        isAdmin: true,
+        mouseSensitivity: 999
+    }), {
+        masterVolume: 45,
+        reducedMotion: true,
+        onlineStatus: "away"
+    });
+    assert.ok(Object.hasOwn(DEFAULT_SETTINGS, "masterVolume"));
+});
+
+test("saved deck validation enforces catalog IDs and existing size limits", () => {
+    const validId = cardCatalog[0].id;
+    assert.equal(validDeckCards([validId]), true);
+    assert.equal(validDeckCards([]), true);
+    assert.equal(validDeckCards(["not-a-real-card"]), false);
+    assert.equal(validDeckCards(Array(MAX_DECK_CARDS + 1).fill(validId)), false);
+    assert.equal(MAX_DECKS, 25);
 });
