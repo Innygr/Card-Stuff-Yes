@@ -63,9 +63,12 @@ document.addEventListener("DOMContentLoaded", () => {
  * Connects buttons and forms to their handlers.
  */
 function setupEventListeners() {
+    const profileForm = document.getElementById("profile-details-form");
     const passwordForm = document.getElementById("change-password-form");
     const logoutButton = document.getElementById("logout-button");
     const cardOverlay = document.getElementById("card-overlay");
+
+    if (profileForm) profileForm.addEventListener("submit", saveProfileDetails);
 
     if (passwordForm) {
         passwordForm.addEventListener("submit", handlePasswordChange);
@@ -100,6 +103,37 @@ function setupEventListeners() {
 }
 
 
+async function saveProfileDetails(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const status = document.getElementById("profile-details-status");
+    const displayName = document.getElementById("display-name").value.trim();
+    const bio = document.getElementById("profile-bio").value.trim();
+    if (displayName.length > 24 || bio.length > 240) {
+        status.textContent = "Display name and bio exceed their length limits.";
+        return;
+    }
+    button.disabled = true;
+    status.textContent = "Saving profile…";
+    try {
+        const response = await fetch(API_BASE + "/api/account/profile", {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName, bio })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not save profile.");
+        if (currentPlayer) currentPlayer.profile = data.profile;
+        status.textContent = "Profile saved to your account.";
+    } catch (error) {
+        status.textContent = error.message;
+    } finally {
+        button.disabled = false;
+    }
+}
+
 /* =========================================================
    PROFILE LOADING
    ========================================================= */
@@ -130,6 +164,10 @@ async function loadProfile() {
          * Save the server-provided player data.
          */
         currentPlayer = data.player;
+        const displayName = document.getElementById("display-name");
+        const bio = document.getElementById("profile-bio");
+        if (displayName) displayName.value = currentPlayer.profile?.displayName || "";
+        if (bio) bio.value = currentPlayer.profile?.bio || "";
 
         /*
          * Display all profile sections.
