@@ -3,7 +3,7 @@
 const crypto = require("node:crypto");
 const { promisify } = require("node:util");
 const { getPool } = require("./db");
-const { sanitizeSettings, validDeckCards, MAX_DECKS, MAX_DECK_CARDS } = require("./account-auth");
+const { sanitizeSettings, validDeckCards, DEFAULT_SETTINGS, MAX_DECKS } = require("./account-auth");
 
 const scrypt = promisify(crypto.scrypt);
 const ACCOUNT_COOKIE = "csyAccountSession";
@@ -450,16 +450,9 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         try { body = await readJson(req); }
         catch (error) { send(res, 400, { error: error.message }); return true; }
         if (!body || typeof body !== "object" || Array.isArray(body) ||
-            Object.keys(body).some(key => !Object.prototype.hasOwnProperty.call(sanitizeSettings({}), key) &&
-                !Object.prototype.hasOwnProperty.call(require("./account-auth").DEFAULT_SETTINGS || {}, key))) {
-            // The sanitizer below is authoritative for values; the explicit key list
-            // is exported separately so unknown keys cannot be silently discarded.
-            const known = new Set(Object.keys(sanitizeSettings(require("./account-auth").DEFAULT_SETTINGS || {})));
-            if (!body || typeof body !== "object" || Array.isArray(body) ||
-                Object.keys(body).some(key => !known.has(key))) {
-                send(res, 400, { error: "One or more setting names are not supported." });
-                return true;
-            }
+            Object.keys(body).some(key => !Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key))) {
+            send(res, 400, { error: "One or more setting names are not supported." });
+            return true;
         }
         const cleaned = sanitizeSettings(body);
         if (Object.keys(cleaned).length !== Object.keys(body).length) {
@@ -609,7 +602,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             try {
                 await client.query("BEGIN");
                 const found = await client.query(
-                    "SELECT id, name FROM csy_private.decks WHERE id = $1 AND account_id = $2 FOR UPDATE",
+                    "SELECT id, name, created_at FROM csy_private.decks WHERE id = $1 AND account_id = $2 FOR UPDATE",
                     [deckId, current.account.id]
                 );
                 if (!found.rowCount) {
@@ -642,7 +635,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
                     : body.cards.slice();
                 send(res, 200, { deck: {
                     id: deckId, name, cards,
-                    createdAt: new Date(found.rows[0].created_at || now).toISOString(),
+                    createdAt: new Date(found.rows[0].created_at).toISOString(),
                     updatedAt: now.toISOString()
                 } });
             } catch (error) {
