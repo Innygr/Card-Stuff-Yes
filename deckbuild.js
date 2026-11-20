@@ -11,7 +11,8 @@
         save: document.getElementById("save-deck-button"),
         saved: document.getElementById("saved-decks"),
         load: document.getElementById("load-deck-button"),
-        remove: document.getElementById("delete-deck-button")
+        remove: document.getElementById("delete-deck-button"),
+        newDeck: document.getElementById("new-deck-button")
     };
 
     let catalog = [];
@@ -226,6 +227,15 @@
         ui.save.addEventListener("click", saveDeck);
         ui.load.addEventListener("click", loadSelectedDeck);
         ui.remove.addEventListener("click", deleteSelectedDeck);
+        ui.newDeck.addEventListener("click", () => {
+            currentDeckId = null;
+            cards = [];
+            ui.name.value = "";
+            ui.saved.value = "";
+            renderDeck();
+            renderSavedDecks();
+            status("Ready to build a new deck.");
+        });
         try {
             const [catalogData] = await Promise.all([request("/api/cards"), refreshDecks()]);
             catalog = Array.isArray(catalogData.cards) ? catalogData.cards : [];
