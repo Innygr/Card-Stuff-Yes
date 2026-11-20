@@ -6,8 +6,8 @@ This is a tracked release-readiness item for the Desktop and Server release trac
 
 | Component | Direct dependencies | Lockfile | Status |
 |---|---|---|---|
-| Desktop (`desktop/`) | Electron `^39.2.0`, electron-builder `^26.0.12` | No `desktop/package-lock.json` | CI currently installs from version ranges; transitive dependency resolution can change between builds. |
-| Server | `pg` `8.16.3` (exact version) | No root `package-lock.json` on the Server branch | Direct dependency is pinned, but transitive resolution is not locked. |
+| Desktop (`desktop/`) | Electron `39.2.0`, electron-builder `26.0.12` (exact direct-version pins) | No `desktop/package-lock.json` | CI installs exact direct versions; transitive dependency resolution can still change between builds. |
+| Server | `pg` `8.16.3` (exact version) | No root `package-lock.json` on the Server branch | Direct dependency is pinned, but transitive resolution is not locked. Desktop direct dependencies are now also exact-version pinned; neither component has a lockfile yet. |
 
 ## Required before 1.0 release
 
