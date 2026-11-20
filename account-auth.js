@@ -235,6 +235,10 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
         send(res, 403, { error: "A trusted website origin is required." });
         return true;
     }
+    if (req.method === "POST" && !String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
+        send(res, 415, { error: "Content-Type must be application/json." });
+        return true;
+    }
 
     if (route === "/api/auth/register" && req.method === "POST") {
         if (rateLimited(req)) { send(res, 429, { error: "Too many attempts. Try again later." }); return true; }
@@ -255,12 +259,19 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
             send(res, 409, { error: "This player is already linked to an account. Sign in to that account instead." });
             return true;
         }
+        const passwordHash = await hashPassword(password);
+        // Re-check after the asynchronous hash to prevent concurrent duplicate registrations.
+        if (accountByUsername(username)) { send(res, 409, { error: "That username is already in use." }); return true; }
+        if (store.accounts.some(item => item.playerId === guestPlayer.id)) {
+            send(res, 409, { error: "This player is already linked to an account. Sign in to that account instead." });
+            return true;
+        }
         const now = new Date().toISOString();
         const account = {
             id: "acct_" + crypto.randomBytes(16).toString("hex"),
             username,
             usernameKey: username.toLowerCase(),
-            passwordHash: await hashPassword(password),
+            passwordHash,
             playerId: guestPlayer.id,
             createdAt: now,
             updatedAt: now
