@@ -72,3 +72,33 @@ test("replay guard refuses new tickets at capacity until entries expire", () => 
     assert.equal(guard.consume(second, 1800000000), false);
     assert.equal(guard.consume(second, 1800000011), true);
 });
+
+
+test("verification rejects inherited key names and malformed token segments", () => {
+    const token = issueJoinTicket(context);
+    assert.throws(() => verifyJoinTicket(token, {
+        ...trusted,
+        publicKeys: Object.create({ "toString": keys.publicKey })
+    }));
+    const parts = token.split(".");
+    assert.throws(() => verifyJoinTicket([parts[0] + "=", parts[1], parts[2]].join("."), trusted));
+    const arrayHeader = Buffer.from("[]").toString("base64url");
+    assert.throws(() => verifyJoinTicket([arrayHeader, parts[1], parts[2]].join("."), trusted));
+});
+
+test("verification validates clock-skew configuration", () => {
+    const token = issueJoinTicket(context);
+    assert.throws(() => verifyJoinTicket(token, { ...trusted, clockSkewSeconds: -1 }));
+    assert.throws(() => verifyJoinTicket(token, { ...trusted, clockSkewSeconds: 61 }));
+});
+
+test("replay guard rejects tickets at their exact expiry second", () => {
+    const guard = new JoinTicketReplayGuard();
+    assert.equal(guard.consume({ ticketId: "expired_ticket_identifier", expiresAt: 1800000000 }, 1800000000), false);
+});
+
+test("issuer rejects oversized or missing string claims", () => {
+    assert.throws(() => issueJoinTicket({ ...context, keyId: "" }));
+    assert.throws(() => issueJoinTicket({ ...context, audience: "x".repeat(129) }));
+    assert.throws(() => issueJoinTicket({ ...context, subject: "" }));
+});
