@@ -140,6 +140,36 @@ test("accounts securely link to an existing guest and survive restart", async ()
     assert.ok(owner.cookies.has("csyAccountSession"));
     assert.equal(owner.cookies.get("csyPlayerId"), guestId);
 
+    const profileSaved = await owner.request("/api/account/profile", {
+        method: "PUT",
+        body: { displayName: "Card Captain", bio: "A player profile that follows my account." }
+    });
+    assert.equal(profileSaved.status, 200);
+    assert.deepEqual(profileSaved.data.profile, {
+        displayName: "Card Captain",
+        bio: "A player profile that follows my account."
+    });
+    const tooLongBio = await owner.request("/api/account/profile", {
+        method: "PUT", body: { bio: "x".repeat(241) }
+    });
+    assert.equal(tooLongBio.status, 400);
+    const profileRead = await owner.request("/api/account/profile");
+    assert.equal(profileRead.data.profile.displayName, "Card Captain");
+
+    const settingsSaved = await owner.request("/api/account/settings", {
+        method: "PUT",
+        body: { masterVolume: 65, reducedMotion: true, colorblindMode: "off", onlineStatus: "online" }
+    });
+    assert.equal(settingsSaved.status, 200);
+    assert.equal(settingsSaved.data.settings.masterVolume, 65);
+    assert.equal(settingsSaved.data.settings.reducedMotion, true);
+    const invalidSettings = await owner.request("/api/account/settings", {
+        method: "PUT", body: { masterVolume: 100000, unknownSetting: true }
+    });
+    assert.equal(invalidSettings.status, 400);
+    const settingsRead = await owner.request("/api/account/settings");
+    assert.equal(settingsRead.data.settings.masterVolume, 65);
+
     const duplicate = await new Client().request("/api/auth/register", {
         method: "POST", body: { username: "cardplayer", password: "Another-long-passphrase!" }
     });
@@ -177,6 +207,10 @@ test("accounts securely link to an existing guest and survive restart", async ()
     const accountAfterRestart = await owner.request("/api/auth/me");
     assert.equal(accountAfterRestart.status, 200);
     assert.equal(accountAfterRestart.data.player.id, guestId);
+    assert.equal(accountAfterRestart.data.player.profile.displayName, "Card Captain");
+    const settingsAfterRestart = await owner.request("/api/account/settings");
+    assert.equal(settingsAfterRestart.data.settings.masterVolume, 65);
+    assert.equal(settingsAfterRestart.data.settings.reducedMotion, true);
 
     const matchAfterRestart = await owner.request("/api/multiplayer/current");
     assert.equal(matchAfterRestart.status, 200);
