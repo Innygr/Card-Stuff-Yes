@@ -9,6 +9,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
     steps:
       - name: Check out documentation source
         uses: actions/checkout@v4
@@ -17,12 +19,17 @@ jobs:
           sparse-checkout: docs
           sparse-checkout-cone-mode: true
       - name: Check out Wiki
+        if: env.WIKI_TOKEN != ''
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository }}.wiki
-          token: ${{ secrets.WIKI_TOKEN }}
+          token: ${{ env.WIKI_TOKEN }}
           path: wiki
+      - name: Explain missing Wiki credential
+        if: env.WIKI_TOKEN == ''
+        run: echo "::notice::Set the WIKI_TOKEN Actions secret to enable automatic Wiki publishing."
       - name: Publish docs as Wiki pages
+        if: env.WIKI_TOKEN != ''
         shell: bash
         run: |
           set -euo pipefail
