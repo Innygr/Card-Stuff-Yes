@@ -9,10 +9,12 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# The server uses only Node.js built-in modules; no npm install is required.
+COPY --chown=node:node package.json ./
+RUN npm install --omit=dev --no-package-lock
+
 COPY --chown=node:node . .
 
-# Multiplayer state is stored in a dedicated persistent volume.
+# Multiplayer and account state stay in a dedicated persistent volume.
 RUN mkdir -p /app/private-data \
     && chown -R node:node /app
 
