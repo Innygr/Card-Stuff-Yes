@@ -4,7 +4,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const database = require("./db");
-const { adminFor } = require("./admin-logs");
+const { adminFor, isAllowedOrigin } = require("./admin-logs");
 const { accountForSession, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 
 const CARD_CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, "cards.json"), "utf8"));
@@ -50,6 +50,10 @@ async function handleAdminManagement(req, res, url) {
     const admin = adminFor(req);
     if (!admin || !["owner", "admin"].includes(admin.rank)) {
         send(res, 403, { error: "Owner or admin access required." });
+        return true;
+    }
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && !isAllowedOrigin(req)) {
+        send(res, 403, { error: "Cross-origin request rejected." });
         return true;
     }
     if (["POST", "PUT", "PATCH"].includes(req.method) &&
