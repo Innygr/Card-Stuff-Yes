@@ -151,6 +151,20 @@ test("accounts securely link to an existing guest and survive restart", async ()
     });
     assert.equal(untrusted.status, 403);
 
+    const missingOrigin = await fetch(baseUrl + "/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "NoOrigin", password: "A-long-passphrase-2026!" })
+    });
+    assert.equal(missingOrigin.status, 403);
+
+    const nonJson = await fetch(baseUrl + "/api/auth/register", {
+        method: "POST",
+        headers: { Origin: allowedOrigin },
+        body: JSON.stringify({ username: "NoJson", password: "A-long-passphrase-2026!" })
+    });
+    assert.equal(nonJson.status, 415);
+
     const accountFileText = fs.readFileSync(accountFile, "utf8");
     assert.equal(accountFileText.includes("A-long-passphrase-2026!"), false);
     assert.equal(accountFileText.includes(owner.cookies.get("csyAccountSession")), false);
@@ -196,6 +210,7 @@ test("accounts securely link to an existing guest and survive restart", async ()
 
     const revokedSession = await duplicateLogin.request("/api/auth/me");
     assert.equal(revokedSession.status, 401);
+    assert.equal((await owner.request("/api/auth/me")).status, 401, "password change revokes every active session");
 
     const oldPassword = await new Client().request("/api/auth/login", {
         method: "POST",
@@ -222,6 +237,7 @@ async function newPasswordClientLogout(result) {
     assert.equal(login.status, 200);
     const logout = await client.request("/api/auth/logout", { method: "POST", body: {} });
     assert.equal(logout.status, 200);
+    assert.equal(client.cookies.has("csyPlayerId"), false);
     assert.equal((await client.request("/api/auth/me")).status, 401);
     return logout.status === 200;
 }
