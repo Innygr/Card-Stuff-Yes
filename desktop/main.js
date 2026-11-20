@@ -1,5 +1,5 @@
 "use strict";
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, dialog } = require("electron");
 const path = require("node:path");
 const { parseAppUrl, shouldOpenExternally, shouldAllowNavigation } = require("./url-policy");
 
@@ -16,6 +16,35 @@ function openExternalSafely(target, appUrl) {
     shell.openExternal(target).catch(error => {
         console.warn("Could not open external link:", error.message);
     });
+}
+
+let loadErrorPromptOpen = false;
+
+async function handleLoadFailure(error) {
+    if (loadErrorPromptOpen || !mainWindow || mainWindow.isDestroyed()) return;
+    loadErrorPromptOpen = true;
+    try {
+        const result = await dialog.showMessageBox(mainWindow, {
+            type: "warning",
+            title: "Card Stuff Yes — connection problem",
+            message: "Card Stuff Yes could not reach the configured server.",
+            detail: String(error.message || "Check your internet connection and server URL.") +
+                "\n\nThe desktop client needs a network connection; offline play is not available yet.",
+            buttons: ["Retry", "Quit"],
+            defaultId: 0,
+            cancelId: 1,
+            noLink: true
+        });
+        if (result.response === 0 && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.loadURL(parseAppUrl(configuredUrl).toString()).catch(nextError => {
+                handleLoadFailure(nextError);
+            });
+        } else {
+            app.quit();
+        }
+    } finally {
+        loadErrorPromptOpen = false;
+    }
 }
 
 function createWindow() {
@@ -54,8 +83,14 @@ function createWindow() {
     mainWindow.on("closed", () => {
         mainWindow = null;
     });
+    mainWindow.webContents.on("did-fail-load", (_event, errorCode, errorDescription, _validatedURL, isMainFrame) => {
+        if (isMainFrame && errorCode !== -3) {
+            handleLoadFailure(new Error(errorDescription + " (" + errorCode + ")"));
+        }
+    });
     mainWindow.loadURL(appUrl.toString()).catch(error => {
         console.error("Card Stuff Yes could not load:", error.message);
+        handleLoadFailure(error);
     });
 }
 
