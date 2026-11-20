@@ -187,6 +187,19 @@ test("accounts securely link to an existing guest and survive restart", async ()
     const settingsRead = await owner.request("/api/account/settings");
     assert.equal(settingsRead.data.settings.masterVolume, 65);
 
+    const deckSaved = await owner.request("/api/account/decks", {
+        method: "POST", body: { name: "Starter Deck", cards: ["spark", "guard", "mend"] }
+    });
+    assert.equal(deckSaved.status, 201);
+    const savedDeckId = deckSaved.data.deck.id;
+    assert.deepEqual(deckSaved.data.deck.cards, ["spark", "guard", "mend"]);
+    const invalidDeck = await owner.request("/api/account/decks", {
+        method: "POST", body: { name: "Invalid", cards: ["not-a-real-card"] }
+    });
+    assert.equal(invalidDeck.status, 400);
+    const deckList = await owner.request("/api/account/decks");
+    assert.equal(deckList.data.decks.length, 1);
+
     const duplicate = await new Client().request("/api/auth/register", {
         method: "POST", body: { username: "cardplayer", password: "Another-long-passphrase!" }
     });
@@ -228,6 +241,17 @@ test("accounts securely link to an existing guest and survive restart", async ()
     const settingsAfterRestart = await owner.request("/api/account/settings");
     assert.equal(settingsAfterRestart.data.settings.masterVolume, 65);
     assert.equal(settingsAfterRestart.data.settings.reducedMotion, true);
+    const decksAfterRestart = await owner.request("/api/account/decks");
+    assert.equal(decksAfterRestart.data.decks.length, 1);
+    assert.equal(decksAfterRestart.data.decks[0].id, savedDeckId);
+    const updatedDeck = await owner.request("/api/account/decks/" + savedDeckId, {
+        method: "PUT", body: { name: "Updated Starter", cards: ["flare", "wall"] }
+    });
+    assert.equal(updatedDeck.status, 200);
+    assert.equal(updatedDeck.data.deck.name, "Updated Starter");
+    const deletedDeck = await owner.request("/api/account/decks/" + savedDeckId, { method: "DELETE" });
+    assert.equal(deletedDeck.status, 200);
+    assert.equal((await owner.request("/api/account/decks")).data.decks.length, 0);
 
     const matchAfterRestart = await owner.request("/api/multiplayer/current");
     assert.equal(matchAfterRestart.status, 200);
