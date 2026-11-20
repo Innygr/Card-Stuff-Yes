@@ -6,6 +6,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 const { handleAccountAuth } = require("./account-auth");
+const { handlePostgresAccountAuth, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -643,7 +644,9 @@ const server = http.createServer(async (req, res) => {
 
         if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/account/")) {
             const guestPlayer = url.pathname === "/api/auth/register" ? getPlayer(req, res) : null;
-            if (await handleAccountAuth(req, res, url, guestPlayer)) return;
+            if (postgresAccountStorageEnabled()) {
+                if (await handlePostgresAccountAuth(req, res, url, guestPlayer)) return;
+            } else if (await handleAccountAuth(req, res, url, guestPlayer)) return;
         }
 
         if (url.pathname.startsWith("/api/multiplayer/")) {
