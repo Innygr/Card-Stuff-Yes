@@ -45,7 +45,7 @@ function sanitizeStore() {
         typeof account.username === "string" && /^[A-Za-z0-9_]{3,20}$/.test(account.username) &&
         account.usernameKey === account.username.toLowerCase() &&
         typeof account.playerId === "string" && /^[a-f0-9]{48}$/.test(account.playerId) &&
-        typeof account.passwordHash === "string" && /^scrypt\\$16384\\$[a-f0-9]{32}\\$[a-f0-9]{128}$/.test(account.passwordHash) &&
+        typeof account.passwordHash === "string" && /^scrypt\$16384\$[a-f0-9]{32}\$[a-f0-9]{128}$/.test(account.passwordHash) &&
         typeof account.createdAt === "string" && Number.isFinite(Date.parse(account.createdAt))
     );
     const accountIds = new Set(store.accounts.map(account => account.id));
@@ -373,6 +373,7 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
     return false;
 }
 
-sanitizeStore();\npruneSessions();
+sanitizeStore();
+pruneSessions();
 
 module.exports = { handleAccountAuth };
