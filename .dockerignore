@@ -13,3 +13,7 @@ npm-debug.log*
 Dockerfile*
 compose*.yaml
 compose*.yml
+
+private-logs
+*.pem
+*.key
