@@ -5,10 +5,22 @@ const { parseAppUrl, shouldOpenExternally, shouldAllowNavigation } = require("./
 
 const DEFAULT_APP_URL = "https://cardstuffyes.ca/";
 const configuredUrl = process.env.CSY_DESKTOP_URL || DEFAULT_APP_URL;
+let mainWindow = null;
+
+// Keep one application process per user session and focus its existing window.
+const hasSingleInstance = app.requestSingleInstanceLock();
+if (!hasSingleInstance) app.quit();
+
+function openExternalSafely(target, appUrl) {
+    if (!shouldOpenExternally(target, appUrl)) return;
+    shell.openExternal(target).catch(error => {
+        console.warn("Could not open external link:", error.message);
+    });
+}
 
 function createWindow() {
     const appUrl = parseAppUrl(configuredUrl);
-    const window = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1280,
         height: 820,
         minWidth: 900,
@@ -25,29 +37,48 @@ function createWindow() {
         }
     });
 
-    window.once("ready-to-show", () => window.show());
-    window.webContents.setWindowOpenHandler(({ url }) => {
-        if (shouldOpenExternally(url, appUrl)) shell.openExternal(url);
+    mainWindow.once("ready-to-show", () => mainWindow?.show());
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        openExternalSafely(url, appUrl);
         return { action: "deny" };
     });
-    window.webContents.on("will-navigate", (event, target) => {
-        if (!shouldAllowNavigation(target, appUrl)) {
-            event.preventDefault();
-            if (shouldOpenExternally(target, appUrl)) shell.openExternal(target);
-        }
+
+    const guardNavigation = (event, target) => {
+        if (shouldAllowNavigation(target, appUrl)) return;
+        event.preventDefault();
+        openExternalSafely(target, appUrl);
+    };
+    mainWindow.webContents.on("will-navigate", guardNavigation);
+    mainWindow.webContents.on("will-redirect", guardNavigation);
+
+    mainWindow.on("closed", () => {
+        mainWindow = null;
     });
-    window.loadURL(appUrl.toString());
+    mainWindow.loadURL(appUrl.toString()).catch(error => {
+        console.error("Card Stuff Yes could not load:", error.message);
+    });
 }
 
-app.whenReady().then(() => {
-    createWindow();
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+if (hasSingleInstance) {
+    app.on("second-instance", () => {
+        if (!mainWindow) {
+            createWindow();
+            return;
+        }
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
     });
-}).catch(error => {
-    console.error("Card Stuff Yes desktop startup failed:", error.message);
-    app.quit();
-});
+
+    app.whenReady().then(() => {
+        createWindow();
+        app.on("activate", () => {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+    }).catch(error => {
+        console.error("Card Stuff Yes desktop startup failed:", error.message);
+        app.quit();
+    });
+}
 
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
