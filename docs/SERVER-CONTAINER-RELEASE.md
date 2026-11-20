@@ -7,13 +7,13 @@ This guide describes building and distributing the Card Stuff Yes server contain
 From the repository root on the `Server` branch:
 
 ```sh
-npm ci
+npm install
 npm run check
 npm test
 docker build --tag card-stuff-yes:local .
 ```
 
-If the repository does not yet contain a committed lockfile, `npm ci` will fail; create and review the lockfile as a separate dependency-management change before relying on reproducible installs.
+The Server branch currently has no committed `package-lock.json`, so dependency resolution is not fully reproducible yet. A reviewed lockfile should be added before calling the server build reproducible or using `npm ci`.
 
 ## Container configuration
 
