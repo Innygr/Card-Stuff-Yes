@@ -138,12 +138,12 @@ function validateSource(data, now = Date.now()) {
 }
 
 async function findExistingAccount(client, account) {
+    const lockClause = client._csyImportApply ? " FOR UPDATE" : "";
     const result = await client.query(`
         SELECT id, player_id, username_key, password_hash
         FROM csy_private.accounts
         WHERE id = $1 OR player_id = $2 OR username_key = $3
-        FOR UPDATE
-    `, [account.id, account.playerId, account.usernameKey]);
+    ` + lockClause, [account.id, account.playerId, account.usernameKey]);
     if (!result.rowCount) return false;
     if (result.rowCount !== 1) {
         throw new Error("Database identity collision for account " + account.id + ".");
@@ -158,7 +158,7 @@ async function findExistingAccount(client, account) {
 
 async function compareExistingDeck(client, accountId, deck) {
     const result = await client.query(
-        "SELECT id, account_id, name, created_at, updated_at FROM csy_private.decks WHERE id = $1 FOR UPDATE",
+        "SELECT id, account_id, name, created_at, updated_at FROM csy_private.decks WHERE id = $1" + (client._csyImportApply ? " FOR UPDATE" : ""),
         [deck.id]
     );
     if (!result.rowCount) return false;
@@ -181,6 +181,7 @@ async function importSource(client, source, { apply = false } = {}) {
         settingsInserted: 0, decksInserted: 0, decksExisting: 0,
         sessionsInserted: 0, sessionsExisting: 0, expiredSessionsSkipped: source.expiredSessions };
 
+    client._csyImportApply = apply;
     if (apply) await client.query("SELECT pg_advisory_xact_lock($1::bigint)", [LOCK_KEY]);
 
     for (const account of source.accounts) {
@@ -248,7 +249,7 @@ async function importSource(client, source, { apply = false } = {}) {
 
     for (const session of source.sessions) {
         const existing = await client.query(
-            "SELECT account_id FROM csy_private.account_sessions WHERE token_hash = $1 FOR UPDATE",
+            "SELECT account_id FROM csy_private.account_sessions WHERE token_hash = $1" + (apply ? " FOR UPDATE" : ""),
             [session.tokenHash]
         );
         if (existing.rowCount) {
