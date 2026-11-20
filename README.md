@@ -14,8 +14,8 @@ Live status for every GitHub Actions workflow used by this repository (including
 [![Secret Hygiene](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/secret-hygiene.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/secret-hygiene.yml)
 [![Welcome](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/welcome.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/welcome.yml)
 [![Wiki Sync](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/wiki-sync.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/wiki-sync.yml)
-[![Container Image](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml)
-[![Multiplayer Prototype Checks](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml)
+[![Container Image](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml/badge.svg?branch=Server)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml?query=branch%3AServer)
+[![Multiplayer Prototype Checks](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml/badge.svg?branch=Server)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml?query=branch%3AServer)
 
 ## Repository layout
 
