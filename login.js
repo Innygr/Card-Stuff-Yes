@@ -67,6 +67,6 @@ registerForm.addEventListener("submit", event => {
 (async function redirectIfSignedIn() {
     try {
         const response = await fetch(API_BASE + "/api/auth/me", { credentials: "include", cache: "no-store" });
-        if (response.ok) window.location.replace("./account.html");
+        if (response.ok) window.location.replace(window.CSY_CONFIG?.routes?.account || "./account.html");
     } catch {}
 })();
