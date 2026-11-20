@@ -77,7 +77,7 @@ db.getPool = () => ({
     }
 });
 
-const { handleAdminManagement, handlePublicNews } = require("../admin-management");
+const { handleAdminManagement, handlePublicNews, handleAccountCollection } = require("../admin-management");
 const { handleAdminLogs } = require("../admin-logs");
 let server;
 let base;
@@ -97,6 +97,7 @@ test.before(async () => {
         if (await handleAdminManagement(req, res, url)) return;
         if (await handleAdminLogs(req, res, url)) return;
         if (await handlePublicNews(req, res, url)) return;
+        if (await handleAccountCollection(req, res, url)) return;
         res.writeHead(404); res.end();
     });
     await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
