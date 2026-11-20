@@ -12,7 +12,8 @@ All endpoints are served by the API host. Production browser pages use `https://
 - `POST /api/auth/logout` — revokes the current session.
 - `POST /api/auth/change-password` — verifies the current password, changes the password, and revokes all sessions so the user signs in again.
 - `GET /api/account/profile` and `PUT /api/account/profile` — reads or updates the account display name and bio.
-- `GET /api/account/settings` and `PUT /api/account/settings` — reads or updates the account\’s validated client settings.
+- `GET /api/account/settings` and `PUT /api/account/settings` — reads or updates validated client settings.
+- `GET /api/account/decks`, `POST /api/account/decks`, `PUT /api/account/decks/:id`, and `DELETE /api/account/decks/:id` — stores up to 25 private decks per account, with catalog-validated card IDs and a 60-card cap.
 
 Usernames are case-insensitive and limited to 3–20 letters, numbers, or underscores. Passwords are 12–128 characters. Passwords are hashed with Node's built-in scrypt implementation. Session cookies contain random opaque tokens; only SHA-256 token hashes are persisted.
 
@@ -37,7 +38,7 @@ Keep any other currently required origins in that comma-separated value. Do not 
 - Email address linking and verification (the account page explicitly reports that email delivery is not configured).
 - Password reset/recovery.
 - Two-factor authentication and user-visible session management.
-- Deck inventory, saved decks, and account migration for any legacy account data.
+- Card inventory/unlock progression and account migration for any legacy account data.
 - Admin player management.
 
 Do not advertise these features as available until their APIs, delivery/configuration, and tests exist.
