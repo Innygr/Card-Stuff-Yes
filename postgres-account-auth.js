@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 const { promisify } = require("node:util");
 const { getPool } = require("./db");
+const { sanitizeSettings, validDeckCards, MAX_DECKS, MAX_DECK_CARDS } = require("./account-auth");
 
 const scrypt = promisify(crypto.scrypt);
 const ACCOUNT_COOKIE = "csyAccountSession";
@@ -427,11 +428,248 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         return true;
     }
 
-    if (route === "/api/account/settings" || route === "/api/account/decks" ||
-        route.startsWith("/api/account/decks/")) {
-        send(res, 501, {
-            error: "This feature is not migrated to PostgreSQL yet. Keep CSY_ACCOUNT_STORAGE unset until settings and saved decks are migrated."
-        });
+    if (route === "/api/account/settings") {
+        const current = await accountForSession(req);
+        if (!current) {
+            send(res, 401, { error: "Sign in to manage your account." });
+            return true;
+        }
+        if (req.method === "GET") {
+            const result = await getPool().query(
+                "SELECT settings FROM csy_private.player_settings WHERE account_id = $1",
+                [current.account.id]
+            );
+            send(res, 200, { settings: sanitizeSettings(result.rows[0]?.settings || {}) });
+            return true;
+        }
+        if (req.method !== "PUT") {
+            send(res, 405, { error: "Method not allowed." }, { Allow: "GET, PUT" });
+            return true;
+        }
+        let body;
+        try { body = await readJson(req); }
+        catch (error) { send(res, 400, { error: error.message }); return true; }
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            Object.keys(body).some(key => !Object.prototype.hasOwnProperty.call(sanitizeSettings({}), key) &&
+                !Object.prototype.hasOwnProperty.call(require("./account-auth").DEFAULT_SETTINGS || {}, key))) {
+            // The sanitizer below is authoritative for values; the explicit key list
+            // is exported separately so unknown keys cannot be silently discarded.
+            const known = new Set(Object.keys(sanitizeSettings(require("./account-auth").DEFAULT_SETTINGS || {})));
+            if (!body || typeof body !== "object" || Array.isArray(body) ||
+                Object.keys(body).some(key => !known.has(key))) {
+                send(res, 400, { error: "One or more setting names are not supported." });
+                return true;
+            }
+        }
+        const cleaned = sanitizeSettings(body);
+        if (Object.keys(cleaned).length !== Object.keys(body).length) {
+            send(res, 400, { error: "One or more setting values have an invalid type or format." });
+            return true;
+        }
+        const result = await getPool().query(`
+            INSERT INTO csy_private.player_settings (account_id, settings, updated_at)
+            VALUES ($1, $2::jsonb, now())
+            ON CONFLICT (account_id) DO UPDATE
+            SET settings = csy_private.player_settings.settings || EXCLUDED.settings,
+                updated_at = now()
+            RETURNING settings
+        `, [current.account.id, JSON.stringify(cleaned)]);
+        await getPool().query(
+            "UPDATE csy_private.accounts SET updated_at = now() WHERE id = $1",
+            [current.account.id]
+        );
+        send(res, 200, { settings: sanitizeSettings(result.rows[0].settings) });
+        return true;
+    }
+
+    if (route === "/api/account/decks" || route.startsWith("/api/account/decks/")) {
+        const current = await accountForSession(req);
+        if (!current) {
+            send(res, 401, { error: "Sign in to manage saved decks." });
+            return true;
+        }
+        const deckId = route === "/api/account/decks" ? null : route.slice("/api/account/decks/".length);
+        const validDeckId = value => typeof value === "string" && /^deck_[a-f0-9]{32}$/.test(value);
+        const listDecks = async () => {
+            const result = await getPool().query(`
+                SELECT d.id, d.name, d.created_at, d.updated_at,
+                       COALESCE(json_agg(dc.card_id ORDER BY dc.position)
+                           FILTER (WHERE dc.card_id IS NOT NULL), '[]'::json) AS cards
+                FROM csy_private.decks d
+                LEFT JOIN csy_private.deck_cards dc ON dc.deck_id = d.id
+                WHERE d.account_id = $1
+                GROUP BY d.id
+                ORDER BY d.updated_at DESC, d.id
+            `, [current.account.id]);
+            return result.rows.map(row => ({
+                id: row.id,
+                name: row.name,
+                cards: row.cards,
+                createdAt: new Date(row.created_at).toISOString(),
+                updatedAt: new Date(row.updated_at).toISOString()
+            }));
+        };
+        if (req.method === "GET" && !deckId) {
+            send(res, 200, { decks: await listDecks() });
+            return true;
+        }
+        if (!deckId && req.method === "POST") {
+            let body;
+            try { body = await readJson(req); }
+            catch (error) { send(res, 400, { error: error.message }); return true; }
+            const name = typeof body.name === "string" ? body.name.trim() : "";
+            if (!name || name.length > 40 || !validDeckCards(body.cards)) {
+                send(res, 400, { error: "A deck needs a name of 1–40 characters and up to 60 valid card IDs." });
+                return true;
+            }
+            const client = await getPool().connect();
+            try {
+                await client.query("BEGIN");
+                await client.query("SELECT id FROM csy_private.accounts WHERE id = $1 FOR UPDATE", [current.account.id]);
+                const count = await client.query(
+                    "SELECT count(*)::int AS count FROM csy_private.decks WHERE account_id = $1",
+                    [current.account.id]
+                );
+                if (count.rows[0].count >= MAX_DECKS) {
+                    await client.query("ROLLBACK");
+                    send(res, 409, { error: "You have reached the saved deck limit." });
+                    return true;
+                }
+                const id = "deck_" + crypto.randomBytes(16).toString("hex");
+                const now = new Date();
+                await client.query(
+                    "INSERT INTO csy_private.decks (id, account_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $4)",
+                    [id, current.account.id, name, now]
+                );
+                for (let position = 0; position < body.cards.length; position += 1) {
+                    await client.query(
+                        "INSERT INTO csy_private.deck_cards (deck_id, position, card_id) VALUES ($1, $2, $3)",
+                        [id, position, body.cards[position]]
+                    );
+                }
+                await client.query("UPDATE csy_private.accounts SET updated_at = $2 WHERE id = $1", [current.account.id, now]);
+                await client.query("COMMIT");
+                send(res, 201, { deck: {
+                    id, name, cards: body.cards.slice(),
+                    createdAt: now.toISOString(), updatedAt: now.toISOString()
+                } });
+            } catch (error) {
+                try { await client.query("ROLLBACK"); } catch {}
+                throw error;
+            } finally {
+                client.release();
+            }
+            return true;
+        }
+        if (!validDeckId(deckId)) {
+            send(res, 400, { error: "Invalid saved deck ID." });
+            return true;
+        }
+        if (req.method === "GET") {
+            const result = await getPool().query(`
+                SELECT d.id, d.name, d.created_at, d.updated_at,
+                       COALESCE(json_agg(dc.card_id ORDER BY dc.position)
+                           FILTER (WHERE dc.card_id IS NOT NULL), '[]'::json) AS cards
+                FROM csy_private.decks d
+                LEFT JOIN csy_private.deck_cards dc ON dc.deck_id = d.id
+                WHERE d.id = $1 AND d.account_id = $2
+                GROUP BY d.id
+            `, [deckId, current.account.id]);
+            if (!result.rowCount) {
+                send(res, 404, { error: "Saved deck not found." });
+                return true;
+            }
+            const row = result.rows[0];
+            send(res, 200, { deck: {
+                id: row.id, name: row.name, cards: row.cards,
+                createdAt: new Date(row.created_at).toISOString(),
+                updatedAt: new Date(row.updated_at).toISOString()
+            } });
+            return true;
+        }
+        if (req.method === "PUT") {
+            let body;
+            try { body = await readJson(req); }
+            catch (error) { send(res, 400, { error: error.message }); return true; }
+            if (!body || typeof body !== "object" || Array.isArray(body) ||
+                Object.keys(body).some(key => !["name", "cards"].includes(key))) {
+                send(res, 400, { error: "Only deck name and cards can be updated." });
+                return true;
+            }
+            if (body.name !== undefined &&
+                (typeof body.name !== "string" || !body.name.trim() || body.name.trim().length > 40)) {
+                send(res, 400, { error: "Deck name must be 1–40 characters." });
+                return true;
+            }
+            if (body.cards !== undefined && !validDeckCards(body.cards)) {
+                send(res, 400, { error: "Deck cards must contain up to 60 valid card IDs." });
+                return true;
+            }
+            const client = await getPool().connect();
+            try {
+                await client.query("BEGIN");
+                const found = await client.query(
+                    "SELECT id, name FROM csy_private.decks WHERE id = $1 AND account_id = $2 FOR UPDATE",
+                    [deckId, current.account.id]
+                );
+                if (!found.rowCount) {
+                    await client.query("ROLLBACK");
+                    send(res, 404, { error: "Saved deck not found." });
+                    return true;
+                }
+                const now = new Date();
+                const name = body.name === undefined ? found.rows[0].name : body.name.trim();
+                await client.query(
+                    "UPDATE csy_private.decks SET name = $3, updated_at = $4 WHERE id = $1 AND account_id = $2",
+                    [deckId, current.account.id, name, now]
+                );
+                if (body.cards !== undefined) {
+                    await client.query("DELETE FROM csy_private.deck_cards WHERE deck_id = $1", [deckId]);
+                    for (let position = 0; position < body.cards.length; position += 1) {
+                        await client.query(
+                            "INSERT INTO csy_private.deck_cards (deck_id, position, card_id) VALUES ($1, $2, $3)",
+                            [deckId, position, body.cards[position]]
+                        );
+                    }
+                }
+                await client.query("UPDATE csy_private.accounts SET updated_at = $2 WHERE id = $1", [current.account.id, now]);
+                await client.query("COMMIT");
+                const cards = body.cards === undefined
+                    ? (await client.query(
+                        "SELECT card_id FROM csy_private.deck_cards WHERE deck_id = $1 ORDER BY position",
+                        [deckId]
+                    )).rows.map(row => row.card_id)
+                    : body.cards.slice();
+                send(res, 200, { deck: {
+                    id: deckId, name, cards,
+                    createdAt: new Date(found.rows[0].created_at || now).toISOString(),
+                    updatedAt: now.toISOString()
+                } });
+            } catch (error) {
+                try { await client.query("ROLLBACK"); } catch {}
+                throw error;
+            } finally {
+                client.release();
+            }
+            return true;
+        }
+        if (req.method === "DELETE") {
+            const result = await getPool().query(
+                "DELETE FROM csy_private.decks WHERE id = $1 AND account_id = $2 RETURNING id",
+                [deckId, current.account.id]
+            );
+            if (!result.rowCount) {
+                send(res, 404, { error: "Saved deck not found." });
+                return true;
+            }
+            await getPool().query(
+                "UPDATE csy_private.accounts SET updated_at = now() WHERE id = $1",
+                [current.account.id]
+            );
+            send(res, 200, { message: "Saved deck deleted." });
+            return true;
+        }
+        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, PUT, DELETE" });
         return true;
     }
 
