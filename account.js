@@ -48,30 +48,33 @@ function displayAccount(player) {
     idElement.textContent = player.id;
     rankElement.textContent = player.rank;
     createdElement.textContent = formatDate(player.createdAt);
-    emailElement.textContent = player.email || "Not linked";
-    emailInput.value = player.pendingEmail || player.email || "";
-    if (player.emailVerified) {
-        emailVerificationStatus.textContent = "Verified";
-        emailVerifiedMessage.classList.remove("hidden");
-        emailSubmitButton.textContent = "Change Email";
-    } else if (player.pendingEmail) {
-        emailVerificationStatus.textContent = "Verification pending";
-        emailVerifiedMessage.classList.add("hidden");
-        emailSubmitButton.textContent = "Resend Verification Email";
-    } else {
-        emailVerificationStatus.textContent = "Not verified";
-        emailVerifiedMessage.classList.add("hidden");
-        emailSubmitButton.textContent = "Send Verification Email";
-    }
+    emailElement.textContent = "Loading email status…";
+    emailVerificationStatus.textContent = "Checking…";
 }
 
 async function loadAccount() {
     try {
         const data = await api("/api/me");
         displayAccount(data.player);
+        const email = await api("/api/account/email/status");
+        emailElement.textContent = email.email || "Not linked";
+        emailInput.value = email.pendingEmail || email.email || "";
+        if (email.emailVerified) {
+            emailVerificationStatus.textContent = "Verified";
+            emailVerifiedMessage.classList.remove("hidden");
+            emailSubmitButton.textContent = "Change Email";
+        } else if (email.pendingEmail) {
+            emailVerificationStatus.textContent = "Verification pending";
+            emailVerifiedMessage.classList.add("hidden");
+            emailSubmitButton.textContent = "Resend Verification Email";
+        } else {
+            emailVerificationStatus.textContent = "Not verified";
+            emailVerifiedMessage.classList.add("hidden");
+            emailSubmitButton.textContent = "Send Verification Email";
+        }
     } catch (error) {
         if (/sign in/i.test(error.message)) {
-            window.location.href = window.CSY_CONFIG?.routes?.account || "./login.html";
+            window.location.href = "./login.html";
             return;
         }
         setStatus(emailFormStatus, error.message, "error");
