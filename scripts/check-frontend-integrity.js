@@ -59,6 +59,9 @@ for (const file of htmlFiles) {
 
 for (const file of cssFiles) {
     const css = fs.readFileSync(file, "utf8");
+    if (/^\\s*```/.test(css) || /```\\s*$/.test(css)) {
+        failures.push(path.relative(root, file) + ": CSS contains Markdown code fences; remove the wrapper.");
+    }
     for (const match of css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) {
         check(match[1], file, "CSS asset");
     }
