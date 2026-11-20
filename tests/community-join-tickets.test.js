@@ -75,11 +75,12 @@ test("replay guard refuses new tickets at capacity until entries expire", () => 
 
 
 test("verification rejects inherited key names and malformed token segments", () => {
-    const token = issueJoinTicket(context);
-    assert.throws(() => verifyJoinTicket(token, {
+    const inheritedKeyToken = issueJoinTicket({ ...context, keyId: "toString" });
+    assert.throws(() => verifyJoinTicket(inheritedKeyToken, {
         ...trusted,
         publicKeys: Object.create({ "toString": keys.publicKey })
     }));
+    const token = issueJoinTicket(context);
     const parts = token.split(".");
     assert.throws(() => verifyJoinTicket([parts[0] + "=", parts[1], parts[2]].join("."), trusted));
     const arrayHeader = Buffer.from("[]").toString("base64url");
