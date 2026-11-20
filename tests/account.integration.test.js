@@ -118,6 +118,19 @@ test("accounts securely link to an existing guest and survive restart", async ()
     assert.equal(guestProfile.status, 200);
     const guestId = guestProfile.data.player.id;
 
+    const anonymousProfile = await new Client().request("/api/account/profile");
+    assert.equal(anonymousProfile.status, 401);
+    const profilePreflight = await fetch(baseUrl + "/api/account/profile", {
+        method: "OPTIONS",
+        headers: {
+            Origin: allowedOrigin,
+            "Access-Control-Request-Method": "PUT",
+            "Access-Control-Request-Headers": "content-type"
+        }
+    });
+    assert.equal(profilePreflight.status, 204);
+    assert.match(profilePreflight.headers.get("access-control-allow-methods") || "", /PUT/);
+
     const loginPage = await fetch(baseUrl + "/login.html");
     assert.equal(loginPage.status, 200);
     assert.match(await loginPage.text(), /Create account/);
@@ -167,6 +180,10 @@ test("accounts securely link to an existing guest and survive restart", async ()
         method: "PUT", body: { masterVolume: 100000, unknownSetting: true }
     });
     assert.equal(invalidSettings.status, 400);
+    const wrongTypeSettings = await owner.request("/api/account/settings", {
+        method: "PUT", body: { reducedMotion: "yes" }
+    });
+    assert.equal(wrongTypeSettings.status, 400);
     const settingsRead = await owner.request("/api/account/settings");
     assert.equal(settingsRead.data.settings.masterVolume, 65);
 
