@@ -137,8 +137,8 @@ function validateSource(data, now = Date.now()) {
     return { accounts, sessions, expiredSessions };
 }
 
-async function findExistingAccount(client, account) {
-    const lockClause = client._csyImportApply ? " FOR UPDATE" : "";
+async function findExistingAccount(client, account, lock = false) {
+    const lockClause = lock ? " FOR UPDATE" : "";
     const result = await client.query(`
         SELECT id, player_id, username_key, password_hash
         FROM csy_private.accounts
@@ -156,9 +156,9 @@ async function findExistingAccount(client, account) {
     return true;
 }
 
-async function compareExistingDeck(client, accountId, deck) {
+async function compareExistingDeck(client, accountId, deck, lock = false) {
     const result = await client.query(
-        "SELECT id, account_id, name, created_at, updated_at FROM csy_private.decks WHERE id = $1" + (client._csyImportApply ? " FOR UPDATE" : ""),
+        "SELECT id, account_id, name, created_at, updated_at FROM csy_private.decks WHERE id = $1" + (lock ? " FOR UPDATE" : ""),
         [deck.id]
     );
     if (!result.rowCount) return false;
@@ -181,11 +181,10 @@ async function importSource(client, source, { apply = false } = {}) {
         settingsInserted: 0, decksInserted: 0, decksExisting: 0,
         sessionsInserted: 0, sessionsExisting: 0, expiredSessionsSkipped: source.expiredSessions };
 
-    client._csyImportApply = apply;
     if (apply) await client.query("SELECT pg_advisory_xact_lock($1::bigint)", [LOCK_KEY]);
 
     for (const account of source.accounts) {
-        const exists = await findExistingAccount(client, account);
+        const exists = await findExistingAccount(client, account, apply);
         if (exists) {
             plan.accountsExisting += 1;
         } else {
@@ -226,7 +225,7 @@ async function importSource(client, source, { apply = false } = {}) {
         }
 
         for (const deck of account.decks) {
-            const existsDeck = await compareExistingDeck(client, account.id, deck);
+            const existsDeck = await compareExistingDeck(client, account.id, deck, apply);
             if (existsDeck) {
                 plan.decksExisting += 1;
                 continue;
