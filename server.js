@@ -33,8 +33,24 @@ const MAX_ENERGY = 6;
 const MAX_HAND = 10;
 const COOKIE = "csyPlayerId";
 const MATCH_TTL_MS = 12 * 60 * 60 * 1000;
-const MAX_GUEST_PLAYERS = 10000;
-const MAX_MATCHES = 5000;
+
+function boundedPositiveInteger(name, fallback, maximum) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === "") return fallback;
+    if (!/^[1-9][0-9]*$/.test(raw)) {
+        console.warn(name + " must be a positive integer; using " + fallback + ".");
+        return fallback;
+    }
+    const value = Number(raw);
+    if (!Number.isSafeInteger(value) || value > maximum) {
+        console.warn(name + " exceeds its supported range; using " + fallback + ".");
+        return fallback;
+    }
+    return value;
+}
+
+const MAX_GUEST_PLAYERS = boundedPositiveInteger("CSY_MAX_GUEST_PLAYERS", 10000, 1000000);
+const MAX_MATCHES = boundedPositiveInteger("CSY_MAX_MATCHES", 5000, 100000);
 const players = new Map();
 const matches = new Map();
 
