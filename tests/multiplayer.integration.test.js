@@ -130,7 +130,6 @@ function startServer() {
             CSY_STATE_FILE: stateFile,
             CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca,https://admin.cardstuffyes.ca",
             CSY_ADMIN_USERS: adminUsers,
-            CSY_ADMIN_COOKIE_DOMAIN: ".cardstuffyes.ca"
         },
         stdio: ["ignore", "pipe", "pipe"]
     });
@@ -256,7 +255,7 @@ test("admin frontend can authenticate against the API subdomain with a shared se
     const setCookie = Array.isArray(login.headers["set-cookie"])
         ? login.headers["set-cookie"][0]
         : login.headers["set-cookie"];
-    assert.match(setCookie, /Domain=\.cardstuffyes\.ca/i);
+    assert.doesNotMatch(setCookie, /Domain=/i);
     assert.match(setCookie, /HttpOnly/i);
     assert.match(setCookie, /SameSite=Strict/i);
     assert.match(setCookie, /Secure/i);
@@ -270,13 +269,19 @@ test("admin frontend can authenticate against the API subdomain with a shared se
     assert.equal(session.status, 200);
     assert.equal(JSON.parse(session.body).admin.username, "integration-owner");
 
-    // The shared cookie also gates the protected admin page subdomain.
+    // The admin page is only a static shell. The host-only API cookie is not
+    // exposed to the admin subdomain; privileged data stays behind /api/admin.
     const adminPage = await requestWithHost("/admin.html", "admin.cardstuffyes.ca", {
-        Cookie: cookie,
         "X-Forwarded-Proto": "https"
     });
     assert.equal(adminPage.status, 200);
     assert.match(adminPage.body, /Admin Panel/);
+
+    const noSession = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(noSession.status, 401);
 
     const logout = await requestWithHost("/api/admin/logout", "api.cardstuffyes.ca", {
         Origin: origin,
