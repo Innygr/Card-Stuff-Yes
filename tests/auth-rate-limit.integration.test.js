@@ -44,6 +44,7 @@ async function malformedAttempt(route, ip) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            "Origin": base,
             "X-Forwarded-For": ip
         },
         body: "{"
@@ -54,6 +55,7 @@ async function malformedAttempt(route, ip) {
 for (const [storage, prefix] of [["JSON", ""], ["PostgreSQL", "/postgres"]]) {
     for (const route of ["/api/auth/register", "/api/auth/login"]) {
         test(storage + " " + route + " enforces the HTTP 429 threshold", async () => {
+            process.env.CSY_ACCOUNT_STORAGE = storage === "PostgreSQL" ? "postgres" : "";
             const ip = storage === "JSON"
                 ? (route.endsWith("register") ? "198.51.100.11" : "198.51.100.12")
                 : (route.endsWith("register") ? "198.51.100.21" : "198.51.100.22");
