@@ -77,6 +77,25 @@
     <main class="deckbuild-page">
 
 
+        <!-- Saved decks -->
+        <section class="deck-section">
+            <div class="section-heading">
+                <div>
+                    <h2>SAVED DECKS</h2>
+                    <p class="section-subtitle">Load or remove a deck saved to your account.</p>
+                </div>
+            </div>
+            <div class="saved-deck-controls">
+                <select id="saved-decks" aria-label="Saved decks">
+                    <option value="">Choose a saved deck</option>
+                </select>
+                <button id="load-deck-button" type="button">LOAD</button>
+                <button id="delete-deck-button" type="button">DELETE</button>
+            </div>
+            <label for="deck-name">Deck name</label>
+            <input id="deck-name" maxlength="40" placeholder="My deck" autocomplete="off">
+        </section>
+
         <!-- ====================================================
              CURRENT DECK
              ==================================================== -->
@@ -133,11 +152,11 @@
                 <div>
 
                     <h2>
-                        UNLOCKED CARDS
+                        CARD CATALOG
                     </h2>
 
                     <p class="section-subtitle">
-                        Select cards to add them to your deck.
+                        Select cards from the available catalog to add them to your deck. Card unlocks and inventory are not connected yet.
                     </p>
 
                 </div>
@@ -225,6 +244,9 @@
     <!-- ========================================================
          JAVASCRIPT
          ======================================================== -->
+
+    <script src="/runtime-config.js" defer></script>
+    <script src="/api.js" defer></script>
 
     <script
         src="/deckbuild.js"
