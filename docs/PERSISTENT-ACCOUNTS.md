@@ -28,7 +28,7 @@ Registration links the account to the guest player's current `csyPlayerId`. Logi
 Add the account frontend origin to the API server's exact CORS allowlist:
 
 ```text
-CSY_ALLOWED_ORIGINS=https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://play.cardstuffyes.ca
+CSY_ALLOWED_ORIGINS=https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://decks.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://play.cardstuffyes.ca
 ```
 
 Keep any other currently required origins in that comma-separated value. Do not replace the existing list blindly. The API host must remain HTTPS in production so its host-only Secure cookies are sent by the browser. No cookie Domain attribute is used.
