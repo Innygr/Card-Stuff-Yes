@@ -1,3 +1,4 @@
+const API_BASE = window.CSY_CONFIG?.apiBaseUrl || "";
 /*
  * Card Stuff Yes - Profile Page
  *
@@ -62,9 +63,12 @@ document.addEventListener("DOMContentLoaded", () => {
  * Connects buttons and forms to their handlers.
  */
 function setupEventListeners() {
+    const profileForm = document.getElementById("profile-details-form");
     const passwordForm = document.getElementById("change-password-form");
     const logoutButton = document.getElementById("logout-button");
     const cardOverlay = document.getElementById("card-overlay");
+
+    if (profileForm) profileForm.addEventListener("submit", saveProfileDetails);
 
     if (passwordForm) {
         passwordForm.addEventListener("submit", handlePasswordChange);
@@ -99,6 +103,34 @@ function setupEventListeners() {
 }
 
 
+async function saveProfileDetails(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const status = document.getElementById("profile-details-status");
+    const displayName = document.getElementById("display-name").value.trim();
+    const bio = document.getElementById("profile-bio").value.trim();
+    button.disabled = true;
+    status.textContent = "Saving profile…";
+    try {
+        const response = await fetch(API_BASE + "/api/account/profile", {
+            method: "PUT", credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName, bio })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not save profile.");
+        if (currentPlayer) currentPlayer.profile = data.profile;
+        const heading = document.getElementById("profile-username");
+        if (heading) heading.textContent = displayName || currentPlayer.username;
+        status.textContent = "Profile saved to your account.";
+    } catch (error) {
+        status.textContent = error.message;
+    } finally {
+        button.disabled = false;
+    }
+}
+
 /* =========================================================
    PROFILE LOADING
    ========================================================= */
@@ -110,13 +142,18 @@ function setupEventListeners() {
  */
 async function loadProfile() {
     try {
-        const response = await fetch("/api/me", {
+        const response = await fetch(API_BASE + "/api/me", {
             method: "GET",
             credentials: "include"
         });
 
         const data = await response.json();
 
+        if (response.status === 401) {
+            const accountBase = window.CSY_CONFIG?.routes?.account || "https://account.cardstuffyes.ca/";
+            window.location.assign(new URL("login.html", accountBase).href);
+            return;
+        }
         if (!response.ok) {
             throw new Error(data.error || "Failed to load profile.");
         }
@@ -125,6 +162,10 @@ async function loadProfile() {
          * Save the server-provided player data.
          */
         currentPlayer = data.player;
+        const displayName = document.getElementById("display-name");
+        const bio = document.getElementById("profile-bio");
+        if (displayName) displayName.value = currentPlayer.profile?.displayName || "";
+        if (bio) bio.value = currentPlayer.profile?.bio || "";
 
         /*
          * Display all profile sections.
@@ -208,7 +249,7 @@ function displayAccount() {
     }
 
     if (profileUsername) {
-        profileUsername.textContent = currentPlayer.username || "Profile";
+        profileUsername.textContent = currentPlayer.profile?.displayName || currentPlayer.username || "Profile";
     }
 
     if (profileRank) {
@@ -603,7 +644,7 @@ async function handlePasswordChange(event) {
     }
 
     try {
-        const response = await fetch("/api/auth/change-password", {
+        const response = await fetch(API_BASE + "/api/auth/change-password", {
             method: "POST",
 
             headers: {
@@ -694,7 +735,7 @@ async function handleLogout() {
     }
 
     try {
-        const response = await fetch("/api/auth/logout", {
+        const response = await fetch(API_BASE + "/api/auth/logout", {
             method: "POST",
             credentials: "include"
         });
