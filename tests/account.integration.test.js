@@ -118,6 +118,10 @@ test("accounts securely link to an existing guest and survive restart", async ()
     assert.equal(guestProfile.status, 200);
     const guestId = guestProfile.data.player.id;
 
+    const loginPage = await fetch(baseUrl + "/login.html");
+    assert.equal(loginPage.status, 200);
+    assert.match(await loginPage.text(), /Create account/);
+
     const match = await owner.request("/api/multiplayer/matches", { method: "POST" });
     assert.equal(match.status, 201);
     const matchId = match.data.match.id;
@@ -150,6 +154,8 @@ test("accounts securely link to an existing guest and survive restart", async ()
     const accountFileText = fs.readFileSync(accountFile, "utf8");
     assert.equal(accountFileText.includes("A-long-passphrase-2026!"), false);
     assert.equal(accountFileText.includes(owner.cookies.get("csyAccountSession")), false);
+    const privateAccountStore = await fetch(baseUrl + "/private-data/accounts.json");
+    assert.equal(privateAccountStore.status, 404);
 
     await stopServer();
     await startServer();
