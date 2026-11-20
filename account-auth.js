@@ -57,6 +57,37 @@ const DEFAULT_SETTINGS = Object.freeze({
     showFPS:false, showDebug:false, showRendererInfo:false, showAssetStats:false
 });
 
+const STRING_SETTING_OPTIONS = Object.freeze({
+    animations: ["full", "reduced", "off"],
+    battleAnimationSpeed: ["0.5", "1", "1.5", "2"],
+    cardZoomBehaviour: ["hold", "toggle"],
+    graphicsQuality: ["auto", "low", "medium", "high", "ultra"],
+    compatibilityMode: ["auto", "maximumCompatibility", "balanced", "maximumQuality"],
+    renderingEngine: ["auto", "webgpu", "webgl2", "compatibility"],
+    textureQuality: ["auto", "low", "medium", "high"],
+    pack3DQuality: ["auto", "low", "medium", "high"],
+    packDisplay: ["auto", "3d", "2d"],
+    vfxQuality: ["low", "medium", "high"],
+    particleEffects: ["on", "reduced", "off"],
+    screenEffects: ["on", "reduced", "off"],
+    shadows: ["on", "low", "off"],
+    antiAliasing: ["auto", "low", "high", "off"],
+    frameRateLimit: ["auto", "30", "60", "120", "unlimited"],
+    resolutionScale: ["auto", "50", "75", "100"],
+    memoryBudget: ["512", "768", "1024", "1536", "2048"],
+    uiScale: ["75", "90", "100", "110", "125", "150"],
+    colorblindMode: ["off", "protanopia", "deuteranopia", "tritanopia"],
+    flashingEffects: ["on", "reduced", "off"],
+    inputDevice: ["auto", "keyboard", "controller", "touch"],
+    onlineStatus: ["online", "away", "invisible"],
+    friendRequests: ["everyone", "friendsOfFriends", "nobody"]
+});
+const NUMBER_SETTING_RANGES = Object.freeze({
+    masterVolume: [0, 100], musicVolume: [0, 100], sfxVolume: [0, 100],
+    attackSfxVolume: [0, 100], uiVolume: [0, 100], vibrationStrength: [0, 100],
+    mouseSensitivity: [25, 200], gamepadSensitivity: [25, 200]
+});
+
 function sanitizeSettings(input) {
     if (!input || typeof input !== "object" || Array.isArray(input)) return {};
     const output = {};
@@ -64,8 +95,8 @@ function sanitizeSettings(input) {
         if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) continue;
         const expected = DEFAULT_SETTINGS[key];
         if (typeof expected === "boolean" && typeof value === "boolean") output[key] = value;
-        else if (typeof expected === "number" && Number.isFinite(value) && value >= 0 && value <= 10000) output[key] = value;
-        else if (typeof expected === "string" && typeof value === "string" && value.length <= 32 && /^[A-Za-z0-9_.-]+$/.test(value)) output[key] = value;
+        else if (typeof expected === "number" && Number.isFinite(value) && NUMBER_SETTING_RANGES[key] && value >= NUMBER_SETTING_RANGES[key][0] && value <= NUMBER_SETTING_RANGES[key][1]) output[key] = value;
+        else if (typeof expected === "string" && typeof value === "string" && STRING_SETTING_OPTIONS[key]?.includes(value)) output[key] = value;
     }
     return output;
 }
