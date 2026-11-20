@@ -276,11 +276,11 @@ async function importSource(client, source, { apply = false } = {}) {
 function parseArgs(argv) {
     const args = new Set(argv);
     if (args.has("--help")) return { help: true };
-    if (args.has("--apply") === args.has("--dry-run")) {
-        throw new Error("Choose exactly one mode: --dry-run or --apply.");
-    }
     for (const arg of args) if (!["--apply", "--dry-run"].includes(arg)) {
         throw new Error("Unknown argument: " + arg);
+    }
+    if (args.has("--apply") === args.has("--dry-run")) {
+        throw new Error("Choose exactly one mode: --dry-run or --apply.");
     }
     return { apply: args.has("--apply") };
 }
