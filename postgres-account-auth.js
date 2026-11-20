@@ -11,7 +11,7 @@ const PLAYER_COOKIE = "csyPlayerId";
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_MIN = 12;
 const PASSWORD_MAX = 128;
-const loginAttempts = new Map();
+const { rateLimited } = require("./login-rate-limit");
 
 function postgresAccountStorageEnabled() {
     return String(process.env.CSY_ACCOUNT_STORAGE || "").trim().toLowerCase() === "postgres";
@@ -143,19 +143,6 @@ function readJson(req) {
         });
         req.on("error", error => { if (!failed) reject(error); });
     });
-}
-
-function rateLimited(req) {
-    const ip = String(req.headers["cf-connecting-ip"] ||
-        String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-        req.socket.remoteAddress || "unknown");
-    const now = Date.now();
-    let entry = loginAttempts.get(ip);
-    if (!entry || entry.resetAt <= now) entry = { count: 0, resetAt: now + 15 * 60 * 1000 };
-    entry.count += 1;
-    loginAttempts.set(ip, entry);
-    for (const [key, value] of loginAttempts) if (value.resetAt <= now) loginAttempts.delete(key);
-    return entry.count > 10;
 }
 
 function publicAccount(row) {
