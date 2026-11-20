@@ -514,5 +514,6 @@ module.exports = {
     tokenHash,
     createToken,
     rateLimited,
+    createScopedRateLimiter,
     trustedOrigin
 };
