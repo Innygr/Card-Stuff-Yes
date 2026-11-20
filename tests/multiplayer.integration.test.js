@@ -834,6 +834,11 @@ test("guest capacity is enforced and reported as service unavailable", async () 
     assert.equal(admitted.status, 200);
     assert.ok(admitted.data.player.id);
 
+    // An identity participating in an unfinished match is retained by the
+    // capacity cleanup policy and cannot be evicted to admit another guest.
+    const match = await first.request("/api/multiplayer/matches", { method: "POST" });
+    assert.equal(match.status, 201);
+
     const rejected = await second.request("/api/multiplayer/me");
     assert.equal(rejected.status, 503);
     assert.match(rejected.data.error, /at capacity/i);
