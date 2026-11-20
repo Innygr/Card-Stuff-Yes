@@ -37,6 +37,26 @@ function readStore() {
 
 const store = readStore();
 
+function sanitizeStore() {
+    const originalAccounts = store.accounts.length;
+    const originalSessions = store.sessions.length;
+    store.accounts = store.accounts.filter(account =>
+        account && typeof account.id === "string" && /^acct_[a-f0-9]{32}$/.test(account.id) &&
+        typeof account.username === "string" && /^[A-Za-z0-9_]{3,20}$/.test(account.username) &&
+        account.usernameKey === account.username.toLowerCase() &&
+        typeof account.playerId === "string" && /^[a-f0-9]{48}$/.test(account.playerId) &&
+        typeof account.passwordHash === "string" && /^scrypt\\$16384\\$[a-f0-9]{32}\\$[a-f0-9]{128}$/.test(account.passwordHash) &&
+        typeof account.createdAt === "string" && Number.isFinite(Date.parse(account.createdAt))
+    );
+    const accountIds = new Set(store.accounts.map(account => account.id));
+    store.sessions = store.sessions.filter(session =>
+        session && typeof session.tokenHash === "string" && /^[a-f0-9]{64}$/.test(session.tokenHash) &&
+        accountIds.has(session.accountId) && Number.isFinite(session.createdAt) &&
+        Number.isFinite(session.expiresAt) && session.expiresAt > Date.now()
+    );
+    if (store.accounts.length !== originalAccounts || store.sessions.length !== originalSessions) saveStore();
+}
+
 function saveStore() {
     const temporary = ACCOUNT_FILE + ".tmp";
     fs.mkdirSync(path.dirname(ACCOUNT_FILE), { recursive: true, mode: 0o700 });
@@ -136,6 +156,12 @@ async function hashPassword(password) {
     const salt = crypto.randomBytes(16);
     const derived = await scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
     return "scrypt$16384$" + salt.toString("hex") + "$" + Buffer.from(derived).toString("hex");
+}
+
+async function burnPasswordCheck(password) {
+    const value = typeof password === "string" ? password.slice(0, PASSWORD_MAX) : "";
+    await scrypt(value, Buffer.alloc(16, 1), 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+    return false;
 }
 
 async function verifyPassword(password, encoded) {
@@ -289,7 +315,10 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
         const username = typeof body.username === "string" ? body.username.trim() : "";
         const password = typeof body.password === "string" ? body.password : "";
         const account = accountByUsername(username);
-        if (!account || !(await verifyPassword(password, account.passwordHash))) {
+        const validPassword = account
+            ? await verifyPassword(password, account.passwordHash)
+            : await burnPasswordCheck(password);
+        if (!validPassword) {
             send(res, 401, { error: "Invalid username or password." });
             return true;
         }
@@ -344,6 +373,6 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
     return false;
 }
 
-pruneSessions();
+sanitizeStore();\npruneSessions();
 
 module.exports = { handleAccountAuth };
