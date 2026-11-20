@@ -4,7 +4,7 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 
 ## Product and deployment readiness
 
-- [ ] Confirm the production domain and DNS are owned and controlled by the project maintainers.
+- [ ] Confirm the production domain and DNS are owned and controlled by the project maintainers; follow [DOMAIN-SETUP.md](DOMAIN-SETUP.md).
 - [ ] Deploy the web frontend and API to a staging environment first.
 - [ ] Verify HTTPS, CORS, session cookies, API routing, and health checks.
 - [ ] Apply database migrations only after a reviewed backup and a documented rollback plan.
