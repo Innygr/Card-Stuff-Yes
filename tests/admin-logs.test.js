@@ -66,3 +66,25 @@ test("rejects users whose configured rank is not admin or owner", async () => {
     });
     assert.equal(login.status, 401);
 });
+
+test("admin login rate limit returns HTTP 429 after eight attempts", async () => {
+    const headers = {
+        "Content-Type": "application/json",
+        Origin: base,
+        "X-Forwarded-For": "203.0.113.77"
+    };
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+        const response = await fetch(base + "/api/admin/login", {
+            method: "POST",
+            headers,
+            body: "{"
+        });
+        assert.equal(response.status, 400);
+    }
+    const blocked = await fetch(base + "/api/admin/login", {
+        method: "POST",
+        headers,
+        body: "{"
+    });
+    assert.equal(blocked.status, 429);
+});
