@@ -269,6 +269,28 @@ test("admin frontend can authenticate against the API subdomain with a host-only
     assert.equal(session.status, 200);
     assert.equal(JSON.parse(session.body).admin.username, "integration-owner");
 
+    const logs = await requestWithHost("/api/admin/server-logs", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(logs.status, 200);
+    assert.ok(Array.isArray(JSON.parse(logs.body).lines));
+
+    // A simple cross-origin POST must not be able to sign the owner out.
+    const csrfLogout = await requestWithHost("/api/admin/logout", "api.cardstuffyes.ca", {
+        Origin: "https://untrusted.example",
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    }, "POST", "{}");
+    assert.equal(csrfLogout.status, 403);
+    const stillSignedIn = await requestWithHost("/api/admin/me", "api.cardstuffyes.ca", {
+        Origin: origin,
+        Cookie: cookie,
+        "X-Forwarded-Proto": "https"
+    });
+    assert.equal(stillSignedIn.status, 200);
+
     // The admin page is only a static shell. The host-only API cookie is not
     // exposed to the admin subdomain; privileged data stays behind /api/admin.
     const adminPage = await requestWithHost("/admin.html", "admin.cardstuffyes.ca", {
