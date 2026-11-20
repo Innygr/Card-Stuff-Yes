@@ -154,15 +154,30 @@ async function currentAccount(req) {
 async function createEmailToken(accountId, purpose, email, ttlMs) {
     const { token, hash } = createToken();
     const expiresAt = new Date(Date.now() + ttlMs);
-    await getPool().query(
-        "DELETE FROM csy_private.account_email_tokens WHERE account_id = $1 AND purpose = $2",
-        [accountId, purpose]
-    );
-    await getPool().query(`
-        INSERT INTO csy_private.account_email_tokens
-            (token_hash, account_id, purpose, email, created_at, expires_at)
-        VALUES ($1, $2, $3, $4, now(), $5)
-    `, [hash, accountId, purpose, email, expiresAt]);
+    const client = await getPool().connect();
+    try {
+        await client.query("BEGIN");
+        const account = await client.query(
+            "SELECT id FROM csy_private.accounts WHERE id = $1 FOR UPDATE",
+            [accountId]
+        );
+        if (!account.rowCount) throw new Error("Account no longer exists.");
+        await client.query(
+            "DELETE FROM csy_private.account_email_tokens WHERE account_id = $1 AND purpose = $2",
+            [accountId, purpose]
+        );
+        await client.query(`
+            INSERT INTO csy_private.account_email_tokens
+                (token_hash, account_id, purpose, email, created_at, expires_at)
+            VALUES ($1, $2, $3, $4, now(), $5)
+        `, [hash, accountId, purpose, email, expiresAt]);
+        await client.query("COMMIT");
+    } catch (error) {
+        try { await client.query("ROLLBACK"); } catch {}
+        throw error;
+    } finally {
+        client.release();
+    }
     return token;
 }
 
