@@ -43,6 +43,9 @@ db.getPool = () => ({
             posts.set(row.id, row);
             return { rows: [row], rowCount: 1 };
         }
+        if (sql.includes("SELECT id, title, summary, content, featured, published_at")) {
+            return { rows: [...posts.values()].filter(post => post.published), rowCount: [...posts.values()].filter(post => post.published).length };
+        }
         if (sql.includes("SELECT id, title, summary, content, published")) {
             return { rows: [...posts.values()], rowCount: posts.size };
         }
