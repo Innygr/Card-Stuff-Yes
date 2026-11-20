@@ -70,6 +70,22 @@ rotation/discovery policy is not yet implemented. Keep the private signing key
 and HMAC secret only in the official account authority's secret store. Never
 copy them to community hosts or commit them.
 
+
+## Community-host public-key import and rotation
+
+`community-join-ticket-keyset.js` validates a downloaded key-set document and
+imports its public Ed25519 JWKs into a verifier map. It rejects private key
+material, unsupported algorithms/curves, malformed identifiers, duplicate
+key IDs, and sets larger than 32 keys. During a planned rotation, the authority
+can publish both the retiring and replacement public keys so hosts can verify
+tickets signed by either key during the overlap period.
+
+This importer does not fetch a URL, establish trust in an issuer, or decide
+when a key should be trusted or removed. A future discovery client must pin or
+otherwise authenticate the expected issuer, use HTTPS, enforce cache and
+freshness policy, and handle revocation/rotation explicitly. Do not trust an
+arbitrary key-set URL supplied by a joining player.
+
 ## Not implemented yet
 
 The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking or account authentication. There is
