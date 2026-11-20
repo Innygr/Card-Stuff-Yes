@@ -16,7 +16,7 @@ test("PostgreSQL replay store atomically claims a valid ticket ID", async () => 
     const ticket = { ticketId: "unique_ticket_identifier_123", expiresAt: 1800000060 };
     assert.equal(await store.consume(ticket, 1800000000), true);
     assert.match(calls[0].sql, /ON CONFLICT \(ticket_id\) DO NOTHING/);
-    assert.match(calls[0].sql, /DELETE FROM community_join_ticket_uses/);
+    assert.match(calls[0].sql, /DELETE FROM csy_private\\.community_join_ticket_uses/);
     assert.deepEqual(calls[0].values, [ticket.ticketId, 1800000000, ticket.expiresAt]);
 });
 
