@@ -24,6 +24,7 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 - [ ] Rotate any credential that has ever been committed to a repository, even if the file was later removed.
 - [ ] Verify public documentation, build logs, artifacts, and source maps contain no secrets.
 - [ ] Review dependency updates and known vulnerability reports.
+- [ ] Complete the [dependency reproducibility requirements](DEPENDENCY-REPRODUCIBILITY.md): commit reviewed lockfiles and use `npm ci` in CI/container builds.
 - [ ] Confirm admin authorization is enforced server-side and owner-only actions are tested.
 - [ ] Review rate limits, input validation, CORS allowlists, and security headers.
 
