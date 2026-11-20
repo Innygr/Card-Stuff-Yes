@@ -71,6 +71,21 @@ function rateLimited(req, scope) {
     return entry.count > RATE_LIMIT;
 }
 
+function trustedOrigin(req) {
+    const origin = req.headers.origin;
+    if (typeof origin !== "string") return false;
+    try {
+        const parsed = new URL(origin);
+        const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+        const protocol = req.socket.encrypted || forwarded === "https" ? "https:" : "http:";
+        if (parsed.origin === protocol + "//" + req.headers.host) return true;
+        return String(process.env.CSY_ALLOWED_ORIGINS || "")
+            .split(",").map(value => value.trim()).filter(Boolean).includes(parsed.origin);
+    } catch {
+        return false;
+    }
+}
+
 function readJson(req) {
     return new Promise((resolve, reject) => {
         let body = "";
@@ -165,10 +180,18 @@ async function handleEmailAccountRoutes(req, res, url) {
         "/api/auth/password-reset/complete"
     ]);
     if (!known.has(route)) return false;
+    if (String(process.env.CSY_ACCOUNT_STORAGE || "").trim().toLowerCase() !== "postgres") {
+        setJson(res, 503, { error: "Account email services are temporarily unavailable." });
+        return true;
+    }
 
     const methodAllowed = route === "/api/account/email/status" ? "GET" : "POST";
     if (req.method !== methodAllowed) {
         setJson(res, 405, { error: "Method not allowed." });
+        return true;
+    }
+    if (req.method === "POST" && !trustedOrigin(req)) {
+        setJson(res, 403, { error: "A trusted website origin is required." });
         return true;
     }
     if (req.method === "POST" &&
