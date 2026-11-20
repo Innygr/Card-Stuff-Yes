@@ -11,6 +11,8 @@ All endpoints are served by the API host. Production browser pages use `https://
 - `GET /api/auth/me` and `GET /api/me` — returns the signed-in account profile.
 - `POST /api/auth/logout` — revokes the current session.
 - `POST /api/auth/change-password` — verifies the current password, changes the password, and revokes all sessions so the user signs in again.
+- `GET /api/account/profile` and `PUT /api/account/profile` — reads or updates the account display name and bio.
+- `GET /api/account/settings` and `PUT /api/account/settings` — reads or updates the account\’s validated client settings.
 
 Usernames are case-insensitive and limited to 3–20 letters, numbers, or underscores. Passwords are 12–128 characters. Passwords are hashed with Node's built-in scrypt implementation. Session cookies contain random opaque tokens; only SHA-256 token hashes are persisted.
 
@@ -25,7 +27,7 @@ Registration links the account to the guest player's current `csyPlayerId`. Logi
 Add the account frontend origin to the API server's exact CORS allowlist:
 
 ```text
-CSY_ALLOWED_ORIGINS=https://account.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://play.cardstuffyes.ca
+CSY_ALLOWED_ORIGINS=https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://play.cardstuffyes.ca
 ```
 
 Keep any other currently required origins in that comma-separated value. Do not replace the existing list blindly. The API host must remain HTTPS in production so its host-only Secure cookies are sent by the browser. No cookie Domain attribute is used.
@@ -35,7 +37,7 @@ Keep any other currently required origins in that comma-separated value. Do not 
 - Email address linking and verification (the account page explicitly reports that email delivery is not configured).
 - Password reset/recovery.
 - Two-factor authentication and user-visible session management.
-- Profile/settings persistence, deck inventory, saved decks, and account migration for any legacy account data.
+- Deck inventory, saved decks, and account migration for any legacy account data.
 - Admin player management.
 
 Do not advertise these features as available until their APIs, delivery/configuration, and tests exist.
