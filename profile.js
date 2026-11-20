@@ -251,7 +251,7 @@ function displayAccount() {
     }
 
     if (profileUsername) {
-        profileUsername.textContent = currentPlayer.username || "Profile";
+        profileUsername.textContent = currentPlayer.profile?.displayName || currentPlayer.username || "Profile";
     }
 
     if (profileRank) {
