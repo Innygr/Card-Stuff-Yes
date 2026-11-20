@@ -1,3 +1,4 @@
+const API_BASE = window.CSY_CONFIG?.apiBaseUrl || "";
 /*
  * Card Stuff Yes - Profile Page
  *
@@ -110,13 +111,17 @@ function setupEventListeners() {
  */
 async function loadProfile() {
     try {
-        const response = await fetch("/api/me", {
+        const response = await fetch(API_BASE + "/api/me", {
             method: "GET",
             credentials: "include"
         });
 
         const data = await response.json();
 
+        if (response.status === 401) {
+            window.location.href = "./login.html";
+            return;
+        }
         if (!response.ok) {
             throw new Error(data.error || "Failed to load profile.");
         }
@@ -603,7 +608,7 @@ async function handlePasswordChange(event) {
     }
 
     try {
-        const response = await fetch("/api/auth/change-password", {
+        const response = await fetch(API_BASE + "/api/auth/change-password", {
             method: "POST",
 
             headers: {
@@ -694,9 +699,11 @@ async function handleLogout() {
     }
 
     try {
-        const response = await fetch("/api/auth/logout", {
+        const response = await fetch(API_BASE + "/api/auth/logout", {
             method: "POST",
-            credentials: "include"
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: "{}"
         });
 
         if (!response.ok) {
