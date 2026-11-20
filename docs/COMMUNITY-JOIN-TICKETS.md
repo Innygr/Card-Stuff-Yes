@@ -25,7 +25,7 @@ Two replay-store implementations are available:
   single-process prototypes. It does not survive restarts or coordinate
   multiple processes.
 - `PostgresJoinTicketReplayStore` uses the unique primary key in
-  `community_join_ticket_uses` to atomically claim a ticket ID across
+  `csy_private.community_join_ticket_uses` to atomically claim a ticket ID across
   processes. It also removes expired rows during redemption. Database errors
   propagate so callers can fail closed.
 
