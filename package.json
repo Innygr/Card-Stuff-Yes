@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check admin-management.js && node --check account-auth.js && node --check admin-logs.js && node --check account.js && node --check login.js && node --check profile.js && node --check settings.js && node --check runtime-config.js && node --check scripts/hash-admin-password.js && node --check multiplayer.js && node --check db.js && node --check scripts/migrate.js && node --check postgres-account-auth.js && node --check scripts/import-json-accounts.js && node --check email.js && node --check email-account.js && node --check verify-email.js && node --check reset-password.js && node --check email-outbox.js",
+    "check": "node --check server.js && node --check admin-management.js && node --check account-auth.js && node --check login-rate-limit.js && node --check admin-logs.js && node --check account.js && node --check login.js && node --check profile.js && node --check settings.js && node --check runtime-config.js && node --check scripts/hash-admin-password.js && node --check multiplayer.js && node --check db.js && node --check scripts/migrate.js && node --check postgres-account-auth.js && node --check scripts/import-json-accounts.js && node --check email.js && node --check email-account.js && node --check verify-email.js && node --check reset-password.js && node --check email-outbox.js",
     "test": "node --test",
     "db:check": "node scripts/check-database.js",
     "db:migrate": "node scripts/migrate.js",
