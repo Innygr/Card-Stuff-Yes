@@ -1,34 +1,46 @@
 # Desktop client (Windows and Linux)
 
-The desktop client is an Electron shell around the hosted Card Stuff Yes web application. It keeps one game implementation and uses the same account/API behavior as the browser client.
+## Status and architecture
 
-## Current behavior
-- Windows: x64 NSIS installer.
-- Linux: x64 AppImage and Debian package.
-- Default site: https://cardstuffyes.ca/
-- Override the target during local development with `CSY_DESKTOP_URL`.
-- HTTPS is required. HTTP is permitted only for localhost development.
-- New windows open in the system browser only for HTTPS URLs.
-- Renderer Node.js integration is disabled; context isolation and sandboxing are enabled.
+The initial desktop client is an Electron shell around the Card Stuff Yes web frontend. It reuses the browser game and API rather than duplicating game logic. The site deployment is not ready yet, so the default URL is a future production target, not a claim that the public site is currently live.
 
-## Build locally
+Set `CSY_DESKTOP_URL` to a reachable HTTPS staging site to test. HTTP is accepted only for loopback development hosts (`localhost` and `127.0.0.1`). No server credentials or database configuration are bundled.
+
+## Platforms and outputs
+
+- Windows x64: NSIS installer.
+- Linux x64: AppImage and Debian package.
+- Build artifacts are uploaded by GitHub Actions and retained for 14 days; they are not automatically published as a release.
+
+## Local development
+
 From `desktop/`:
+
 ```sh
 npm install
-npm start
+CSY_DESKTOP_URL=https://your-staging-host.example npm start
+npm test
 npm run dist
 ```
-Build output is written to `desktop/dist/`.
 
-## CI artifacts
-The Desktop Client workflow builds Windows and Linux artifacts when desktop source changes. Artifacts are temporary CI downloads (14-day retention); they are not signed installers or a public release.
+On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="https://your-staging-host.example"`.
 
-## Release requirements
+## Security controls
+
+- Renderer Node.js integration is disabled.
+- Context isolation, sandboxing, and web security are enabled.
+- Top-level navigation is restricted to the configured origin.
+- External HTTPS links open in the system browser.
+- Non-HTTPS external links and script/data URLs are blocked.
+- URL policy has automated Node.js tests.
+
+## Release gates
+
 Before publishing installers:
-1. Confirm the canonical production site and API are live.
-2. Add Windows code signing and Linux package/repository signing.
-3. Add an update strategy and release-channel policy.
-4. Test login, cookies, navigation, downloads, external links, and window sizing on real Windows and Linux systems.
+1. Deploy and verify a staging frontend/API environment.
+2. Test login, session persistence, game flows, downloads, and external links on real Windows and Linux systems.
+3. Add Windows code signing and Linux package/repository signing.
+4. Define update channels and a secure update strategy.
 5. Publish versioned checksums and release notes.
 
-The desktop shell currently requires an internet connection and does not provide offline play. It does not bundle server credentials or database configuration.
+Offline play, auto-updates, code signing, and public release publishing are not implemented yet.
