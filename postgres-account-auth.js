@@ -679,5 +679,6 @@ module.exports = {
     sanitizeProfile,
     hashPassword,
     verifyPassword,
-    handlePostgresAccountAuth
+    handlePostgresAccountAuth,
+    accountForSession
 };
