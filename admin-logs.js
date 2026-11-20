@@ -146,7 +146,7 @@ async function handleAdminLogs(req, res, url) {
         const token = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
         const rank = String(user.rank).toLowerCase();
-        sessions.set(tokenHash, { username: user.username, rank, expiresAt: now + SESSION_MS });
+        sessions.set(tokenHash, { username: user.username, rank, expiresAt: Date.now() + SESSION_MS });
         setCookie(req, res, token, Math.floor(SESSION_MS / 1000));
         send(res, 200, { admin: { username: user.username, rank } });
         return true;
