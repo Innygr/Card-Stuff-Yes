@@ -160,6 +160,20 @@ function pruneExpiredMatches(now = Date.now()) {
     return changed;
 }
 
+function pruneFinishedMatchesToCapacity() {
+    if (matches.size < MAX_MATCHES) return false;
+    const finished = [...matches.values()]
+        .filter(match => match.status === "finished")
+        .sort((a, b) => Date.parse(a.updatedAt) - Date.parse(b.updatedAt));
+    let changed = false;
+    while (matches.size >= MAX_MATCHES && finished.length) {
+        const oldest = finished.shift();
+        matches.delete(oldest.id);
+        changed = true;
+    }
+    return changed;
+}
+
 let CARDS;
 try {
     const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
@@ -462,7 +476,9 @@ async function handleApi(req, res, url, player) {
         sendJson(res, 200, { matches: open }); return;
     }
     if (url.pathname === "/api/multiplayer/matches" && req.method === "POST") {
-        if (pruneExpiredMatches()) saveState();
+        const expiredPruned = pruneExpiredMatches();
+        const finishedPruned = pruneFinishedMatchesToCapacity();
+        if (expiredPruned || finishedPruned) saveState();
         if (matches.size >= MAX_MATCHES) {
             sendJson(res, 503, { error: "The match service is at capacity. Please try again later." }); return;
         }
