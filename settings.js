@@ -293,38 +293,25 @@ const API_BASE = window.CSY_CONFIG?.apiBaseUrl || "";
      */
 
     function loadSettings() {
-
         let saved = {};
-
         try {
-
-            const raw =
-                localStorage.getItem(
-                    STORAGE_KEY
-                );
-
-            if (raw) {
-
-                saved =
-                    JSON.parse(raw);
-
-            }
-
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) saved = JSON.parse(raw);
         } catch (error) {
-
-            console.warn(
-                "Card Stuff Yes settings could not be loaded.",
-                error
-            );
-
+            console.warn("Card Stuff Yes settings could not be loaded.", error);
         }
-
-
-        return {
-            ...DEFAULT_SETTINGS,
-            ...(saved || {})
-        };
-
+        const result = { ...DEFAULT_SETTINGS };
+        if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+            for (const [name, value] of Object.entries(saved)) {
+                if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, name)) continue;
+                const expected = DEFAULT_SETTINGS[name];
+                if (typeof value === typeof expected &&
+                    (typeof value !== "number" || Number.isFinite(value))) {
+                    result[name] = value;
+                }
+            }
+        }
+        return result;
     }
 
 
