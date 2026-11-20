@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { getPool, closeDatabase } = require("../db");
+const { sanitizeSettings } = require("../account-auth");
 
 const ACCOUNT_FILE = path.resolve(
     process.env.CSY_ACCOUNT_FILE || path.join(__dirname, "..", "private-data", "accounts.json")
@@ -70,7 +71,7 @@ function validateSource(data, now = Date.now()) {
         const profile = isPlainObject(account.profile) ? account.profile : {};
         const displayName = typeof profile.displayName === "string" ? profile.displayName.trim().slice(0, 24) : "";
         const bio = typeof profile.bio === "string" ? profile.bio.trim().slice(0, 240) : "";
-        const settings = isPlainObject(account.settings) ? account.settings : {};
+        const settings = sanitizeSettings(isPlainObject(account.settings) ? account.settings : {});
         const decksInput = Array.isArray(account.decks) ? account.decks : [];
         if (decksInput.length > 25) throw new Error("Account has more than 25 saved decks at " + label + ".");
         const decks = decksInput.map((deck, deckIndex) => {
@@ -202,29 +203,36 @@ async function importSource(client, source, { apply = false } = {}) {
             plan.accountsInserted += 1;
         }
 
-        if (apply) {
-            const profile = await client.query(`
-                INSERT INTO csy_private.profiles (account_id, display_name, bio, updated_at)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (account_id) DO NOTHING
-                RETURNING account_id
-            `, [account.id, account.profile.displayName, account.profile.bio, account.updatedAt]);
-            if (profile.rowCount) plan.profilesInserted += 1;
-
-            const settings = await client.query(`
-                INSERT INTO csy_private.player_settings (account_id, settings, updated_at)
-                VALUES ($1, $2::jsonb, $3)
-                ON CONFLICT (account_id) DO NOTHING
-                RETURNING account_id
-            `, [account.id, JSON.stringify(account.settings), account.updatedAt]);
-            if (settings.rowCount) plan.settingsInserted += 1;
+        const [profile, settings] = await Promise.all([
+            client.query("SELECT display_name, bio FROM csy_private.profiles WHERE account_id = $1" + (apply ? " FOR UPDATE" : ""), [account.id]),
+            client.query("SELECT settings FROM csy_private.player_settings WHERE account_id = $1" + (apply ? " FOR UPDATE" : ""), [account.id])
+        ]);
+        if (profile.rowCount) {
+            const row = profile.rows[0];
+            if (row.display_name !== account.profile.displayName || row.bio !== account.profile.bio) {
+                throw new Error("Existing profile conflicts with source account: " + account.id);
+            }
         } else {
-            const [profile, settings] = await Promise.all([
-                client.query("SELECT account_id FROM csy_private.profiles WHERE account_id = $1", [account.id]),
-                client.query("SELECT account_id FROM csy_private.player_settings WHERE account_id = $1", [account.id])
-            ]);
-            if (!profile.rowCount) plan.profilesInserted += 1;
-            if (!settings.rowCount) plan.settingsInserted += 1;
+            if (apply) {
+                await client.query(`
+                    INSERT INTO csy_private.profiles (account_id, display_name, bio, updated_at)
+                    VALUES ($1, $2, $3, $4)
+                `, [account.id, account.profile.displayName, account.profile.bio, account.updatedAt]);
+            }
+            plan.profilesInserted += 1;
+        }
+        if (settings.rowCount) {
+            if (JSON.stringify(settings.rows[0].settings) !== JSON.stringify(account.settings)) {
+                throw new Error("Existing settings conflict with source account: " + account.id);
+            }
+        } else {
+            if (apply) {
+                await client.query(`
+                    INSERT INTO csy_private.player_settings (account_id, settings, updated_at)
+                    VALUES ($1, $2::jsonb, $3)
+                `, [account.id, JSON.stringify(account.settings), account.updatedAt]);
+            }
+            plan.settingsInserted += 1;
         }
 
         for (const deck of account.decks) {
@@ -251,12 +259,15 @@ async function importSource(client, source, { apply = false } = {}) {
 
     for (const session of source.sessions) {
         const existing = await client.query(
-            "SELECT account_id FROM csy_private.account_sessions WHERE token_hash = $1" + (apply ? " FOR UPDATE" : ""),
+            "SELECT account_id, created_at, expires_at FROM csy_private.account_sessions WHERE token_hash = $1" + (apply ? " FOR UPDATE" : ""),
             [session.tokenHash]
         );
         if (existing.rowCount) {
-            if (existing.rows[0].account_id !== session.accountId) {
-                throw new Error("Session token hash is already assigned to a different account.");
+            const row = existing.rows[0];
+            if (row.account_id !== session.accountId ||
+                new Date(row.created_at).getTime() !== session.createdAt.getTime() ||
+                new Date(row.expires_at).getTime() !== session.expiresAt.getTime()) {
+                throw new Error("Existing session conflicts with source token hash.");
             }
             plan.sessionsExisting += 1;
             continue;
