@@ -1,3 +1,4 @@
+const API_BASE = window.CSY_CONFIG?.apiBaseUrl || "";
 /*
  * ============================================================
  * Card Stuff Yes
@@ -20,6 +21,8 @@
 
     const STORAGE_KEY =
         "card-stuff-yes-settings";
+
+    let remoteSaveTimer = null;
 
 
     /*
@@ -290,38 +293,25 @@
      */
 
     function loadSettings() {
-
         let saved = {};
-
         try {
-
-            const raw =
-                localStorage.getItem(
-                    STORAGE_KEY
-                );
-
-            if (raw) {
-
-                saved =
-                    JSON.parse(raw);
-
-            }
-
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) saved = JSON.parse(raw);
         } catch (error) {
-
-            console.warn(
-                "Card Stuff Yes settings could not be loaded.",
-                error
-            );
-
+            console.warn("Card Stuff Yes settings could not be loaded.", error);
         }
-
-
-        return {
-            ...DEFAULT_SETTINGS,
-            ...(saved || {})
-        };
-
+        const result = { ...DEFAULT_SETTINGS };
+        if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+            for (const [name, value] of Object.entries(saved)) {
+                if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, name)) continue;
+                const expected = DEFAULT_SETTINGS[name];
+                if (typeof value === typeof expected &&
+                    (typeof value !== "number" || Number.isFinite(value))) {
+                    result[name] = value;
+                }
+            }
+        }
+        return result;
     }
 
 
@@ -355,7 +345,40 @@
 
 
         applySettings();
+        clearTimeout(remoteSaveTimer);
+        remoteSaveTimer = setTimeout(saveAccountSettings, 450);
 
+    }
+
+    async function saveAccountSettings() {
+        try {
+            const response = await fetch(API_BASE + "/api/account/settings", {
+                method: "PUT", credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            });
+            if (response.ok) showStatus("Settings saved to your account.");
+        } catch (error) {
+            console.warn("Account settings sync unavailable; local settings remain saved.", error);
+        }
+    }
+
+    async function loadAccountSettings() {
+        try {
+            const response = await fetch(API_BASE + "/api/account/settings", {
+                credentials: "include", cache: "no-store"
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data.settings || typeof data.settings !== "object") return;
+            settings = { ...settings, ...data.settings };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            applySettings();
+            updateControls();
+            showStatus("Account settings loaded.");
+        } catch (error) {
+            console.warn("Could not load account settings; using this device’s settings.", error);
+        }
     }
 
 
@@ -1206,6 +1229,7 @@
             bindControls();
 
             bindButtons();
+            loadAccountSettings();
 
         }
     );

@@ -4,7 +4,8 @@ FROM node:22-alpine
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=6565 \
-    CSY_STATE_FILE=/app/private-data/multiplayer-state.json
+    CSY_STATE_FILE=/app/private-data/multiplayer-state.json \
+    CSY_ACCOUNT_FILE=/app/private-data/accounts.json
 
 WORKDIR /app
 

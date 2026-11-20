@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
+const { handleAccountAuth } = require("./account-auth");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -36,6 +37,9 @@ const matches = new Map();
 // public site tree and replace it atomically so a crash cannot leave half JSON.
 const STATE_FILE = path.resolve(
     process.env.CSY_STATE_FILE || path.join(ROOT, "private-data", "multiplayer-state.json")
+);
+const ACCOUNT_FILE = path.resolve(
+    process.env.CSY_ACCOUNT_FILE || path.join(ROOT, "private-data", "accounts.json")
 );
 
 function saveState() {
@@ -199,7 +203,7 @@ function applyCors(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "600");
     res.setHeader("Vary", "Origin");
     return true;
@@ -519,7 +523,7 @@ async function handleApi(req, res, url, player) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".ico": "image/x-icon" };
-const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
+const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "account-auth.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
 
 function serveStatic(req, res, pathname) {
     if (req.method !== "GET" && req.method !== "HEAD") { sendJson(res, 405, { error: "Method not allowed." }, { Allow: "GET, HEAD" }); return; }
@@ -529,7 +533,8 @@ function serveStatic(req, res, pathname) {
     const relative = decoded === "/" ? "index.html" : decoded.replace(/^\/+/, "");
     const filePath = path.resolve(ROOT, relative);
     if (PRIVATE.has(relative) || relative.startsWith("private-data/") || relative.startsWith("node_modules/") ||
-        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp") {
+        filePath === STATE_FILE || filePath === STATE_FILE + ".tmp" ||
+        filePath === ACCOUNT_FILE || filePath === ACCOUNT_FILE + ".tmp") {
         sendJson(res, 404, { error: "Not found." });
         return;
     }
@@ -634,6 +639,11 @@ const server = http.createServer(async (req, res) => {
         if (url.pathname === "/api/cards" && req.method === "GET") {
             sendJson(res, 200, { cards: CARDS, count: CARDS.length });
             return;
+        }
+
+        if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/account/")) {
+            const guestPlayer = url.pathname === "/api/auth/register" ? getPlayer(req, res) : null;
+            if (await handleAccountAuth(req, res, url, guestPlayer)) return;
         }
 
         if (url.pathname.startsWith("/api/multiplayer/")) {
