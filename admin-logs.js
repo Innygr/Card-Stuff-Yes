@@ -7,6 +7,9 @@ const COOKIE = "csyAdminSession";
 const SESSION_MS = 8 * 60 * 60 * 1000;
 const sessions = new Map();
 const LOG_FILE = process.env.CSY_LOG_FILE || "/app/private-logs/card-stuff-yes.log";
+const ALLOWED_ORIGINS = new Set(
+    String(process.env.CSY_ALLOWED_ORIGINS || "").split(",").map(value => value.trim()).filter(Boolean)
+);
 const MAX_LOG_BYTES = 512 * 1024;
 const MAX_LINES = 1000;
 const loginAttempts = new Map();
@@ -70,22 +73,40 @@ function send(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
+function cookieDomainAttribute() {
+    const domain = String(process.env.CSY_ADMIN_COOKIE_DOMAIN || "").trim();
+    if (!domain || !/^\.?[a-z0-9.-]+$/i.test(domain) || domain.includes("..")) return "";
+    return "; Domain=" + domain;
+}
+
+function isAllowedOrigin(req) {
+    const origin = req.headers.origin;
+    if (!origin) return false;
+    try {
+        const parsed = new URL(origin);
+        if (parsed.origin !== origin) return false;
+        const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+        const protocol = req.socket.encrypted || forwarded === "https" ? "https:" : "http:";
+        const sameOrigin = origin === protocol + "//" + String(req.headers.host || "").toLowerCase();
+        return sameOrigin || ALLOWED_ORIGINS.has(origin);
+    } catch {
+        return false;
+    }
+}
+
 function setCookie(req, res, token, maxAge) {
     const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
     const secure = req.socket.encrypted || forwarded === "https" ? "; Secure" : "";
     res.setHeader("Set-Cookie", COOKIE + "=" + encodeURIComponent(token) +
-        "; HttpOnly; SameSite=Strict; Path=/; Max-Age=" + maxAge + secure);
+        "; HttpOnly; SameSite=Strict; Path=/; Max-Age=" + maxAge +
+        cookieDomainAttribute() + secure);
 }
 
-function clearCookie(res) {
-    res.setHeader("Set-Cookie", COOKIE + "=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Secure");
-}
-
-function sameOrigin(req) {
-    const origin = req.headers.origin;
-    if (!origin) return false;
-    try { return new URL(origin).host === String(req.headers.host || "").toLowerCase(); }
-    catch { return false; }
+function clearCookie(req, res) {
+    const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const secure = req.socket.encrypted || forwarded === "https" ? "; Secure" : "";
+    res.setHeader("Set-Cookie", COOKIE + "=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0" +
+        cookieDomainAttribute() + secure);
 }
 
 function readLogs() {
@@ -110,7 +131,7 @@ async function handleAdminLogs(req, res, url) {
     if (!url.pathname.startsWith("/api/admin/")) return false;
 
     if (url.pathname === "/api/admin/login" && req.method === "POST") {
-        if (!sameOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
+        if (!isAllowedOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
         const ip = String(req.headers["cf-connecting-ip"] || String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "unknown");
         const now = Date.now();
         const attempt = loginAttempts.get(ip) || { count: 0, until: now + 60000 };
@@ -147,9 +168,10 @@ async function handleAdminLogs(req, res, url) {
     }
 
     if (url.pathname === "/api/admin/logout" && req.method === "POST") {
+        if (!isAllowedOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
         const token = cookies(req)[COOKIE];
         if (token) sessions.delete(crypto.createHash("sha256").update(token).digest("hex"));
-        clearCookie(res);
+        clearCookie(req, res);
         send(res, 200, { message: "Signed out." }); return true;
     }
 
