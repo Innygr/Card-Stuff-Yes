@@ -1,0 +1,48 @@
+name: Desktop Client
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/desktop-client.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/desktop-client.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    name: Package ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-latest
+          - platform: linux
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package.json
+      - name: Install desktop dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Windows installer
+        if: matrix.platform == 'windows'
+        run: npx electron-builder --win nsis --x64
+      - name: Build Linux packages
+        if: matrix.platform == 'linux'
+        run: npx electron-builder --linux AppImage deb --x64
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-stuff-yes-${{ matrix.platform }}
+          path: desktop/dist/*
+          if-no-files-found: error
+          retention-days: 14
