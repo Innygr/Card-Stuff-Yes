@@ -300,7 +300,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         const username = typeof body.username === "string" ? body.username.trim() : "";
         const password = typeof body.password === "string" ? body.password : "";
         const result = await getPool().query(`
-            SELECT a.id, a.player_id, a.username, a.password_hash, a.created_at,
+            SELECT a.id, a.player_id, a.username, a.password_hash, a.rank, a.created_at,
                    p.display_name, p.bio
             FROM csy_private.accounts a
             LEFT JOIN csy_private.profiles p ON p.account_id = a.id
