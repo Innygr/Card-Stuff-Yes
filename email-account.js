@@ -19,7 +19,7 @@ const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 30 * 60 * 1000;
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT = 5;
-const attempts = new Map();
+const MAX_RATE_ENTRIES = 10000;
 const GENERIC_RESET_MESSAGE = "If an account has a verified email address matching that information, a password reset link will be sent.";
 
 function tokenHash(token) {
@@ -60,16 +60,40 @@ function clientIp(req) {
         req.socket.remoteAddress || "unknown").slice(0, 100);
 }
 
-function rateLimited(req, scope) {
-    const key = scope + ":" + clientIp(req);
-    const now = Date.now();
-    let entry = attempts.get(key);
-    if (!entry || entry.resetAt <= now) entry = { count: 0, resetAt: now + RATE_WINDOW_MS };
-    entry.count += 1;
-    attempts.set(key, entry);
-    for (const [item, value] of attempts) if (value.resetAt <= now) attempts.delete(item);
-    return entry.count > RATE_LIMIT;
+function createScopedRateLimiter({
+    windowMs = RATE_WINDOW_MS,
+    limit = RATE_LIMIT,
+    maxEntries = MAX_RATE_ENTRIES,
+    now = Date.now,
+    getClientIp = clientIp
+} = {}) {
+    const attempts = new Map();
+
+    function rateLimited(req, scope) {
+        const currentTime = now();
+        for (const [key, value] of attempts) {
+            if (value.resetAt <= currentTime) attempts.delete(key);
+        }
+
+        const key = String(scope) + ":" + getClientIp(req);
+        let entry = attempts.get(key);
+        if (!entry || entry.resetAt <= currentTime) {
+            entry = { count: 0, resetAt: currentTime + windowMs };
+        }
+        entry.count += 1;
+        attempts.delete(key);
+        attempts.set(key, entry);
+
+        // Keep attacker-controlled source addresses from growing this map forever.
+        while (attempts.size > maxEntries) attempts.delete(attempts.keys().next().value);
+        return entry.count > limit;
+    }
+
+    Object.defineProperty(rateLimited, "size", { get: () => attempts.size });
+    return rateLimited;
 }
+
+const rateLimited = createScopedRateLimiter();
 
 function trustedOrigin(req) {
     const origin = req.headers.origin;
