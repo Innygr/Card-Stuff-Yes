@@ -26,3 +26,28 @@ test("login rate limiter bounds memory for many distinct source addresses", () =
     rateLimited(requestFor("198.51.100.1"));
     assert.equal(rateLimited.size, 25);
 });
+
+test("login rate limiter resets an address after the window expires", () => {
+    let clock = 1000;
+    const rateLimited = createRateLimiter({ limit: 1, windowMs: 500, now: () => clock });
+    const request = requestFor("192.0.2.20");
+    assert.equal(rateLimited(request), false);
+    assert.equal(rateLimited(request), true);
+    clock += 500;
+    assert.equal(rateLimited(request), false);
+    assert.equal(rateLimited.size, 1);
+});
+
+test("Cloudflare client address takes precedence over forwarded headers", () => {
+    const rateLimited = createRateLimiter({ limit: 1 });
+    const request = {
+        headers: {
+            "cf-connecting-ip": "192.0.2.30",
+            "x-forwarded-for": "192.0.2.31, 192.0.2.32"
+        },
+        socket: { remoteAddress: "127.0.0.1" }
+    };
+    assert.equal(rateLimited(request), false);
+    assert.equal(rateLimited(request), true);
+    assert.equal(rateLimited.size, 1);
+});
