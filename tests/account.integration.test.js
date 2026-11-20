@@ -142,7 +142,7 @@ test("accounts securely link to an existing guest and survive restart", async ()
     assert.equal(duplicate.status, 409);
 
     const untrusted = await new Client().request("/api/auth/register", {
-        origin: "https://untrusted.example",
+        method: "POST", origin: "https://untrusted.example",
         body: { username: "Intruder", password: "A-long-passphrase-2026!" }
     });
     assert.equal(untrusted.status, 403);
