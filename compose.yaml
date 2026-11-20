@@ -14,14 +14,12 @@ services:
       CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-https://cardstuffyes.ca,https://www.cardstuffyes.ca,https://play.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://cards.cardstuffyes.ca,https://decks.cardstuffyes.ca,https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://news.cardstuffyes.ca,https://help.cardstuffyes.ca,https://admin.cardstuffyes.ca}
       CSY_COOKIE_SAMESITE: ${CSY_COOKIE_SAMESITE:-Lax}
       CSY_ADMIN_USERS: ${CSY_ADMIN_USERS:-[]}
-      CSY_LOG_FILE: /app/private-logs/card-stuff-yes.log
 
     ports:
-      - "6565:6565"
+      - "${CSY_BIND_ADDRESS:-127.0.0.1}:6565:6565"
 
     volumes:
       - card-stuff-yes-data:/app/private-data
-      - ./private-logs:/app/private-logs:ro
 
     read_only: true
     tmpfs:
