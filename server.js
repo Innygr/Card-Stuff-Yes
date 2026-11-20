@@ -460,6 +460,7 @@ async function handleApi(req, res, url, player) {
         sendJson(res, 200, { matches: open }); return;
     }
     if (url.pathname === "/api/multiplayer/matches" && req.method === "POST") {
+        if (pruneExpiredMatches()) saveState();
         if (matches.size >= MAX_MATCHES) {
             sendJson(res, 503, { error: "The match service is at capacity. Please try again later." }); return;
         }
