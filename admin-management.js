@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { getPool } = require("./db");
 const { adminFor } = require("./admin-logs");
+const { accountForSession, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 
 const CARD_CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, "cards.json"), "utf8"));
 const CARD_IDS = new Set(CARD_CATALOG.map(card => card.id));
@@ -213,12 +214,17 @@ async function handlePublicNews(req, res, url) {
     return true;
 }
 
-async function handleAccountCollection(req, res, url, accountSession) {
+async function handleAccountCollection(req, res, url) {
     if (url.pathname !== "/api/account/collection") return false;
+    if (!postgresAccountStorageEnabled()) {
+        send(res, 503, { error: "Card collection requires PostgreSQL account storage." });
+        return true;
+    }
     if (req.method !== "GET") {
         send(res, 405, { error: "Method not allowed." }, { Allow: "GET" });
         return true;
     }
+    const accountSession = await accountForSession(req);
     if (!accountSession) {
         send(res, 401, { error: "Sign in to view your card collection." });
         return true;
