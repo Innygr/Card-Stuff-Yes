@@ -18,6 +18,8 @@ on:
     branches:
       - Server
       - feature/docker-ghcr
+    tags:
+      - 'server-v*'
 
 permissions:
   contents: read
@@ -46,7 +48,7 @@ jobs:
 
   publish:
     name: Publish image to GitHub Container Registry
-    if: github.event_name == 'push' && github.ref == 'refs/heads/Server'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/server-v')
     needs: validate
     runs-on: ubuntu-latest
     permissions:
@@ -73,6 +75,7 @@ jobs:
           images: ghcr.io/innygr/card-stuff-yes
           tags: |
             type=raw,value=server
+            type=ref,event=tag
             type=sha,prefix=sha-
 
       - name: Build and push image
