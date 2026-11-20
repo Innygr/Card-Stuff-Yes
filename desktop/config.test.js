@@ -40,3 +40,14 @@ test("preload exposes no privileged renderer bridge", () => {
     const preloadSource = fs.readFileSync(path.join(root, "preload.js"), "utf8");
     assert.doesNotMatch(preloadSource, /contextBridge|ipcRenderer|require\s*\(/);
 });
+
+test("desktop package metadata is stable and bundles only the app shell", () => {
+    assert.equal(pkg.build.appId, "ca.cardstuffyes.desktop");
+    assert.equal(pkg.build.productName, "Card Stuff Yes");
+    assert.equal(pkg.build.asar, true);
+    assert.deepEqual([...pkg.build.files].sort(), ["main.js", "package.json", "preload.js", "url-policy.js"].sort());
+    assert.equal(pkg.build.nsis.oneClick, false);
+    assert.equal(pkg.build.nsis.perMachine, false);
+    assert.equal(pkg.private, true);
+    assert.equal(pkg.build.publish, undefined);
+});
