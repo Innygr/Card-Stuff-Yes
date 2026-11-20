@@ -18,7 +18,8 @@ The Server branch currently has no committed `package-lock.json`, so dependency 
 ## Container configuration
 
 - The image uses Node.js 22 and runs as the unprivileged `node` user.
-- Bind the service to a private interface or place it behind a TLS-terminating reverse proxy. Do not expose the prototype directly to the public internet.
+- The image health check calls `/api/health`, matching the server's JSON health response.
+- The Compose file binds port 6565 to `127.0.0.1` by default. Keep this default when using a reverse proxy on the same host. Set `CSY_BIND_ADDRESS=0.0.0.0` only when you intentionally need direct network access and have separately configured firewalling and TLS. Do not expose the prototype directly to the public internet.
 - Keep `private-data/` in a persistent, access-controlled volume. It contains account and/or multiplayer runtime data and must not be committed or included in a public image.
 - Supply database URLs, admin bootstrap credentials, email credentials, and signing keys only through protected runtime secrets. Never bake them into the image or Compose file.
 - Back up persistent data before upgrades and test restore procedures.
