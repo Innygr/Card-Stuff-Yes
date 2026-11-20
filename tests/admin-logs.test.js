@@ -58,6 +58,27 @@ test("owner login can read and filter bounded server logs", async () => {
     assert.match(data.lines[0], /ERROR request failed/);
 });
 
+test("admin session cookie has restrictive attributes", async () => {
+    const secureOrigin = "https://" + new URL(base).host;
+    const login = await fetch(base + "/api/admin/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Origin: secureOrigin,
+            "X-Forwarded-Proto": "https"
+        },
+        body: JSON.stringify({ username: "site-owner", password: "correct horse battery staple" })
+    });
+    assert.equal(login.status, 200);
+    const cookie = login.headers.get("set-cookie");
+    assert.match(cookie, /^csyAdminSession=/);
+    assert.match(cookie, /; HttpOnly(?:;|$)/);
+    assert.match(cookie, /; SameSite=Strict(?:;|$)/);
+    assert.match(cookie, /; Path=\/(?:;|$)/);
+    assert.match(cookie, /; Max-Age=28800(?:;|$)/);
+    assert.match(cookie, /; Secure(?:;|$)/);
+});
+
 test("admin sessions can be checked and revoked", async () => {
     const login = await fetch(base + "/api/admin/login", {
         method: "POST",
