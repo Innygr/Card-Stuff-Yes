@@ -19,12 +19,21 @@ local guest identity flow.
 
 ## Replay protection
 
-`JoinTicketReplayGuard` provides a bounded, in-process one-time-use guard for
-verified tickets. It is suitable for unit tests and a single-process prototype
-only. It is **not** shared across multiple server processes and does not
-survive restarts. A production community host must use an atomic shared
-single-use store (for example, a database uniqueness constraint or equivalent
-transactional primitive) and must fail closed if that store is unavailable.
+Two replay-store implementations are available:
+
+- `JoinTicketReplayGuard` is a bounded in-memory guard for unit tests and
+  single-process prototypes. It does not survive restarts or coordinate
+  multiple processes.
+- `PostgresJoinTicketReplayStore` uses the unique primary key in
+  `community_join_ticket_uses` to atomically claim a ticket ID across
+  processes. It also removes expired rows during redemption. Database errors
+  propagate so callers can fail closed.
+
+The PostgreSQL store requires migration
+`004_community_join_ticket_uses.sql` to be applied to the community host's
+database before use. It accepts a PostgreSQL-compatible pool by dependency
+injection and does not create a connection or apply migrations itself. Do not
+treat the in-memory guard as a production substitute.
 
 ## Key handling and deployment
 
@@ -39,7 +48,7 @@ transactional primitive) and must fail closed if that store is unavailable.
 
 ## Not implemented yet
 
-The module is not wired into matchmaking or account authentication. There is
+The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking or account authentication. There is
 no production issuer endpoint, public-key discovery/rotation endpoint, durable
 replay store, ticket redemption route, or end-to-end community-hosting flow.
 Those must be implemented and security-tested before community servers are
