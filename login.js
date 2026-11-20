@@ -45,7 +45,7 @@ async function submitAuth(form, route) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "Could not complete sign-in.");
         setStatus(route.endsWith("register") ? "Account created. Opening your account…" : "Signed in. Opening your account…", "success");
-        window.location.assign("./account.html");
+        window.location.assign(window.CSY_CONFIG?.routes?.account || "./account.html");
     } catch (error) {
         setStatus(error.message, "error");
     } finally {
