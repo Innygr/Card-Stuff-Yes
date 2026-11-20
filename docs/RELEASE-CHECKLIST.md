@@ -35,6 +35,7 @@ This checklist is the release gate for the first public 1.0 release. A checked C
 - [ ] Verify each platform artifact includes `SHA256SUMS.txt` and validate every checksum.
 - [ ] Install and launch the Windows build on a clean Windows test machine.
 - [ ] Install and launch the Linux AppImage and Debian package on supported distributions.
+- [ ] Complete and retain the platform test record in [DESKTOP-SMOKE-TEST.md](DESKTOP-SMOKE-TEST.md) for both Windows and Linux.
 - [ ] Test login, logout, session persistence, navigation, external links, and window lifecycle.
 - [ ] Verify the app cannot navigate away from the configured application origin.
 - [ ] Decide whether code signing is required before distribution; unsigned builds must be clearly identified.
