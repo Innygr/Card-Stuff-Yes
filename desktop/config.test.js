@@ -56,6 +56,6 @@ test("desktop direct dependencies are pinned to exact versions", () => {
     assert.equal(pkg.devDependencies.electron, "39.2.0");
     assert.equal(pkg.devDependencies["electron-builder"], "26.0.12");
     for (const version of Object.values(pkg.devDependencies)) {
-        assert.match(version, /^\\d+\\.\\d+\\.\\d+$/);
+        assert.match(version, /^\d+\.\d+\.\d+$/);
     }
 });
