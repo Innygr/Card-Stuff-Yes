@@ -46,3 +46,4 @@ Windows x64 and Linux x64 desktop builds are produced as GitHub Actions test art
 - [Desktop client build and verification](docs/DESKTOP-CLIENT.md)
 - [Repository workflows and wiki synchronization](docs/WORKFLOWS.md)
 - [Card Stuff Yes 1.0 release checklist](docs/RELEASE-CHECKLIST.md)
+- [Domain registration and DNS setup](docs/DOMAIN-SETUP.md)
