@@ -404,6 +404,9 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
             usernameKey: username.toLowerCase(),
             passwordHash,
             playerId: guestPlayer.id,
+            profile: { displayName: "", bio: "" },
+            settings: {},
+            decks: [],
             createdAt: now,
             updatedAt: now
         };
