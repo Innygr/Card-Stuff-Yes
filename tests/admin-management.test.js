@@ -151,6 +151,25 @@ test("admin mutations reject cross-origin requests", async () => {
     assert.equal(posts.size, 0);
 });
 
+test("admin mutations reject requests without an Origin header", async () => {
+    const response = await fetch(base + "/api/admin/news", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: ownerCookie
+        },
+        body: JSON.stringify({
+            title: "Missing origin",
+            summary: "",
+            content: "Must not be stored.",
+            published: false,
+            featured: false
+        })
+    });
+    assert.equal(response.status, 403);
+    assert.equal(posts.size, 0);
+});
+
 test("admin can list account-backed players", async () => {
     const { response, data } = await request("/api/admin/players");
     assert.equal(response.status, 200);
