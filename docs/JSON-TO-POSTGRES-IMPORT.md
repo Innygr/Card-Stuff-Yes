@@ -1,6 +1,6 @@
 # Import legacy JSON accounts into Supabase PostgreSQL
 
-This importer transfers the existing Node account store into the private `csy_private` schema. It does not change the source JSON file, enable PostgreSQL mode, change Compose, or deploy anything.
+This importer transfers the existing Node account store into the private `csy_private` schema. Run the repository's automated checks with `npm test` before any database operation. It does not change the source JSON file, enable PostgreSQL mode, change Compose, or deploy anything.
 
 ## Before running it
 
