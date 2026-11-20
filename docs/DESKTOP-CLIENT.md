@@ -53,7 +53,7 @@ On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="
 - A single-instance lock prevents duplicate app processes and focuses the existing window.
 - Loopback development URLs support localhost, IPv4, and IPv6.
 - Non-HTTPS external links and script/data URLs are blocked.
-- URL policy has automated Node.js tests, including IPv6 loopback, origin/port confinement, and rejected non-HTTPS external schemes.
+- Automated Node.js tests cover IPv6 loopback, origin/port confinement, rejected non-HTTPS external schemes, platform packaging targets, non-publishing build scripts, and Electron security settings.
 
 ## Release gates
 
