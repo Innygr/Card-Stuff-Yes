@@ -20,7 +20,7 @@ const allowedOrigins = new Set(
         .map(value => value.trim())
         .filter(Boolean)
 );
-const loginAttempts = new Map();
+const { rateLimited } = require("./login-rate-limit");
 const MAX_DECKS = 25;
 const MAX_DECK_CARDS = 60;
 const CARD_IDS = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, "cards.json"), "utf8")).map(card => card.id));
@@ -336,19 +336,6 @@ function issueSession(req, res, account) {
     saveStore();
     setCookie(req, res, ACCOUNT_COOKIE, token, Math.floor(SESSION_MS / 1000));
     setCookie(req, res, PLAYER_COOKIE, account.playerId, 30 * 24 * 60 * 60, "Lax");
-}
-
-function rateLimited(req) {
-    const ip = String(req.headers["cf-connecting-ip"] ||
-        String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-        req.socket.remoteAddress || "unknown");
-    const now = Date.now();
-    let entry = loginAttempts.get(ip);
-    if (!entry || entry.resetAt <= now) entry = { count: 0, resetAt: now + 15 * 60 * 1000 };
-    entry.count += 1;
-    loginAttempts.set(ip, entry);
-    for (const [key, value] of loginAttempts) if (value.resetAt <= now) loginAttempts.delete(key);
-    return entry.count > 10;
 }
 
 async function handleAccountAuth(req, res, url, guestPlayer) {
