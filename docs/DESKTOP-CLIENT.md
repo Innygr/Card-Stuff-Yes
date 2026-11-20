@@ -10,7 +10,7 @@ Set `CSY_DESKTOP_URL` to a reachable HTTPS staging site to test. HTTP is accepte
 
 - Windows x64: NSIS installer.
 - Linux x64: AppImage and Debian package.
-- Build artifacts are uploaded by GitHub Actions and retained for 14 days; they are not automatically published as a release.
+- Build artifacts are uploaded by GitHub Actions and retained for 14 days; they are not automatically published as a release. Each platform artifact includes `SHA256SUMS.txt` for corruption checks.
 
 ## Local development
 
@@ -24,6 +24,13 @@ npm run dist
 ```
 
 On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="https://your-staging-host.example"`.
+
+## Downloading CI builds
+
+1. Open the repository's **Actions** tab and select a successful **Desktop Client** run on the intended commit.
+2. Download the platform artifact (`card-stuff-yes-windows` or `card-stuff-yes-linux`) from the run's **Artifacts** section and extract it.
+3. Verify the installer against `SHA256SUMS.txt` before opening it. On Linux, run `sha256sum -c SHA256SUMS.txt`; on Windows, compare `Get-FileHash <installer> -Algorithm SHA256` with the matching entry.
+4. These are CI test builds, not signed public releases. Only use builds from a trusted successful workflow run.
 
 ## Security controls
 
