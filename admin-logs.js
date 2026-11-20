@@ -206,4 +206,4 @@ function serveAdminPage(req, res, pathname) {
     return false;
 }
 
-module.exports = { handleAdminLogs, serveAdminPage };
+module.exports = { handleAdminLogs, serveAdminPage, adminFor };
