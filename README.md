@@ -5,6 +5,8 @@ Card Stuff Yes is a browser-based multiplayer card game.<br>
 [![Frontend integrity](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/frontend-integrity.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/frontend-integrity.yml)
 [![Jekyll site CI](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/jekyll-docker.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/jekyll-docker.yml)
 [![Container Image](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/container-image.yml)
+[![Desktop Client](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/desktop-client.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/desktop-client.yml)
+[![Secret Hygiene](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/secret-hygiene.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/secret-hygiene.yml)
 [![Deploy Server to GitHub Pages](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/pages.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/pages.yml)
 
 ## Repository layout
@@ -27,3 +29,12 @@ The frontend/backend split is being introduced incrementally. The existing front
 Website: https://cardstuffyes.ca (deployment is not ready yet)
 
 Community: https://discord.gg/3Vt2vEDJt
+
+
+## Desktop client and release preparation
+
+Windows x64 and Linux x64 desktop builds are produced as GitHub Actions test artifacts. They are not public releases and are not automatically published. See:
+
+- [Desktop client build and verification](docs/DESKTOP-CLIENT.md)
+- [Repository workflows and wiki synchronization](docs/WORKFLOWS.md)
+- [Card Stuff Yes 1.0 release checklist](docs/RELEASE-CHECKLIST.md)
