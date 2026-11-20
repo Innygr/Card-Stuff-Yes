@@ -81,18 +81,19 @@ function sanitizeProfile(input) {
 function sanitizeStore() {
     const originalAccounts = store.accounts.length;
     const originalSessions = store.sessions.length;
-    for (const account of store.accounts) {
-        account.profile = sanitizeProfile(account.profile);
-        account.settings = sanitizeSettings(account.settings);
-    }
     store.accounts = store.accounts.filter(account =>
-        account && typeof account.id === "string" && /^acct_[a-f0-9]{32}$/.test(account.id) &&
+        account && typeof account === "object" &&
+        typeof account.id === "string" && /^acct_[a-f0-9]{32}$/.test(account.id) &&
         typeof account.username === "string" && /^[A-Za-z0-9_]{3,20}$/.test(account.username) &&
         account.usernameKey === account.username.toLowerCase() &&
         typeof account.playerId === "string" && /^[a-f0-9]{48}$/.test(account.playerId) &&
         typeof account.passwordHash === "string" && /^scrypt\$16384\$[a-f0-9]{32}\$[a-f0-9]{128}$/.test(account.passwordHash) &&
         typeof account.createdAt === "string" && Number.isFinite(Date.parse(account.createdAt))
     );
+    for (const account of store.accounts) {
+        account.profile = sanitizeProfile(account.profile);
+        account.settings = sanitizeSettings(account.settings);
+    }
     const accountIds = new Set(store.accounts.map(account => account.id));
     store.sessions = store.sessions.filter(session =>
         session && typeof session.tokenHash === "string" && /^[a-f0-9]{64}$/.test(session.tokenHash) &&
