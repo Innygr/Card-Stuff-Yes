@@ -68,8 +68,10 @@ function isSecure(req) {
 
 function setCookie(req, res, name, value, maxAge, sameSite = "Strict") {
     const secure = isSecure(req) ? "; Secure" : "";
-    res.setHeader("Set-Cookie", name + "=" + encodeURIComponent(value) +
-        "; HttpOnly; SameSite=" + sameSite + "; Path=/; Max-Age=" + maxAge + secure);
+    const cookie = name + "=" + encodeURIComponent(value) +
+        "; HttpOnly; SameSite=" + sameSite + "; Path=/; Max-Age=" + maxAge + secure;
+    const existing = res.getHeader("Set-Cookie");
+    res.setHeader("Set-Cookie", existing ? [].concat(existing, cookie) : cookie);
 }
 
 function clearCookie(req, res, name, sameSite = "Strict") {
