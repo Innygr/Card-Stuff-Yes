@@ -17,10 +17,43 @@
     "appId": "ca.cardstuffyes.desktop",
     "productName": "Card Stuff Yes",
     "asar": true,
-    "files": ["main.js", "preload.js", "url-policy.js", "package.json"],
-    "directories": { "output": "dist" },
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
-    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true },
-    "linux": { "category": "Game", "target": ["AppImage", "deb"] }
+    "files": [
+      "main.js",
+      "preload.js",
+      "url-policy.js",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "category": "Game",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "maintainer": "Team Blacklight",
+      "desktopName": "Card Stuff Yes",
+      "syncDesktopName": true
+    }
+  },
+  "homepage": "https://github.com/Innygr/Card-Stuff-Yes",
+  "author": {
+    "name": "Team Blacklight"
   }
 }
