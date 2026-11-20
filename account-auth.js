@@ -38,7 +38,8 @@ function readStore() {
     }
 }
 
-const store = readStore();
+const postgresAccountStorage = String(process.env.CSY_ACCOUNT_STORAGE || "").trim().toLowerCase() === "postgres";
+const store = postgresAccountStorage ? { version: 1, accounts: [], sessions: [] } : readStore();
 
 const DEFAULT_SETTINGS = Object.freeze({
     animations:"full", battleAnimationSpeed:"1", cardZoomBehaviour:"hold",
@@ -610,7 +611,9 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
     return false;
 }
 
-sanitizeStore();
-pruneSessions();
+if (!postgresAccountStorage) {
+    sanitizeStore();
+    pruneSessions();
+}
 
 module.exports = { handleAccountAuth };
