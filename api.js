@@ -39,8 +39,8 @@
         }
 
         const method = String(options.method || "GET").toUpperCase();
-        if (method !== "GET" && method !== "POST") {
-            throw new TypeError("The current Card Stuff Yes API supports GET and POST requests only.");
+        if (!["GET", "POST", "PUT", "DELETE"].includes(method)) {
+            throw new TypeError("Unsupported Card Stuff Yes API method.");
         }
 
         const headers = new Headers(options.headers || {});
@@ -79,6 +79,8 @@
     window.CSY_API = Object.freeze({
         request,
         get: path => request(path, { method: "GET" }),
-        post: (path, body) => request(path, { method: "POST", body })
+        post: (path, body) => request(path, { method: "POST", body }),
+        put: (path, body) => request(path, { method: "PUT", body }),
+        delete: path => request(path, { method: "DELETE" })
     });
 })();
