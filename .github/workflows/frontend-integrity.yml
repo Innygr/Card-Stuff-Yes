@@ -17,5 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check frontend JavaScript syntax
+        run: node --check api.js && node --check deckbuild.js && node --check runtime-config.js
       - name: Check local frontend assets
         run: node scripts/check-frontend-integrity.js
