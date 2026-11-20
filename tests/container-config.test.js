@@ -8,6 +8,14 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = name => fs.readFileSync(path.join(root, name), "utf8");
 
+test("package and server CI agree on the supported Node 22 runtime", () => {
+    const manifest = JSON.parse(read("package.json"));
+    const workflow = read(".github/workflows/multiplayer-check.yml");
+    assert.equal(manifest.engines.node, ">=22 <23");
+    assert.match(workflow, /node-version:\s*22/);
+    assert.match(read("Dockerfile"), /^FROM node:22-alpine/m);
+});
+
 test("container runs as an unprivileged user with a real API health check", () => {
     const dockerfile = read("Dockerfile");
     assert.match(dockerfile, /^FROM node:22-alpine/m);
