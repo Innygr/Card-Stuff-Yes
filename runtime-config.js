@@ -15,7 +15,9 @@
             play: "https://play.cardstuffyes.ca/",
             pvp: "https://pvp.cardstuffyes.ca/",
             cards: "https://cards.cardstuffyes.ca/",
-            account: "https://account.cardstuffyes.ca/"
+            account: "https://account.cardstuffyes.ca/",
+            profile: "https://profile.cardstuffyes.ca/",
+            settings: "https://settings.cardstuffyes.ca/"
         })
     });
 })();
