@@ -1,0 +1,428 @@
+/* ============================================================
+   account.html
+   ============================================================ */
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Account Settings - Card Stuff Yes</title>
+
+    <link
+        rel="stylesheet"
+        href="./colors.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./account.css"
+    >
+
+</head>
+
+
+<body>
+
+    <header class="account-header">
+
+        <a
+            class="back-link"
+            href="./homepage.html"
+        >
+            ← Back to Card Stuff Yes
+        </a>
+
+        <h1>Account Settings</h1>
+
+        <p>
+            Manage your Card Stuff Yes account and security.
+        </p>
+
+    </header>
+
+
+    <main class="account-container">
+
+
+        <!-- =====================================================
+             ACCOUNT INFORMATION
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Account</h2>
+
+                <p>
+                    Your basic Card Stuff Yes account information.
+                </p>
+
+            </div>
+
+
+            <div class="account-info">
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Username
+                    </span>
+
+                    <span
+                        id="account-username"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Player ID
+                    </span>
+
+                    <span
+                        id="account-id"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Rank
+                    </span>
+
+                    <span
+                        id="account-rank"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-label">
+                        Created
+                    </span>
+
+                    <span
+                        id="account-created"
+                        class="account-value"
+                    >
+                        Loading...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             EMAIL
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Email Address</h2>
+
+                <p>
+                    Add an email address to secure and recover
+                    your Card Stuff Yes account.
+                </p>
+
+            </div>
+
+
+            <div
+                id="email-status-box"
+                class="email-status-box"
+            >
+
+                <div>
+
+                    <span class="account-label">
+                        Current email
+                    </span>
+
+                    <span
+                        id="account-email"
+                        class="account-value"
+                    >
+                        Not linked
+                    </span>
+
+                </div>
+
+
+                <span
+                    id="email-verification-status"
+                    class="verification-status"
+                >
+                    Not verified
+                </span>
+
+            </div>
+
+
+            <form
+                id="email-form"
+                class="account-form"
+            >
+
+                <label
+                    class="form-label"
+                    for="email-input"
+                >
+                    Email address
+                </label>
+
+
+                <input
+                    id="email-input"
+                    class="form-input"
+                    type="email"
+                    autocomplete="email"
+                    maxlength="254"
+                    placeholder="you@example.com"
+                    required
+                >
+
+
+                <button
+                    id="email-submit-button"
+                    class="account-button"
+                    type="submit"
+                >
+                    Send Verification Email
+                </button>
+
+
+                <p
+                    id="email-form-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+
+            <div
+                id="email-verified-message"
+                class="success-box hidden"
+            >
+                Your email address is verified.
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PASSWORD
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>Password</h2>
+
+                <p>
+                    Change your account password.
+                </p>
+
+            </div>
+
+
+            <form
+                id="password-form"
+                class="account-form"
+            >
+
+                <label
+                    class="form-label"
+                    for="current-password"
+                >
+                    Current password
+                </label>
+
+                <input
+                    id="current-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="new-password"
+                >
+                    New password
+                </label>
+
+                <input
+                    id="new-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    maxlength="256"
+                    required
+                >
+
+
+                <label
+                    class="form-label"
+                    for="confirm-password"
+                >
+                    Confirm new password
+                </label>
+
+                <input
+                    id="confirm-password"
+                    class="form-input"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    maxlength="256"
+                    required
+                >
+
+
+                <button
+                    class="account-button"
+                    type="submit"
+                >
+                    Change Password
+                </button>
+
+
+                <p
+                    id="password-status"
+                    class="form-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- =====================================================
+             FUTURE SECURITY
+             ===================================================== -->
+
+        <section class="account-section">
+
+            <div class="section-heading">
+
+                <h2>More Security</h2>
+
+                <p>
+                    Additional account security features.
+                </p>
+
+            </div>
+
+
+            <div class="future-security-list">
+
+                <div class="future-security-item">
+
+                    <strong>
+                        Password Recovery
+                    </strong>
+
+                    <span>
+                        Coming next.
+                    </span>
+
+                </div>
+
+
+                <div class="future-security-item">
+
+                    <strong>
+                        Two-Factor Authentication
+                    </strong>
+
+                    <span>
+                        Coming soon.
+                    </span>
+
+                </div>
+
+
+                <div class="future-security-item">
+
+                    <strong>
+                        Session Management
+                    </strong>
+
+                    <span>
+                        Coming soon.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             SIGN OUT
+             ===================================================== -->
+
+        <section class="account-section account-danger-section">
+
+            <button
+                id="logout-button"
+                class="account-button"
+                type="button"
+            >
+                Sign Out
+            </button>
+
+            <p
+                id="logout-status"
+                class="form-status"
+                aria-live="polite"
+            ></p>
+
+        </section>
+
+    </main>
+
+
+    <script src="./runtime-config.js"></script>
+    <script src="./account.js"></script>
+
+</body>
+
+</html>

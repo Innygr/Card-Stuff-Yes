@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign in or create a Card Stuff Yes account.">
+    <title>Sign In - Card Stuff Yes</title>
+    <link rel="stylesheet" href="./colors.css">
+    <link rel="stylesheet" href="./login.css">
+</head>
+<body>
+    <main class="auth-shell">
+        <a class="back-link" href="https://cardstuffyes.ca/">← Card Stuff Yes</a>
+        <header>
+            <p class="eyebrow">CARD STUFF YES</p>
+            <h1>Your account</h1>
+            <p class="intro">Sign in to keep your player identity and multiplayer progress with you.</p>
+        </header>
+
+        <section class="auth-card" aria-labelledby="auth-heading">
+            <div class="auth-tabs" role="tablist" aria-label="Account access">
+                <button id="login-tab" class="tab active" type="button" role="tab" aria-selected="true">Sign in</button>
+                <button id="register-tab" class="tab" type="button" role="tab" aria-selected="false">Create account</button>
+            </div>
+
+            <h2 id="auth-heading">Welcome back</h2>
+            <form id="login-form">
+                <label for="login-username">Username</label>
+                <input id="login-username" name="username" autocomplete="username" minlength="3" maxlength="20" required>
+                <label for="login-password">Password</label>
+                <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+                <button class="primary-button" type="submit">Sign in</button>
+            </form>
+
+            <form id="register-form" hidden>
+                <label for="register-username">Choose a username</label>
+                <input id="register-username" name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" required>
+                <small>3–20 letters, numbers, or underscores.</small>
+                <label for="register-password">Create a password</label>
+                <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+                <small>Use at least 12 characters.</small>
+                <button class="primary-button" type="submit">Create account</button>
+            </form>
+            <p id="auth-status" class="status" role="status" aria-live="polite"></p>
+            <p class="privacy-note">Creating an account links it to this browser’s current guest player, preserving that player ID and existing matches.</p>
+        </section>
+    </main>
+    <script src="./runtime-config.js"></script>
+    <script src="./login.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+```css
+/* ================================================================
+   CARD STUFF YES - GLOBAL COLORS
+
+   IMPORTANT:
+   Every CSS file should use these variables instead of defining
+   its own colors.
+
+   Change colors HERE to change the color theme across the website.
+
+   ================================================================ */
+
+
+/* ================================================================
+   MAIN COLOR PALETTE
+   ================================================================ */
+
+:root {
+
+    /* ------------------------------------------------------------
+       BACKGROUNDS
+       ------------------------------------------------------------ */
+
+    --color-background:
+        #111111;
+
+    --color-background-secondary:
+        #1c1c1c;
+
+    --color-background-tertiary:
+        #242424;
+
+    --color-background-hover:
+        #303030;
+
+
+    /* ------------------------------------------------------------
+       TEXT
+       ------------------------------------------------------------ */
+
+    --color-text:
+        #ffffff;
+
+    --color-text-secondary:
+        #aaaaaa;
+
+    --color-text-muted:
+        #888888;
+
+
+    /* ------------------------------------------------------------
+       BORDERS
+       ------------------------------------------------------------ */
+
+    --color-border:
+        #383838;
+
+    --color-border-light:
+        #444444;
+
+
+    /* ------------------------------------------------------------
+       BUTTONS
+       ------------------------------------------------------------ */
+
+    --color-button:
+        #444444;
+
+    --color-button-hover:
+        #555555;
+
+    --color-button-text:
+        #ffffff;
+
+
+    /* ------------------------------------------------------------
+       INPUTS
+       ------------------------------------------------------------ */
+
+    --color-input:
+        #292929;
+
+    --color-input-border:
+        #444444;
+
+    --color-input-text:
+        #ffffff;
+
+
+    /* ------------------------------------------------------------
+       LINKS
+       ------------------------------------------------------------ */
+
+    --color-link:
+        #aaaaaa;
+
+    --color-link-hover:
+        #ffffff;
+
+
+    /* ------------------------------------------------------------
+       WARNINGS
+       ------------------------------------------------------------ */
+
+    --color-warning-background:
+        #493d00;
+
+    --color-warning-border:
+        #806d00;
+
+    --color-warning-text:
+        #ffffff;
+
+
+    /* ------------------------------------------------------------
+       CARD ZOOM / OVERLAYS
+       ------------------------------------------------------------ */
+
+    --color-overlay:
+        rgba(0, 0, 0, 0.78);
+
+    --color-zoom-card:
+        #222222;
+
+
+    /* ------------------------------------------------------------
+       STATUS COLORS
+       
+       These can be used by the login page, profile page,
+       game UI, admin UI, etc.
+       ------------------------------------------------------------ */
+
+    --color-success:
+        #4caf50;
+
+    --color-error:
+        #f44336;
+
+    --color-info:
+        #2196f3;
+
+
+    /* ------------------------------------------------------------
+       RANK COLORS
+       
+       These are separate because ranks may eventually have
+       their own visual identity.
+       ------------------------------------------------------------ */
+
+    --color-owner:
+        #ffd700;
+
+    --color-moderator:
+        #55aaff;
+
+    --color-player:
+        #ffffff;
+
+
+    /* ------------------------------------------------------------
+       CARD RARITY COLORS
+       
+       We can expand these when the card system is created.
+       ------------------------------------------------------------ */
+
+    --color-rarity-common:
+        #aaaaaa;
+
+    --color-rarity-uncommon:
+        #55aa55;
+
+    --color-rarity-rare:
+        #5599ff;
+
+    --color-rarity-epic:
+        #aa55ff;
+
+    --color-rarity-legendary:
+        #ffaa00;
+
+
+    /* ------------------------------------------------------------
+       EFFECT / TRANSITION SETTINGS
+
+       These aren't colors, but keeping global design variables
+       here can make the entire site easier to theme later.
+       ------------------------------------------------------------ */
+
+    --global-transition-speed:
+        0.15s;
+
+}
+```
