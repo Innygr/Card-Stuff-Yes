@@ -119,7 +119,7 @@ async function loadProfile() {
         const data = await response.json();
 
         if (response.status === 401) {
-            window.location.href = "./login.html";
+            window.location.href = window.CSY_CONFIG?.routes?.account ? new URL("login.html", window.CSY_CONFIG.routes.account).href : "./login.html";
             return;
         }
         if (!response.ok) {
