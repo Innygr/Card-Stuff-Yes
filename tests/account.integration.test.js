@@ -220,7 +220,7 @@ async function newPasswordClientLogout(result) {
         method: "POST", body: { username: "CardPlayer", password: "A-new-secure-passphrase-2026!" }
     });
     assert.equal(login.status, 200);
-    const logout = await client.request("/api/auth/logout", { method: "POST" });
+    const logout = await client.request("/api/auth/logout", { method: "POST", body: {} });
     assert.equal(logout.status, 200);
     assert.equal((await client.request("/api/auth/me")).status, 401);
     return logout.status === 200;
