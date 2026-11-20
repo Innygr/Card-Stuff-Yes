@@ -140,7 +140,7 @@ function validateSource(data, now = Date.now()) {
 async function findExistingAccount(client, account, lock = false) {
     const lockClause = lock ? " FOR UPDATE" : "";
     const result = await client.query(`
-        SELECT id, player_id, username_key, password_hash
+        SELECT id, player_id, username, username_key, password_hash
         FROM csy_private.accounts
         WHERE id = $1 OR player_id = $2 OR username_key = $3
     ` + lockClause, [account.id, account.playerId, account.usernameKey]);
@@ -150,7 +150,8 @@ async function findExistingAccount(client, account, lock = false) {
     }
     const row = result.rows[0];
     if (row.id !== account.id || row.player_id !== account.playerId ||
-        row.username_key !== account.usernameKey || row.password_hash !== account.passwordHash) {
+        row.username !== account.username || row.username_key !== account.usernameKey ||
+        row.password_hash !== account.passwordHash) {
         throw new Error("Existing account conflicts with source identity or password hash: " + account.id);
     }
     return true;
@@ -163,7 +164,9 @@ async function compareExistingDeck(client, accountId, deck, lock = false) {
     );
     if (!result.rowCount) return false;
     const row = result.rows[0];
-    if (row.account_id !== accountId || row.name !== deck.name) {
+    if (row.account_id !== accountId || row.name !== deck.name ||
+        new Date(row.created_at).getTime() !== deck.createdAt.getTime() ||
+        new Date(row.updated_at).getTime() !== deck.updatedAt.getTime()) {
         throw new Error("Existing saved deck conflicts with source: " + deck.id);
     }
     const cards = await client.query(
