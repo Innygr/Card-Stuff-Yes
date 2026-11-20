@@ -59,6 +59,10 @@ async function loadAccount() {
         const email = await api("/api/account/email/status");
         emailElement.textContent = email.email || "Not linked";
         emailInput.value = email.pendingEmail || email.email || "";
+        emailSubmitButton.disabled = !email.emailActionsAvailable;
+        if (!email.emailActionsAvailable) {
+            setStatus(emailFormStatus, "Email delivery has not been configured yet. Your account and current email remain unchanged.");
+        }
         if (email.emailVerified) {
             emailVerificationStatus.textContent = "Verified";
             emailVerifiedMessage.classList.remove("hidden");
