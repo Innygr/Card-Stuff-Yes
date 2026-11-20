@@ -48,10 +48,12 @@ On Windows PowerShell, set the environment variable with `$env:CSY_DESKTOP_URL="
 
 - Renderer Node.js integration is disabled.
 - Context isolation, sandboxing, and web security are enabled.
-- Top-level navigation is restricted to the configured origin.
-- External HTTPS links open in the system browser.
+- Top-level navigation and redirects are restricted to the configured origin.
+- External HTTPS links open in the system browser; failed browser launches are handled without crashing the app.
+- A single-instance lock prevents duplicate app processes and focuses the existing window.
+- Loopback development URLs support localhost, IPv4, and IPv6.
 - Non-HTTPS external links and script/data URLs are blocked.
-- URL policy has automated Node.js tests.
+- URL policy has automated Node.js tests, including IPv6 loopback, origin/port confinement, and rejected non-HTTPS external schemes.
 
 ## Release gates
 
