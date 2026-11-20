@@ -1,6 +1,7 @@
 # Card Stuff Yes
 
 Card Stuff Yes is a browser-based multiplayer card game.
+[![Multiplayer Prototype Checks](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml/badge.svg)](https://github.com/Innygr/Card-Stuff-Yes/actions/workflows/multiplayer-check.yml)
 
 ## Repository layout
 
