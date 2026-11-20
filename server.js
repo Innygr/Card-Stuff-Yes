@@ -7,6 +7,7 @@ const crypto = require("node:crypto");
 const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 const { handleAccountAuth } = require("./account-auth");
 const { handlePostgresAccountAuth, postgresAccountStorageEnabled } = require("./postgres-account-auth");
+const { handleEmailAccountRoutes } = require("./email-account");
 
 const ROOT = __dirname;
 let config = { host: "127.0.0.1", port: 6565 };
@@ -524,7 +525,7 @@ async function handleApi(req, res, url, player) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".ico": "image/x-icon" };
-const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "account-auth.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
+const PRIVATE = new Set(["server.js", "package.json", "config.json", "admin-server-patch.js", "admin-logs.js", "account-auth.js", "email-account.js", "email.js", "server-set-manager-module.js", "security=lockdown-api.js"]);
 
 function serveStatic(req, res, pathname) {
     if (req.method !== "GET" && req.method !== "HEAD") { sendJson(res, 405, { error: "Method not allowed." }, { Allow: "GET, HEAD" }); return; }
@@ -624,6 +625,7 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
             if (await handleAdminLogs(req, res, url)) return;
+            if (await handleEmailAccountRoutes(req, res, url)) return;
         }
 
         if ((url.pathname === "/api/health" || url.pathname === "/api/status") &&
