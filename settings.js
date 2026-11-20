@@ -1,3 +1,4 @@
+const API_BASE = window.CSY_CONFIG?.apiBaseUrl || "";
 /*
  * ============================================================
  * Card Stuff Yes
@@ -20,6 +21,8 @@
 
     const STORAGE_KEY =
         "card-stuff-yes-settings";
+
+    let remoteSaveTimer = null;
 
 
     /*
@@ -355,7 +358,40 @@
 
 
         applySettings();
+        clearTimeout(remoteSaveTimer);
+        remoteSaveTimer = setTimeout(saveAccountSettings, 450);
 
+    }
+
+    async function saveAccountSettings() {
+        try {
+            const response = await fetch(API_BASE + "/api/account/settings", {
+                method: "PUT", credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            });
+            if (response.ok) showStatus("Settings saved to your account.");
+        } catch (error) {
+            console.warn("Account settings sync unavailable; local settings remain saved.", error);
+        }
+    }
+
+    async function loadAccountSettings() {
+        try {
+            const response = await fetch(API_BASE + "/api/account/settings", {
+                credentials: "include", cache: "no-store"
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data.settings || typeof data.settings !== "object") return;
+            settings = { ...settings, ...data.settings };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            applySettings();
+            updateControls();
+            showStatus("Account settings loaded.");
+        } catch (error) {
+            console.warn("Could not load account settings; using this device’s settings.", error);
+        }
     }
 
 
@@ -1206,6 +1242,7 @@
             bindControls();
 
             bindButtons();
+            loadAccountSettings();
 
         }
     );
