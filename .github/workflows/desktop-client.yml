@@ -35,10 +35,10 @@ jobs:
         run: npm test
       - name: Build Windows installer
         if: matrix.platform == 'windows'
-        run: npx electron-builder --win nsis --x64
+        run: npx electron-builder --win nsis --x64 --publish never
       - name: Build Linux packages
         if: matrix.platform == 'linux'
-        run: npx electron-builder --linux AppImage deb --x64
+        run: npx electron-builder --linux AppImage deb --x64 --publish never
       - name: Upload desktop artifacts
         uses: actions/upload-artifact@v4
         with:
