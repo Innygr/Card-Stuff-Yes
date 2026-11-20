@@ -40,6 +40,14 @@ Account persistence defaults to the local JSON account file. Set `CSY_ACCOUNT_ST
 
 These routes are implemented in the current codebase, but that does not mean the service is production-ready: real deployment still requires staging tests, secure runtime secrets, HTTPS, exact CORS/cookie configuration, backups, migration review, and security testing.
 
+## Authentication abuse controls
+
+Account registration and login share a per-process in-memory rate limiter in both JSON and PostgreSQL storage modes. It permits up to 10 attempts per client address in a 15-minute window, then returns HTTP 429 until the window expires. Expired entries are cleaned up, and the tracker is capped at 10,000 addresses to prevent unbounded memory growth.
+
+Client address selection prefers `CF-Connecting-IP`, then the first address in `X-Forwarded-For`, then the socket peer address. These headers are trustworthy only when the application is reachable exclusively through a correctly configured reverse proxy that overwrites client-supplied forwarding headers. Do not expose a proxy-bypassing origin that allows clients to forge these headers.
+
+This limiter is process-local, not a distributed abuse-control system. Multi-instance deployments need a shared rate-limit store or an upstream gateway limit before being treated as production-ready. Restarting the process resets its counters.
+
 ## Multiplayer prototype scope
 
 - Two-player, turn-based matches with create/join codes.
