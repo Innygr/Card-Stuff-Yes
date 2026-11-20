@@ -41,22 +41,14 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
     },
-    "linux": {
-      "category": "Game",
-      "target": [
-        "AppImage",
-        "deb"
-      ]
-    },
     "deb": {
       "maintainer": "Team Blacklight"
-    },
-    "appImage": {
-      "license": "MIT"
     }
   },
   "homepage": "https://github.com/Innygr/Card-Stuff-Yes",
   "author": {
     "name": "Team Blacklight"
-  }
+  },
+  "desktopName": "Card Stuff Yes",
+  "license": "MIT"
 }
