@@ -1,249 +1,90 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <title>News — Card Stuff Yes</title>
-
-    <link
-        rel="stylesheet"
-        href="./colors.css"
-    >
-
+    <link rel="stylesheet" href="./colors.css">
     <style>
-
-        html {
-            box-sizing: border-box;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: inherit;
-        }
-
-        body {
-            margin: 0;
-
-            min-height: 100vh;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
-            background:
-                var(--color-background);
-
-            color:
-                var(--color-text);
-        }
-
-        .page {
-            width: min(
-                100% - 32px,
-                900px
-            );
-
-            margin: 0 auto;
-
-            padding:
-                24px
-                0
-                60px;
-        }
-
-        .back-link {
-            display: inline-block;
-
-            margin-bottom: 30px;
-
-            color:
-                var(--color-link);
-
-            text-decoration: none;
-        }
-
-        .back-link:hover {
-            color:
-                var(--color-link-hover);
-        }
-
-        header {
-            margin-bottom: 35px;
-        }
-
-        h1 {
-            margin: 0;
-
-            font-size:
-                clamp(
-                    32px,
-                    7vw,
-                    48px
-                );
-        }
-
-        .subtitle {
-            margin:
-                10px 0 0;
-
-            color:
-                var(--color-text-secondary);
-
-            font-size: 17px;
-        }
-
-        .news-list {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 18px;
-        }
-
-        .news-item {
-            padding: 22px;
-
-            background:
-                var(--color-background-secondary);
-
-            border:
-                1px solid
-                var(--color-border);
-
-            border-radius: 8px;
-        }
-
-        .news-date {
-            margin: 0 0 7px;
-
-            color:
-                var(--color-text-secondary);
-
-            font-size: 13px;
-        }
-
-        .news-title {
-            margin:
-                0 0 10px;
-
-            font-size: 21px;
-        }
-
-        .news-content {
-            margin: 0;
-
-            color:
-                var(--color-text-secondary);
-
-            line-height: 1.6;
-        }
-
-        .empty-news {
-            padding: 30px;
-
-            text-align: center;
-
-            color:
-                var(--color-text-secondary);
-
-            background:
-                var(--color-background-secondary);
-
-            border:
-                1px solid
-                var(--color-border);
-
-            border-radius: 8px;
-        }
-
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; background: var(--color-background); color: var(--color-text); }
+        .page { width: min(100% - 32px, 900px); margin: 0 auto; padding: 24px 0 60px; }
+        .back-link { display: inline-block; margin-bottom: 30px; color: var(--color-link); text-decoration: none; }
+        .back-link:hover { color: var(--color-link-hover); }
+        header { margin-bottom: 35px; }
+        h1 { margin: 0; font-size: clamp(32px, 7vw, 48px); }
+        .subtitle { margin: 10px 0 0; color: var(--color-text-secondary); font-size: 17px; }
+        .news-list { display: flex; flex-direction: column; gap: 18px; }
+        .news-item { padding: 22px; background: var(--color-background-secondary); border: 1px solid var(--color-border); border-radius: 8px; }
+        .news-date { margin: 0 0 7px; color: var(--color-text-secondary); font-size: 13px; }
+        .news-title { margin: 0 0 10px; font-size: 21px; }
+        .news-summary { margin: 0 0 12px; color: var(--color-text-secondary); font-weight: 600; }
+        .news-content { margin: 0; color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .empty-news { padding: 30px; text-align: center; color: var(--color-text-secondary); background: var(--color-background-secondary); border: 1px solid var(--color-border); border-radius: 8px; }
+        .news-featured { border-color: var(--color-link); }
     </style>
-
 </head>
-
-
 <body>
-
     <main class="page">
-
-        <a
-            class="back-link"
-            href="./homepage.html"
-        >
-            ← Back to Card Stuff Yes
-        </a>
-
-
+        <a class="back-link" href="./homepage.html">← Back to Card Stuff Yes</a>
         <header>
-
             <h1>News</h1>
-
-            <p class="subtitle">
-                Updates, announcements, and development news.
-            </p>
-
+            <p class="subtitle">Updates, announcements, and development news.</p>
         </header>
-
-
-        <section class="news-list">
-
-
-            <!-- =================================================
-                 NEWS ITEM
-                 Copy this block for future announcements.
-                 ================================================= -->
-
-            <article class="news-item">
-
-                <p class="news-date">
-                    Development Update
-                </p>
-
-                <h2 class="news-title">
-                    Card Stuff Yes is in development
-                </h2>
-
-                <p class="news-content">
-                    The game is actively being developed.
-                    New cards, gameplay systems, account features,
-                    and other improvements are being added over time.
-                </p>
-
-            </article>
-
-
-            <article class="news-item">
-
-                <p class="news-date">
-                    Website Update
-                </p>
-
-                <h2 class="news-title">
-                    New information pages
-                </h2>
-
-                <p class="news-content">
-                    The How to Play and News pages are now available
-                    as part of the Card Stuff Yes website.
-                </p>
-
-            </article>
-
-
+        <section class="news-list" id="news-list" aria-live="polite">
+            <p class="empty-news">Loading news…</p>
         </section>
-
     </main>
-
+    <script src="./runtime-config.js"></script>
+    <script src="./api.js"></script>
+    <script>
+        "use strict";
+        (async function () {
+            const list = document.getElementById("news-list");
+            function message(text) {
+                const item = document.createElement("p");
+                item.className = "empty-news";
+                item.textContent = text;
+                list.replaceChildren(item);
+            }
+            try {
+                const result = await window.CSY_API.get("/api/news");
+                const posts = Array.isArray(result.news) ? result.news : [];
+                if (!posts.length) {
+                    message("There are no published news posts yet.");
+                    return;
+                }
+                list.replaceChildren();
+                for (const post of posts) {
+                    const article = document.createElement("article");
+                    article.className = "news-item" + (post.featured ? " news-featured" : "");
+                    const date = document.createElement("p");
+                    date.className = "news-date";
+                    const timestamp = Date.parse(post.published_at || "");
+                    date.textContent = Number.isFinite(timestamp)
+                        ? new Date(timestamp).toLocaleDateString()
+                        : "Card Stuff Yes update";
+                    const title = document.createElement("h2");
+                    title.className = "news-title";
+                    title.textContent = post.title || "Untitled";
+                    article.append(date, title);
+                    if (post.summary) {
+                        const summary = document.createElement("p");
+                        summary.className = "news-summary";
+                        summary.textContent = post.summary;
+                        article.append(summary);
+                    }
+                    const content = document.createElement("p");
+                    content.className = "news-content";
+                    content.textContent = post.content || "";
+                    article.append(content);
+                    list.append(article);
+                }
+            } catch (error) {
+                message(error.message || "News could not be loaded right now.");
+            }
+        })();
+    </script>
 </body>
-
 </html>
-```
