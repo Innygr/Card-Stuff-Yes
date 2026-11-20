@@ -3,7 +3,7 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
-const { getPool } = require("./db");
+const database = require("./db");
 const { adminFor } = require("./admin-logs");
 const { accountForSession, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 
@@ -60,7 +60,7 @@ async function handleAdminManagement(req, res, url) {
     }
 
     if (route === "/api/admin/players" && req.method === "GET") {
-        const result = await getPool().query(`
+        const result = await database.getPool().query(`
             SELECT id, player_id, username, rank, email, email_verified_at, created_at
             FROM csy_private.accounts
             ORDER BY created_at DESC
@@ -88,7 +88,7 @@ async function handleAdminManagement(req, res, url) {
             send(res, 400, { error: "Rank must be player, mod, or admin. Owner status cannot be assigned through this API." });
             return true;
         }
-        const result = await getPool().query(
+        const result = await database.getPool().query(
             "UPDATE csy_private.accounts SET rank = $1, updated_at = now() WHERE id = $2 RETURNING id, username, rank",
             [rank, rankMatch[1]]
         );
@@ -98,7 +98,7 @@ async function handleAdminManagement(req, res, url) {
     }
 
     if (route === "/api/admin/news" && req.method === "GET") {
-        const result = await getPool().query(
+        const result = await database.getPool().query(
             "SELECT id, title, summary, content, published, featured, created_at, updated_at, published_at FROM csy_private.news_posts ORDER BY featured DESC, updated_at DESC LIMIT 200"
         );
         send(res, 200, { news: result.rows });
@@ -116,7 +116,7 @@ async function handleAdminManagement(req, res, url) {
             return true;
         }
         const id = crypto.randomUUID();
-        const result = await getPool().query(`
+        const result = await database.getPool().query(`
             INSERT INTO csy_private.news_posts
                 (id, title, summary, content, published, featured, created_by, published_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $5 THEN now() ELSE NULL END)
@@ -142,7 +142,7 @@ async function handleAdminManagement(req, res, url) {
             send(res, 400, { error: "Invalid news update." });
             return true;
         }
-        const result = await getPool().query(`
+        const result = await database.getPool().query(`
             UPDATE csy_private.news_posts SET
                 title = COALESCE($2, title),
                 summary = COALESCE($3, summary),
@@ -162,7 +162,7 @@ async function handleAdminManagement(req, res, url) {
         return true;
     }
     if (newsMatch && req.method === "DELETE") {
-        const result = await getPool().query(
+        const result = await database.getPool().query(
             "DELETE FROM csy_private.news_posts WHERE id = $1 RETURNING id",
             [newsMatch[1]]
         );
@@ -184,7 +184,7 @@ async function handleAdminManagement(req, res, url) {
         if (!Number.isInteger(body.quantity) || body.quantity < 0 || body.quantity > 999) {
             send(res, 400, { error: "Quantity must be an integer from 0 to 999." }); return true;
         }
-        const result = await getPool().query(
+        const result = await database.getPool().query(
             "INSERT INTO csy_private.account_card_inventory (account_id, card_id, quantity) SELECT id, $2, $3 FROM csy_private.accounts WHERE id = $1 ON CONFLICT (account_id, card_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_at = now() RETURNING account_id, card_id, quantity",
             [match[1], match[2], body.quantity]
         );
@@ -203,7 +203,7 @@ async function handlePublicNews(req, res, url) {
         send(res, 405, { error: "Method not allowed." }, { Allow: "GET" });
         return true;
     }
-    const result = await getPool().query(`
+    const result = await database.getPool().query(`
         SELECT id, title, summary, content, featured, published_at
         FROM csy_private.news_posts
         WHERE published = true
@@ -229,7 +229,7 @@ async function handleAccountCollection(req, res, url) {
         send(res, 401, { error: "Sign in to view your card collection." });
         return true;
     }
-    const result = await getPool().query(
+    const result = await database.getPool().query(
         "SELECT card_id, quantity, updated_at FROM csy_private.account_card_inventory WHERE account_id = $1 ORDER BY card_id",
         [accountSession.account.id]
     );
