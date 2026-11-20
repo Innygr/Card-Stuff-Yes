@@ -616,4 +616,4 @@ if (!postgresAccountStorage) {
     pruneSessions();
 }
 
-module.exports = { handleAccountAuth, sanitizeSettings, validDeckCards, MAX_DECKS, MAX_DECK_CARDS };
+module.exports = { handleAccountAuth, sanitizeSettings, validDeckCards, DEFAULT_SETTINGS, MAX_DECKS, MAX_DECK_CARDS };
