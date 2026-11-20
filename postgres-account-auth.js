@@ -510,6 +510,10 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             let body;
             try { body = await readJson(req); }
             catch (error) { send(res, 400, { error: error.message }); return true; }
+            if (!body || typeof body !== "object" || Array.isArray(body)) {
+                send(res, 400, { error: "A deck must be a JSON object." });
+                return true;
+            }
             const name = typeof body.name === "string" ? body.name.trim() : "";
             if (!name || name.length > 40 || !validDeckCards(body.cards)) {
                 send(res, 400, { error: "A deck needs a name of 1–40 characters and up to 60 valid card IDs." });
