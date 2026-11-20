@@ -37,9 +37,54 @@ function readStore() {
 
 const store = readStore();
 
+const DEFAULT_SETTINGS = Object.freeze({
+    animations:"full", battleAnimationSpeed:"1", cardZoomBehaviour:"hold",
+    autoEndTurn:false, confirmActions:true, showDamageNumbers:true, showResourceChanges:true, showAbilityNames:true,
+    graphicsQuality:"auto", compatibilityMode:"auto", renderingEngine:"auto", textureQuality:"auto",
+    pack3DQuality:"auto", packDisplay:"auto", vfxQuality:"high", particleEffects:"on", screenEffects:"on",
+    shadows:"on", antiAliasing:"auto", frameRateLimit:"auto", resolutionScale:"auto",
+    memoryBudget:"1024", assetCaching:true, keep3DAssetsCached:true, backgroundRendering:true,
+    performanceMode:false, lowPowerMode:false,
+    masterVolume:100, musicVolume:100, sfxVolume:100, attackSfxVolume:100, uiVolume:100,
+    cardPackSounds:true, battleSounds:true, muteWhenUnfocused:false,
+    uiScale:"100", compactUI:false, showCardIDs:false, showRarity:true, showIllustrator:true,
+    reducedMotion:false, highContrast:false, colorblindMode:"off", largerText:false, screenShake:true, flashingEffects:"on",
+    showPing:true, showConnectionStatus:true, autoReconnect:true, autoDownloadAssets:true,
+    inputDevice:"auto", controllerVibration:true, vibrationStrength:100, mouseSensitivity:100,
+    gamepadSensitivity:100, invertX:false, invertY:false,
+    onlineStatus:"online", friendRequests:"everyone", tradeRequests:true, donationRequests:true,
+    battleInvites:true, showElo:true,
+    showFPS:false, showDebug:false, showRendererInfo:false, showAssetStats:false
+});
+
+function sanitizeSettings(input) {
+    if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+    const output = {};
+    for (const [key, value] of Object.entries(input)) {
+        if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) continue;
+        const expected = DEFAULT_SETTINGS[key];
+        if (typeof expected === "boolean" && typeof value === "boolean") output[key] = value;
+        else if (typeof expected === "number" && Number.isFinite(value) && value >= 0 && value <= 10000) output[key] = value;
+        else if (typeof expected === "string" && typeof value === "string" && value.length <= 32 && /^[A-Za-z0-9_.-]+$/.test(value)) output[key] = value;
+    }
+    return output;
+}
+
+function sanitizeProfile(input) {
+    const profile = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+    return {
+        displayName: typeof profile.displayName === "string" ? profile.displayName.trim().slice(0, 24) : "",
+        bio: typeof profile.bio === "string" ? profile.bio.trim().slice(0, 240) : ""
+    };
+}
+
 function sanitizeStore() {
     const originalAccounts = store.accounts.length;
     const originalSessions = store.sessions.length;
+    for (const account of store.accounts) {
+        account.profile = sanitizeProfile(account.profile);
+        account.settings = sanitizeSettings(account.settings);
+    }
     store.accounts = store.accounts.filter(account =>
         account && typeof account.id === "string" && /^acct_[a-f0-9]{32}$/.test(account.id) &&
         typeof account.username === "string" && /^[A-Za-z0-9_]{3,20}$/.test(account.username) &&
@@ -189,7 +234,8 @@ function publicAccount(account) {
         rank: "member",
         createdAt: account.createdAt,
         email: null,
-        emailVerified: false
+        emailVerified: false,
+        profile: sanitizeProfile(account.profile)
     };
 }
 
@@ -252,16 +298,16 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/change-password"].includes(route);
     if (!isAccountRoute) return false;
 
-    if (req.method !== "GET" && req.method !== "POST") {
-        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, POST" });
+    if (req.method !== "GET" && req.method !== "POST" && req.method !== "PUT") {
+        send(res, 405, { error: "Method not allowed." }, { Allow: "GET, POST, PUT" });
         return true;
     }
 
-    if (req.method === "POST" && !trustedOrigin(req)) {
+    if ((req.method === "POST" || req.method === "PUT") && !trustedOrigin(req)) {
         send(res, 403, { error: "A trusted website origin is required." });
         return true;
     }
-    if (req.method === "POST" && !String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
+    if ((req.method === "POST" || req.method === "PUT") && !String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
         send(res, 415, { error: "Content-Type must be application/json." });
         return true;
     }
@@ -344,6 +390,58 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
         clearCookie(req, res, ACCOUNT_COOKIE);
         clearCookie(req, res, PLAYER_COOKIE, "Lax");
         send(res, 200, { message: "Signed out." });
+        return true;
+    }
+
+    if (route === "/api/account/profile" || route === "/api/account/settings") {
+        const current = sessionFor(req);
+        if (!current) { send(res, 401, { error: "Sign in to manage your account." }); return true; }
+        const isProfile = route.endsWith("/profile");
+        const key = isProfile ? "profile" : "settings";
+        if (req.method === "GET") {
+            send(res, 200, isProfile
+                ? { profile: sanitizeProfile(current.account.profile) }
+                : { settings: sanitizeSettings(current.account.settings) });
+            return true;
+        }
+        if (req.method !== "PUT") {
+            send(res, 405, { error: "Method not allowed." }, { Allow: "GET, PUT" });
+            return true;
+        }
+        let body;
+        try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
+        if (isProfile) {
+            if (!body || typeof body !== "object" || Array.isArray(body) ||
+                (body.displayName !== undefined && typeof body.displayName !== "string") ||
+                (body.bio !== undefined && typeof body.bio !== "string") ||
+                Object.keys(body).some(name => !["displayName", "bio"].includes(name))) {
+                send(res, 400, { error: "Profile accepts only displayName and bio text fields." });
+                return true;
+            }
+            if ((body.displayName || "").length > 24 || (body.bio || "").length > 240) {
+                send(res, 400, { error: "Display name is limited to 24 characters and bio to 240." });
+                return true;
+            }
+            current.account.profile = sanitizeProfile({ ...current.account.profile, ...body });
+            current.account.updatedAt = new Date().toISOString();
+            saveStore();
+            send(res, 200, { profile: current.account.profile });
+            return true;
+        }
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            Object.keys(body).some(name => !Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, name))) {
+            send(res, 400, { error: "One or more setting names are not supported." });
+            return true;
+        }
+        const cleaned = sanitizeSettings(body);
+        if (Object.keys(cleaned).length !== Object.keys(body).length) {
+            send(res, 400, { error: "One or more setting values have an invalid type or format." });
+            return true;
+        }
+        current.account.settings = { ...sanitizeSettings(current.account.settings), ...cleaned };
+        current.account.updatedAt = new Date().toISOString();
+        saveStore();
+        send(res, 200, { settings: current.account.settings });
         return true;
     }
 
