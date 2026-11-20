@@ -380,26 +380,29 @@ async function handleEmailAccountRoutes(req, res, url) {
         try { body = await readJson(req); }
         catch { setJson(res, 202, { message: GENERIC_RESET_MESSAGE }); return true; }
         const email = normalizeEmail(body.email);
+        // Do all account lookups and provider work after sending the same
+        // response, so known and unknown addresses have indistinguishable
+        // response bodies and do not wait on database/provider timing.
+        setJson(res, 202, { message: GENERIC_RESET_MESSAGE });
         if (email && emailActionsReady()) {
-            const found = await getPool().query(`
-                SELECT id FROM csy_private.accounts
-                WHERE lower(email) = $1 AND email_verified_at IS NOT NULL
-                LIMIT 1
-            `, [email]);
-            if (found.rowCount) {
-                const accountId = found.rows[0].id;
+            setImmediate(async () => {
                 try {
+                    const found = await getPool().query(`
+                        SELECT id FROM csy_private.accounts
+                        WHERE lower(email) = $1 AND email_verified_at IS NOT NULL
+                        LIMIT 1
+                    `, [email]);
+                    if (!found.rowCount) return;
+                    const accountId = found.rows[0].id;
                     const token = await createEmailToken(accountId, "password_reset", email, RESET_TTL_MS);
                     const link = publicBaseUrl() + "/reset-password.html?token=" + encodeURIComponent(token);
                     const result = await sendEmail(email, buildPasswordResetEmail(link));
                     if (!result.sent) throw new Error("Email delivery unavailable.");
-                } catch (error) {
-                    // The public response remains identical for known and unknown addresses.
-                    console.error("Password reset email could not be queued.");
+                } catch {
+                    console.error("Password reset email delivery failed.");
                 }
-            }
+            });
         }
-        setJson(res, 202, { message: GENERIC_RESET_MESSAGE });
         return true;
     }
 
