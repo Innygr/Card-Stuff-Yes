@@ -36,6 +36,7 @@ The following page workflows are not implemented by the current Server API:
 - Account page: `/api/me`, `/api/account/email`, and
   `/api/auth/change-password` / `logout`.
 - Profile page: `/api/me` and account/password workflows.
+- Deck builder: no card-collection, inventory, deck-load, or deck-save endpoints exist. The migrated page now displays an explicit unavailable state instead of spinning forever.
 - Admin page: `/api/admin/me`, player management, news management, and
   admin logout/login routes. The separate server-log implementation must be
   audited as its own protected route before cross-origin use.
