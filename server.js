@@ -635,7 +635,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/")) {
-            const guestPlayer = getPlayer(req, res);
+            const guestPlayer = url.pathname === "/api/auth/register" ? getPlayer(req, res) : null;
             if (await handleAccountAuth(req, res, url, guestPlayer)) return;
         }
 
