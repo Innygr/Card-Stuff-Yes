@@ -20,6 +20,10 @@ The current `server.js` implements:
 | POST | `/api/multiplayer/matches/:id/join` | Join a waiting match |
 | POST | `/api/multiplayer/matches/:id/leave` | Leave/cancel a match |
 | POST | `/api/multiplayer/matches/:id/action` | Play a turn action |
+| POST | `/api/admin/login` | Owner/admin sign-in (scrypt password verification) |
+| GET | `/api/admin/me` | Current admin session |
+| POST | `/api/admin/logout` | End admin session |
+| GET | `/api/admin/server-logs` | Owner/admin-only bounded log snapshot |
 
 The server's cross-origin CORS policy currently advertises `GET, POST, OPTIONS`
 and allows the `Content-Type` request header. It returns credentialed CORS
@@ -37,13 +41,15 @@ The following page workflows are not implemented by the current Server API:
   `/api/auth/change-password` / `logout`.
 - Profile page: `/api/me` and account/password workflows.
 - Deck builder: no card-collection, inventory, deck-load, or deck-save endpoints exist. The migrated page now displays an explicit unavailable state instead of spinning forever.
-- Admin page: `/api/admin/me`, player management, news management, and
-  admin logout/login routes. The separate server-log implementation must be
-  audited as its own protected route before cross-origin use.
+- Admin page: player management and news management endpoints are not
+  implemented. Owner/admin login, session lookup, logout, and server-log reads
+  are implemented by `admin-logs.js`. Cross-subdomain CORS/session integration
+  is proposed in Server PR #23 and remains pending review/merge.
 
 The DNS map makes these pages addressable; it does not mean their APIs exist.
-Do not wire these pages to the shared API client as if the missing endpoints
-were available. Build and test the backend workflows first.
+Do not wire account/profile, deck, player-management, or news-management UI to
+the shared API client as if the missing endpoints were available. Build and
+test those backend workflows first.
 
 ## Shared frontend client constraints
 
