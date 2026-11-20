@@ -251,6 +251,10 @@ async function handleAccountAuth(req, res, url, guestPlayer) {
             return true;
         }
         if (accountByUsername(username)) { send(res, 409, { error: "That username is already in use." }); return true; }
+        if (store.accounts.some(item => item.playerId === guestPlayer.id)) {
+            send(res, 409, { error: "This player is already linked to an account. Sign in to that account instead." });
+            return true;
+        }
         const now = new Date().toISOString();
         const account = {
             id: "acct_" + crypto.randomBytes(16).toString("hex"),
