@@ -4,8 +4,9 @@
  * Shared API client for Card Stuff Yes frontend pages.
  *
  * Load runtime-config.js first, then this file, before page-specific scripts.
- * The current backend supports cross-origin GET and POST only. Account/admin
- * endpoints and write methods such as PATCH/DELETE are not available yet.
+ * Credentialed cross-origin requests use the configured API origin. The
+ * account deck builder uses GET/POST/PUT/DELETE; those endpoints depend on
+ * the account backend changes being merged and deployed.
  */
 (function () {
     const config = window.CSY_CONFIG || {};
