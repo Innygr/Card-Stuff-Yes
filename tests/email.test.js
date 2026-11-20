@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
-    emailConfigured, emailStatus, escapeHtml, validRecipient, validActionUrl,
+    emailConfigured, emailStatus, escapeHtml, validRecipient, validSender, validActionUrl,
     buildVerificationEmail, buildPasswordResetEmail, sendTransactionalEmail
 } = require("../email");
 
@@ -33,7 +33,7 @@ test("email remains safely disabled until both provider key and sender are confi
 
 test("recipient and action URL validation rejects unsafe values", () => {
     assert.equal(validRecipient("player@example.com"), true);
-    assert.equal(validRecipient("not-an-email"), false);
+    assert.equal(validRecipient("not-an-email"), false);\n    assert.equal(validSender("noreply@cardstuffyes.ca"), true);\n    assert.equal(validSender("Card Stuff Yes <noreply@cardstuffyes.ca>"), true);\n    assert.equal(validSender("invalid sender"), false);
     assert.equal(validActionUrl("https://cardstuffyes.ca/verify"), true);
     assert.equal(validActionUrl("http://cardstuffyes.ca/verify"), false);
     assert.equal(validActionUrl("javascript:alert(1)"), false);
