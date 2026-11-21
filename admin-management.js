@@ -49,7 +49,7 @@ function isAdminRoute(pathname) {
 async function handleAdminManagement(req, res, url) {
     const route = url.pathname;
     if (!isAdminRoute(route)) return false;
-    const admin = adminFor(req);
+    const admin = await adminFor(req);
     if (!admin || !["owner", "admin"].includes(admin.rank)) {
         send(res, 403, { error: "Owner or admin access required." });
         return true;
