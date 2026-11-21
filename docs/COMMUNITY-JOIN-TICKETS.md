@@ -320,3 +320,50 @@ enable it when clients can reach the Node process directly. This setting
 affects same-origin protocol detection and the `Secure` attribute on player
 cookies. When in doubt, leave it disabled and terminate TLS directly at the
 application.
+
+
+## Persistent community-server directory foundation
+
+Migration `006_community_server_registry.sql` and
+`community-server-registry.js` add the first persistent directory layer.
+The migration has **not** been applied to any database. It stores a server ID,
+owner account, HTTPS endpoint, display name, verification state, approval
+state, and revocation audit fields in the private schema.
+
+The registry deliberately separates four lifecycle states:
+
+1. **Pending registration** — an authenticated owner registers a unique server
+   ID and endpoint. Registration does not grant directory visibility or join
+   ticket eligibility.
+2. **Ownership verified** — the owner proves control of the endpoint hostname
+   by publishing a one-time DNS TXT record at
+   `_csy-verify.<hostname>`. The registry stores only a SHA-256 hash of the
+   random 256-bit token and an expiry time. The challenge generator returns
+   the token once; do not log it or persist it in plaintext.
+3. **Approved** — an authorized operator explicitly approves a verified
+   pending record. This is a separate moderation action; DNS proof alone does
+   not establish that a server is safe or eligible.
+4. **Revoked** — an operator can revoke a registration with an audit actor,
+   timestamp, and bounded reason. Revoked servers are excluded from public
+   directory results.
+
+The store exposes registration, owner-bound challenge completion, approval,
+revocation, owner-scoped lookup, and a public listing that returns only
+approved and verified servers. Public results omit owner IDs and moderation
+metadata. Database errors propagate; the module does not create a pool or
+apply migrations itself.
+
+**Important integration boundary:** this is a storage and lifecycle
+foundation, not yet a public registration API, DNS resolver, operator UI, or
+automated health-check system. The caller that invokes
+`verifyOwnership` must independently resolve the exact DNS TXT record over a
+trusted DNS path, compare the complete value to the one-time token, and only
+then pass its stored hash to the registry. Never accept a browser-supplied
+"DNS verified" boolean. Operator approval and revocation must be protected by
+a separate server-side administrative authorization check.
+
+The existing account-authority join-ticket endpoint still uses its
+configuration allowlist. It has not yet been switched to consult this
+directory, and migration 006 is not applied. Do not remove the allowlist or
+enable self-service registration until route authorization, DNS verification,
+admin controls, rate limits, audit logging, and end-to-end tests are in place.
