@@ -2,6 +2,7 @@
 
 const crypto = require("node:crypto");
 const { isIP } = require("node:net");
+const dns = require("node:dns/promises");
 
 const SERVER_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const TOKEN_HASH = /^[a-f0-9]{64}$/;
@@ -121,6 +122,53 @@ class PostgresCommunityServerRegistry {
             [serverId, ownerAccountId, challengeTokenHash, now]
         );
         return result.rows?.length === 1;
+    }
+
+    async verifyOwnershipFromDns({ serverId, ownerAccountId, now = new Date(), resolveTxt = dns.resolveTxt }) {
+        if (typeof serverId !== "string" || !SERVER_ID.test(serverId) ||
+            typeof ownerAccountId !== "string" || ownerAccountId.length < 1 ||
+            !(now instanceof Date) || !Number.isFinite(now.getTime()) ||
+            typeof resolveTxt !== "function") {
+            throw new TypeError("A valid server ownership verification request is required.");
+        }
+        const pending = await this.pool.query(
+            `SELECT endpoint, verification_token_hash, verification_expires_at
+             FROM csy_private.community_servers
+             WHERE server_id = $1 AND owner_account_id = $2 AND status = 'pending'
+               AND verified_at IS NULL AND verification_token_hash IS NOT NULL
+               AND verification_expires_at > $3`,
+            [serverId, ownerAccountId, now]
+        );
+        if (pending.rows?.length !== 1) return false;
+        const hostname = new URL(validateEndpoint(pending.rows[0].endpoint)).hostname;
+        let records;
+        try {
+            records = await resolveTxt("_csy-verify." + hostname);
+        } catch (error) {
+            // Missing records and resolver failures are a failed proof, not a
+            // reason to reveal DNS or registration details to the caller.
+            if (error && ["ENOTFOUND", "ENODATA", "ENONAME", "ESERVFAIL", "ETIMEOUT", "ECONNREFUSED"].includes(error.code)) {
+                return false;
+            }
+            throw error;
+        }
+        if (!Array.isArray(records) || records.length > 32) return false;
+        const expectedHash = pending.rows[0].verification_token_hash;
+        const matched = records.some(chunks => {
+            if (!Array.isArray(chunks) || chunks.length < 1 || chunks.length > 8 ||
+                chunks.some(chunk => typeof chunk !== "string")) return false;
+            const value = chunks.join("");
+            if (!/^[A-Za-z0-9_-]{43}$/.test(value)) return false;
+            const actualHash = hashOwnershipChallenge(value);
+            return crypto.timingSafeEqual(Buffer.from(actualHash, "hex"), Buffer.from(expectedHash, "hex"));
+        });
+        if (!matched) return false;
+        return this.verifyOwnership({
+            serverId,
+            ownerAccountId,
+            challengeTokenHash: expectedHash,
+            now
+        });
     }
 
     async approve({ serverId, approvedBy, now = new Date() }) {
