@@ -149,8 +149,9 @@ service yet**. In particular:
 - Public-key trust distribution, freshness, automated rotation, and emergency
   revocation policy are not complete. Hosts currently configure a pinned
   public JWK set.
-- There is no persistent server directory, registration/ownership verification,
-  approval workflow, or operator-facing revocation control.
+- The persistent directory schema, authenticated owner registration and DNS
+  verification APIs, and registry approval/revocation operations now exist.
+  Operator-facing approval/revocation APIs and UI are still incomplete.
 - Multiplayer match state remains single-process and is not coordinated across
   multiple host replicas.
 - Migrations `004_community_join_ticket_uses.sql` and
@@ -180,9 +181,10 @@ becomes the ticket's exact audience. Successful responses contain a
 Configure `CSY_COMMUNITY_SERVER_IDS` as a comma-separated allowlist of
 approved server IDs. An absent or malformed allowlist fails closed with a
 service-unavailable response; a server ID not on the list receives a forbidden
-response. This is an interim deployment gate, not a substitute for the planned
-persistent server directory, ownership verification, health checks, or
-revocation controls.
+response. This is an interim deployment gate. The persistent registry and owner
+registration/DNS verification APIs now exist, but the join-ticket route has
+not yet been switched to database-backed approval and revocation checks.
+Health checks and operator moderation APIs remain outstanding.
 
 Required issuer environment variables are
 `CSY_JOIN_SIGNING_PRIVATE_KEY`, `CSY_JOIN_SIGNING_KEY_ID`,
@@ -192,9 +194,10 @@ returns a generic service-unavailable response; internal configuration details
 are logged server-side only. Keep the private signing key and HMAC secret on
 the official account authority.
 
-This endpoint checks the configured server-ID allowlist, but does not yet
-check persistent ownership/approval records, account eligibility policy, or
-server suspension/revocation. It is available only in
+This endpoint currently checks the configured server-ID allowlist. It does
+not yet consult the persistent registry's ownership/approval records or
+revocation state, and no account eligibility policy is applied beyond
+requiring a valid signed-in account session. It is available only in
 PostgreSQL account-storage mode. It does not expose the account database or
 session cookie to the community host.
 
@@ -304,9 +307,11 @@ multiplayer state.
 The public JWK set is pinned through operator configuration; key rotation
 requires an operator-managed update/restart and is not automated.
 
-This enables account-authority sign-in to establish a local host identity, but
-it does not yet create a global server directory, self-service server
-registration, ownership verification, or a federation key-rotation service.
+This enables account-authority sign-in to establish a local host identity.
+The project now has persistent server registration and DNS ownership proof,
+plus overlapping signing-key support. It still lacks a public directory,
+operator moderation API/UI, health checks, and automatic key discovery and
+rotation for community hosts.
 
 
 ## Reverse-proxy HTTPS trust
