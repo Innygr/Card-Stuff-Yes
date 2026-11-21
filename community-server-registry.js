@@ -142,8 +142,19 @@ class PostgresCommunityServerRegistry {
         if (pending.rows?.length !== 1) return false;
         const hostname = new URL(validateEndpoint(pending.rows[0].endpoint)).hostname;
         let records;
+        let dnsTimeout;
         try {
-            records = await resolveTxt("_csy-verify." + hostname);
+            records = await Promise.race([
+                Promise.resolve().then(() => resolveTxt("_csy-verify." + hostname)),
+                new Promise((_, reject) => {
+                    dnsTimeout = setTimeout(() => {
+                        const error = new Error("DNS ownership lookup timed out.");
+                        error.code = "ETIMEOUT";
+                        reject(error);
+                    }, 5000);
+                    dnsTimeout.unref?.();
+                })
+            ]);
         } catch (error) {
             // Missing records and resolver failures are a failed proof, not a
             // reason to reveal DNS or registration details to the caller.
@@ -151,6 +162,8 @@ class PostgresCommunityServerRegistry {
                 return false;
             }
             throw error;
+        } finally {
+            if (dnsTimeout) clearTimeout(dnsTimeout);
         }
         if (!Array.isArray(records) || records.length > 32) return false;
         const expectedHash = pending.rows[0].verification_token_hash;
