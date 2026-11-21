@@ -22,6 +22,7 @@ const cardCatalog = require("../cards.json");
 test("PostgreSQL account routing recognizes only account API routes", () => {
     assert.equal(isAccountRoute("/api/auth/register"), true);
     assert.equal(isAccountRoute("/api/auth/me"), true);
+    assert.equal(isAccountRoute("/api/community/join-keys"), true);
     assert.equal(isAccountRoute("/api/account/profile"), true);
     assert.equal(isAccountRoute("/api/account/decks/deck_0123456789abcdef0123456789abcdef"), true);
     assert.equal(isAccountRoute("/api/community/servers/community:one/join-ticket"), true);
