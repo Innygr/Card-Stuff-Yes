@@ -163,11 +163,18 @@ class PostgresCommunityServerRegistry {
             return crypto.timingSafeEqual(Buffer.from(actualHash, "hex"), Buffer.from(expectedHash, "hex"));
         });
         if (!matched) return false;
+        // DNS resolution may take long enough for the challenge to expire.
+        // Re-read the clock after the external lookup; never reuse the
+        // pre-resolution timestamp to extend the proof's validity.
+        const verifiedAt = new Date();
+        if (verifiedAt.getTime() >= new Date(pending.rows[0].verification_expires_at).getTime()) {
+            return false;
+        }
         return this.verifyOwnership({
             serverId,
             ownerAccountId,
             challengeTokenHash: expectedHash,
-            now
+            now: verifiedAt
         });
     }
 
@@ -219,19 +226,29 @@ class PostgresCommunityServerRegistry {
         return result.rows?.length === 1;
     }
 
-    async listApproved({ limit = 100 } = {}) {
-        if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-            throw new TypeError("Directory page size must be between 1 and 500.");
+    async listApproved({ limit = 100, afterServerId = null } = {}) {
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100 ||
+            (afterServerId !== null &&
+                (typeof afterServerId !== "string" || !SERVER_ID.test(afterServerId)))) {
+            throw new TypeError("A valid directory page size and cursor are required.");
         }
         const result = await this.pool.query(
             `SELECT server_id, endpoint, display_name, verified_at
              FROM csy_private.community_servers
              WHERE status = 'approved' AND verified_at IS NOT NULL
-             ORDER BY approved_at DESC, server_id ASC
+               AND revoked_at IS NULL
+               AND ($2::text IS NULL OR server_id > $2)
+             ORDER BY server_id ASC
              LIMIT $1`,
-            [limit]
+            [limit + 1, afterServerId]
         );
-        return Object.freeze((result.rows || []).map(publicServer));
+        const rows = result.rows || [];
+        const hasMore = rows.length > limit;
+        const page = rows.slice(0, limit);
+        return Object.freeze({
+            servers: Object.freeze(page.map(publicServer)),
+            nextCursor: hasMore ? page[page.length - 1].server_id : null
+        });
     }
 
     async getOwned({ serverId, ownerAccountId }) {
