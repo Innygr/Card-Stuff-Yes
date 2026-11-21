@@ -39,6 +39,23 @@ Until that operational checklist is complete:
 - Do not restart or redeploy production as part of development work.
 - Preserve the JSON account file and independent backups.
 
+## Community server registry APIs
+
+PostgreSQL account mode also exposes the public approved-server directory and
+authenticated owner registration, DNS challenge renewal, and DNS ownership
+verification routes. Operator approval/revocation and moderation-event history
+are provided by the admin-management API.
+
+These features require migrations
+`006_community_server_registry.sql` and
+`007_community_server_moderation_events.sql`. The migrations are discovered
+and applied in filename order by the migration runner, but they have **not**
+been applied to any database. Keep
+`CSY_COMMUNITY_REGISTRY_ENFORCE` unset until both migrations have been
+reviewed and applied to the intended database and the full operator workflow
+has been tested. Without that flag, join-ticket issuance continues to use the
+static server-ID allowlist.
+
 ## Database and session boundaries
 
 The browser calls the Node API; it never receives PostgreSQL credentials.
