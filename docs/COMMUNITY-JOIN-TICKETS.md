@@ -149,9 +149,9 @@ service yet**. In particular:
 - Public-key trust distribution, freshness, automated rotation, and emergency
   revocation policy are not complete. Hosts currently configure a pinned
   public JWK set.
-- The persistent directory schema, authenticated owner registration and DNS
-  verification APIs, and registry approval/revocation operations now exist.
-  Operator-facing approval/revocation APIs and UI are still incomplete.
+- The persistent directory schema, public paginated directory endpoint,
+authenticated owner registration and DNS verification APIs, and operator
+approval/revocation APIs now exist. The operator UI is still incomplete.
 - Multiplayer match state remains single-process and is not coordinated across
   multiple host replicas.
 - Migrations `004_community_join_ticket_uses.sql` and
@@ -365,8 +365,12 @@ results omit owner IDs and moderation metadata. Database errors propagate;
 the module does not create a pool or apply migrations itself.
 
 **Current HTTP integration:** when PostgreSQL account storage is enabled,
-the account API now provides:
+the account API provides:
 
+- `GET /api/community/servers` — public, paginated directory of approved
+  servers. Supports `limit` (1–100, default 50) and an opaque
+  `after` server-ID cursor. Returns only server ID, HTTPS endpoint, display
+  name, and verification timestamp. Responses are briefly cacheable.
 - `POST /api/community/servers` — authenticated registration. The response
   contains a one-time DNS TXT challenge. Store it securely until the owner
   publishes it; it is not written to application logs.
@@ -374,23 +378,22 @@ the account API now provides:
   account's own registration.
 - `POST /api/community/servers/:serverId/verify` — authenticated DNS TXT
   verification. The server resolves the record itself, compares the complete
-  TXT value against the stored hash using a constant-time comparison, and
-  consumes the challenge on success. Missing, mismatched, and expired proofs
-  fail closed.
+  TXT value against the stored hash using a constant-time comparison, applies
+  a five-second resolver timeout, rechecks challenge expiry after resolution,
+  and consumes the challenge on success. Missing, mismatched, timed-out, and
+  expired proofs fail closed.
 
-These routes use the existing account session, same-origin protections, and
-request rate limiter. Registration and verification are not public, and a
-server cannot approve itself.
+Directory reads are public and rate-limited. Registration and verification
+use the existing account session, same-origin protections, and request rate
+limiter. A server cannot approve itself.
 
-**Remaining integration boundary:** there is not yet a public directory API,
-operator approval/revocation HTTP interface, operator UI, automated health
-checks, or DNS propagation diagnostics. Approval and revocation currently
-exist only as registry operations and must be called by a separately
-authorized server-side operator workflow. The account-authority join-ticket
-endpoint still uses its configuration allowlist; it has not yet switched to
-database-backed eligibility. Migration 006 is not applied. Do not remove the
-allowlist or enable self-service federation eligibility until operator
-controls, audit logging, health checks, and end-to-end tests are complete.
+**Remaining integration boundary:** there is no operator UI, automated health
+checks, or DNS propagation diagnostics. The account-authority join-ticket
+endpoint still defaults to its configuration allowlist. Registry enforcement
+is an explicit opt-in after migration 006. Migration 006 is not applied.
+Dedicated immutable moderation-event history is also outstanding. Do not
+enable registry enforcement until the migration and operator workflow have
+been reviewed and tested.
 
 
 ## Community server operator moderation API
@@ -406,6 +409,6 @@ The admin-management API exposes these owner/admin-only routes:
 
 These routes use the existing admin session, same-origin mutation protection,
 and JSON validation. Approval/revocation state is written to the registry
-record. Admin UI and a dedicated immutable moderation-event history are not
+record. Admin UI and dedicated immutable moderation-event history are not
 implemented yet; the current record retains the latest approval/revocation
 metadata. Apply migration 006 before using these routes.
