@@ -19,6 +19,13 @@ function postgresAccountStorageEnabled() {
     return String(process.env.CSY_ACCOUNT_STORAGE || "").trim().toLowerCase() === "postgres";
 }
 
+function configuredCommunityServerIds(value = process.env.CSY_COMMUNITY_SERVER_IDS) {
+    if (typeof value !== "string" || !value.trim()) return null;
+    const ids = value.split(",").map(id => id.trim()).filter(Boolean);
+    if (!ids.length || ids.some(id => !/^[A-Za-z0-9._:-]{1,128}$/.test(id))) return null;
+    return new Set(ids);
+}
+
 function isAccountRoute(pathname) {
     return pathname === "/api/me" ||
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
@@ -222,6 +229,16 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             send(res, 405, { error: "Method not allowed." }, { Allow: "POST" });
             return true;
         }
+        const serverId = communityJoinMatch[1];
+        const approvedServerIds = configuredCommunityServerIds();
+        if (!approvedServerIds) {
+            send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+            return true;
+        }
+        if (!approvedServerIds.has(serverId)) {
+            send(res, 403, { error: "This community server is not approved for account sign-in." });
+            return true;
+        }
         if (rateLimited(req)) {
             send(res, 429, { error: "Too many attempts. Try again later." });
             return true;
@@ -235,7 +252,6 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             if (!communityJoinIssuer) {
                 communityJoinIssuer = createCommunityJoinIssuerFromEnvironment();
             }
-            const serverId = communityJoinMatch[1];
             const ticket = communityJoinIssuer.issueForAccount({
                 accountId: current.account.id,
                 serverId
@@ -703,6 +719,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
 module.exports = {
     postgresAccountStorageEnabled,
     isAccountRoute,
+    configuredCommunityServerIds,
     sanitizeProfile,
     hashPassword,
     verifyPassword,
