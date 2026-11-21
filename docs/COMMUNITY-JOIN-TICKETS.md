@@ -375,6 +375,9 @@ the account API provides:
   publishes it; it is not written to application logs.
 - `GET /api/community/servers/:serverId` — retrieve only the signed-in
   account's own registration.
+- `POST /api/community/servers/:serverId/challenge` — renew an expired or
+  lost challenge for an unverified pending registration. The previous token
+  is invalidated.
 - `POST /api/community/servers/:serverId/verify` — authenticated DNS TXT
   verification. The server resolves the record itself, compares the complete
   TXT value against the stored hash using a constant-time comparison, applies
