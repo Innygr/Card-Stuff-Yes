@@ -12,7 +12,8 @@ function fixture() {
         privateKey: pair.privateKey,
         keyId: "redeem-test-1",
         issuer: "https://accounts.example.test",
-        subjectSecret: "test-redeemer-secret-long-enough-for-hmac-sha256"
+        subjectSecret: "test-redeemer-secret-long-enough-for-hmac-sha256",
+        now: () => 1800000000
     });
     const used = new Set();
     const replayStore = {
