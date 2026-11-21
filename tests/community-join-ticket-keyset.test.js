@@ -58,6 +58,6 @@ test("rejects missing, malformed, private, duplicate, and oversized key sets", (
     assert.throws(() => importCommunityJoinPublicKeys({ keys: [jwk, jwk] }), /duplicate/);
     assert.throws(() => importCommunityJoinPublicKeys({ keys: Array(33).fill(jwk) }), /1 to 32/);
     assert.throws(() => importCommunityJoinPublicKeys({ keys: [{ ...jwk, kid: "../bad" }] }), /invalid or private/);
-    assert.throws(() => importCommunityJoinPublicKeys({ keys: [{ ...jwk, x: "A".repeat(43) }] }), /non-canonical public key|invalid/);
+    assert.throws(() => importCommunityJoinPublicKeys({ keys: [{ ...jwk, x: "A".repeat(42) + "B" }] }), /non-canonical public key|invalid/);
     assert.throws(() => importCommunityJoinPublicKeys({ keys: [{ ...jwk, extra: "unexpected" }] }), /unsupported JWK fields/);
 });
