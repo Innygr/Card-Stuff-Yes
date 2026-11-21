@@ -131,3 +131,37 @@ test("community join HTTP handler validates dependencies", () => {
         redeemer: { redeem() {} }, rateLimit() {}
     }), /provisioning/);
 });
+
+
+test("community join HTTP handler does not report success when session establishment fails", async () => {
+    const f = handler({
+        async establishSession() { throw new Error("cookie write failed"); }
+    });
+    const res = response();
+    await f.handle(request({ ticket: "t".repeat(64) }), res);
+    assert.equal(res.status, 503);
+    assert.match(res.body, /new sign-in ticket/i);
+    assert.equal(f.calls.provision.length, 1);
+    assert.equal(f.calls.session.length, 0);
+});
+
+test("community join HTTP handler rejects malformed local player records", async () => {
+    const f = handler({
+        async provisionPlayer() { return { id: "local-player-1", name: 42 }; }
+    });
+    const res = response();
+    await f.handle(request({ ticket: "t".repeat(64) }), res);
+    assert.equal(res.status, 503);
+    assert.doesNotMatch(res.body, /local-player-1/);
+});
+
+test("community join HTTP handler returns generic unavailable response when rate limiter fails", async () => {
+    const f = handler({
+        async rateLimit() { throw new Error("internal limiter details"); }
+    });
+    const res = response();
+    await f.handle(request({ ticket: "t".repeat(64) }), res);
+    assert.equal(res.status, 503);
+    assert.doesNotMatch(res.body, /internal limiter details/);
+    assert.equal(f.calls.redeem.length, 0);
+});
