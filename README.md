@@ -22,6 +22,8 @@ Run `npm test` to run the automated tests, including HTTP-level checks that both
 - `CSY_STATE_FILE` selects the private multiplayer-state snapshot path.
 - `CSY_ACCOUNT_FILE` selects the private JSON account-store path when PostgreSQL mode is disabled.
 - `CSY_ACCOUNT_STORAGE=postgres` enables PostgreSQL account storage; configure `DATABASE_URL` as a protected runtime secret.
+- `CSY_COMMUNITY_SERVER_IDS` is the default comma-separated allowlist for community join-ticket issuance.
+- `CSY_COMMUNITY_REGISTRY_ENFORCE=true` opts into checking verified, approved, non-revoked community-server registry records instead of the static allowlist; only set it after migrations 006 and 007 and the operator workflow have been validated.
 - `RESEND_API_KEY` and `CSY_EMAIL_FROM` enable verification and password-reset email delivery; keep both outside source control.
 - `CSY_ALLOWED_ORIGINS` is a comma-separated exact-origin allowlist for a frontend hosted on a different origin. Leave it empty when the API is same-origin only.
 - `CSY_COOKIE_SAMESITE` accepts `Strict`, `Lax`, or `None`. Use `None` only with HTTPS and a trusted frontend origin; the server automatically adds `Secure` for this setting.
@@ -33,8 +35,32 @@ Run `npm test` to run the automated tests, including HTTP-level checks that both
 - Authentication: registration, login, current session, logout, and password change.
 - Account: profile, settings, deck management, and collection reads.
 - Email: verification and password-reset routes when Resend is configured; email delivery remains disabled until valid runtime credentials and a sender address are supplied.
-- Administration: player listing, owner-controlled rank changes, news management, and player collection updates.
+- Administration: player listing, owner-controlled rank changes, news management, player collection updates, and (in PostgreSQL mode) community-server review, approval, revocation, and moderation history.
+- Community federation (PostgreSQL mode): public approved-server directory; authenticated server registration and DNS TXT ownership verification; owner challenge renewal; operator moderation APIs; short-lived, one-time account-authority join tickets.
 - Multiplayer: guest identity, match creation/joining, and turn-based match actions.
+
+### Community federation status
+
+Community federation is an opt-in, multi-component feature. PostgreSQL account
+storage is required for the official registry APIs. Apply migrations
+`004` through `007` only to an explicitly selected test database while
+validating the full workflow; no migration runs automatically at startup.
+The official account authority retains accounts and credentials. Community
+hosts receive short-lived join tickets and keep their own local player state.
+
+The public directory is available at `GET /api/community/servers`.
+Authenticated owners can register with `POST /api/community/servers`,
+retrieve their own registration, renew a pending DNS challenge, and verify
+the DNS TXT record. Operators can review registrations under
+`/api/admin/community-servers`, approve verified entries, revoke entries,
+and inspect append-only moderation history. The admin UI, automated endpoint
+health checks, and automatic key discovery/rotation remain incomplete.
+
+Join-ticket eligibility continues to use the static server-ID allowlist unless
+`CSY_COMMUNITY_REGISTRY_ENFORCE=true` is explicitly configured. Keep that
+flag unset until migrations 006 and 007 have been applied to the intended
+database and the full registry/operator workflow has been reviewed and tested.
+These APIs are not a declaration that federation is production-ready.
 
 Account persistence defaults to the local JSON account file. Set `CSY_ACCOUNT_STORAGE=postgres` and provide `DATABASE_URL` to use PostgreSQL-backed account storage. The PostgreSQL schema is managed separately through the migration scripts; do not run migrations against production without a reviewed backup and rollback plan. The multiplayer prototype still uses its separate JSON snapshot and is not a multi-process/high-availability store.
 
