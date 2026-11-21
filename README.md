@@ -41,6 +41,10 @@ Run `npm test` to run the automated tests, including HTTP-level checks that both
 
 ### Community federation status
 
+See [Community Server API](docs/COMMUNITY-SERVER-API.md) for the route
+contract, examples, and response codes.
+
+
 Community federation is an opt-in, multi-component feature. PostgreSQL account
 storage is required for the official registry APIs. Apply migrations
 `004` through `007` only to an explicitly selected test database while
