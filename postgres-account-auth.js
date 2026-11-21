@@ -265,6 +265,31 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             send(res, 429, { error: "Too many attempts. Try again later." });
             return true;
         }
+        if (route === "/api/community/servers" && req.method === "GET") {
+            const rawLimit = url.searchParams.get("limit");
+            const limit = rawLimit === null ? 50 : (/^[1-9][0-9]{0,2}$/.test(rawLimit) ? Number(rawLimit) : NaN);
+            const afterServerId = url.searchParams.get("after");
+            if (!Number.isInteger(limit) || limit < 1 || limit > 100 ||
+                (afterServerId !== null && !/^[A-Za-z0-9._:-]{1,128}$/.test(afterServerId))) {
+                send(res, 400, { error: "Invalid directory pagination parameters." });
+                return true;
+            }
+            if (rateLimited(req)) {
+                send(res, 429, { error: "Too many attempts. Try again later." });
+                return true;
+            }
+            try {
+                const directory = await new PostgresCommunityServerRegistry(getPool())
+                    .listApproved({ limit, afterServerId });
+                send(res, 200, directory, {
+                    "Cache-Control": "public, max-age=60, stale-while-revalidate=30"
+                });
+            } catch (error) {
+                console.error("Community server directory is unavailable:", error.message);
+                send(res, 503, { error: "Community server directory is temporarily unavailable." });
+            }
+            return true;
+        }
         const current = await accountForSession(req);
         if (!current) {
             send(res, 401, { error: "Sign in to manage community servers." });
