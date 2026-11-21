@@ -225,13 +225,20 @@ function sendJson(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
+function requestIsSecure(req) {
+    if (req.socket && req.socket.encrypted) return true;
+    // Only honor X-Forwarded-Proto when deployment explicitly confirms that
+    // an ingress proxy strips client-supplied copies and sets this header.
+    if (process.env.CSY_TRUST_PROXY !== "true") return false;
+    return String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase() === "https";
+}
+
 function applyCors(req, res) {
     const origin = req.headers.origin;
     if (!origin) return true;
 
     // Same-origin requests do not need CORS headers.
-    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-    const requestProtocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+    const requestProtocol = requestIsSecure(req) ? "https:" : "http:";
     try {
         const parsedOrigin = new URL(origin);
         if (parsedOrigin.origin === requestProtocol + "//" + req.headers.host) return true;
@@ -321,8 +328,7 @@ function getPlayer(req, res) {
         player = { id, name: "Guest-" + id.slice(0, 4).toUpperCase() };
         players.set(id, player);
         saveState();
-        const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-        const secure = req.socket.encrypted || proto === "https" || COOKIE_SAMESITE === "None" ? "; Secure" : "";
+        const secure = requestIsSecure(req) || COOKIE_SAMESITE === "None" ? "; Secure" : "";
         res.setHeader("Set-Cookie", COOKIE + "=" + id + "; HttpOnly; SameSite=" + COOKIE_SAMESITE + "; Path=/; Max-Age=2592000" + secure);
     }
     return player;
@@ -633,8 +639,7 @@ const SUBDOMAIN_ENTRYPOINTS = Object.freeze({
 function applyDomainRouting(req, res, url) {
     const rawHost = String(req.headers.host || "").toLowerCase();
     const host = rawHost.replace(/:\d+$/, "");
-    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-    const protocol = req.socket.encrypted || forwardedProto === "https" ? "https:" : "http:";
+    const protocol = requestIsSecure(req) ? "https:" : "http:";
 
     if (host === "www." + DOMAIN) {
         res.writeHead(308, {
@@ -691,8 +696,7 @@ if (process.env.CSY_COMMUNITY_JOIN_ENABLED === "true") {
                 return players.get(local.id);
             },
             establishSession: async (req, res, player) => {
-                const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-                const secure = req.socket.encrypted || proto === "https" || COOKIE_SAMESITE === "None" ? "; Secure" : "";
+                const secure = requestIsSecure(req) || COOKIE_SAMESITE === "None" ? "; Secure" : "";
                 res.setHeader("Set-Cookie", COOKIE + "=" + encodeURIComponent(player.id) +
                     "; HttpOnly; SameSite=" + COOKIE_SAMESITE + "; Path=/; Max-Age=2592000" + secure);
             }
