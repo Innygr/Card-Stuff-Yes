@@ -166,3 +166,67 @@ test("approved eligibility lookup requires an approved, verified, non-revoked ro
     assert.deepEqual(calls[0].values, [base.serverId]);
     await assert.rejects(registry.isApproved("invalid server id"), TypeError);
 });
+
+test("DNS ownership verification compares the exact TXT challenge and consumes it once", async () => {
+    const token = "z".repeat(43);
+    const tokenHash = hashOwnershipChallenge(token);
+    const calls = [];
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql, values) {
+            calls.push({ sql, values });
+            if (calls.length === 1) return { rows: [{
+                endpoint: "https://play.example.net",
+                verification_token_hash: tokenHash,
+                verification_expires_at: new Date("2026-11-20T13:00:00.000Z")
+            }] };
+            return { rows: [{ server_id: base.serverId }] };
+        }
+    });
+    let queriedName;
+    const verified = await registry.verifyOwnershipFromDns({
+        serverId: base.serverId,
+        ownerAccountId: base.ownerAccountId,
+        now: NOW,
+        async resolveTxt(name) {
+            queriedName = name;
+            return [["unrelated"], [token.slice(0, 20), token.slice(20)]];
+        }
+    });
+    assert.equal(verified, true);
+    assert.equal(queriedName, "_csy-verify.play.example.net");
+    assert.match(calls[1].sql, /verification_token_hash = \$3/);
+});
+
+test("DNS ownership verification fails closed for missing, incorrect, and expired proofs", async () => {
+    const tokenHash = hashOwnershipChallenge("z".repeat(43));
+    let dbCalls = 0;
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql) {
+            dbCalls += 1;
+            if (dbCalls === 1) return { rows: [{
+                endpoint: "https://play.example.net",
+                verification_token_hash: tokenHash,
+                verification_expires_at: new Date("2026-11-20T13:00:00.000Z")
+            }] };
+            if (dbCalls === 2) return { rows: [{
+                endpoint: "https://play.example.net",
+                verification_token_hash: tokenHash,
+                verification_expires_at: new Date("2026-11-20T13:00:00.000Z")
+            }] };
+            return { rows: [] };
+        }
+    });
+    assert.equal(await registry.verifyOwnershipFromDns({
+        serverId: base.serverId, ownerAccountId: base.ownerAccountId, now: NOW,
+        async resolveTxt() { return [["wrong-token"]]; }
+    }), false);
+    assert.equal(await registry.verifyOwnershipFromDns({
+        serverId: base.serverId, ownerAccountId: base.ownerAccountId, now: NOW,
+        async resolveTxt() { const error = new Error("missing"); error.code = "ENODATA"; throw error; }
+    }), false);
+    assert.equal(await registry.verifyOwnershipFromDns({
+        serverId: base.serverId, ownerAccountId: base.ownerAccountId,
+        now: new Date("2026-11-20T14:00:00.000Z"),
+        async resolveTxt() { throw new Error("must not query DNS after expiry"); }
+    }), false);
+});
