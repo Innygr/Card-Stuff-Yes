@@ -208,6 +208,7 @@ test("DNS ownership verification compares the exact TXT challenge and consumes i
         serverId: base.serverId,
         ownerAccountId: base.ownerAccountId,
         now: NOW,
+        clock: () => NOW,
         async resolveTxt(name) {
             queriedName = name;
             return [["unrelated"], [token.slice(0, 20), token.slice(20)]];
@@ -216,6 +217,27 @@ test("DNS ownership verification compares the exact TXT challenge and consumes i
     assert.equal(verified, true);
     assert.equal(queriedName, "_csy-verify.play.example.net");
     assert.match(calls[1].sql, /verification_token_hash = \$3/);
+});
+
+test("DNS ownership proof is rejected if it expires while DNS is resolving", async () => {
+    const token = "z".repeat(43);
+    const tokenHash = hashOwnershipChallenge(token);
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql) {
+            if (sql.startsWith("SELECT endpoint")) return { rows: [{
+                endpoint: "https://play.example.net",
+                verification_token_hash: tokenHash,
+                verification_expires_at: new Date("2026-11-20T13:00:00.000Z")
+            }] };
+            throw new Error("Expired proof must not be consumed.");
+        }
+    });
+    const verified = await registry.verifyOwnershipFromDns({
+        serverId: base.serverId, ownerAccountId: base.ownerAccountId, now: NOW,
+        clock: () => new Date("2026-11-20T13:00:01.000Z"),
+        async resolveTxt() { return [[token]]; }
+    });
+    assert.equal(verified, false);
 });
 
 test("DNS ownership verification fails closed for missing, incorrect, and expired proofs", async () => {
