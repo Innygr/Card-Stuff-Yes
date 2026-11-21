@@ -5,6 +5,7 @@ const { test } = require("node:test");
 const {
     PostgresCommunityServerRegistry,
     hashOwnershipChallenge,
+    createOwnershipChallenge,
     validateEndpoint
 } = require("../community-server-registry");
 
@@ -132,4 +133,17 @@ test("ownership challenge hashing accepts high-entropy URL-safe tokens only", ()
     const token = "x".repeat(43);
     assert.equal(hashOwnershipChallenge(token).length, 64);
     assert.throws(() => hashOwnershipChallenge("short"), TypeError);
+});
+
+test("ownership challenge produces a one-time DNS TXT proof with bounded expiry", () => {
+    const challenge = createOwnershipChallenge("https://play.example.net", {
+        now: NOW,
+        lifetimeMs: 60 * 60 * 1000
+    });
+    assert.equal(challenge.recordName, "_csy-verify.play.example.net");
+    assert.equal(challenge.recordValue, challenge.token);
+    assert.equal(challenge.tokenHash, hashOwnershipChallenge(challenge.token));
+    assert.equal(challenge.expiresAt.toISOString(), "2026-11-20T13:00:00.000Z");
+    assert.equal(challenge.token.length, 43);
+    assert.throws(() => createOwnershipChallenge("http://play.example.net"), TypeError);
 });
