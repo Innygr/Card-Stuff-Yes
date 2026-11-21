@@ -26,9 +26,37 @@ const player = {
     created_at: new Date("2026-01-01T00:00:00Z")
 };
 const posts = new Map();
+const communityServers = new Map([[
+    "community:pending",
+    { server_id: "community:pending", owner_account_id: player.id, owner_username: player.username,
+      endpoint: "https://play.example.net", display_name: "Pending Server", status: "pending",
+      verified_at: new Date("2026-11-20T12:00:00Z"), approved_at: null, approved_by: null,
+      revoked_at: null, revoked_by: null, revocation_reason: null,
+      created_at: new Date("2026-11-20T11:00:00Z"), updated_at: new Date("2026-11-20T11:00:00Z") }
+]]);
 const db = require("../db");
 db.getPool = () => ({
     async query(sql, params = []) {
+        if (sql.includes("FROM csy_private.community_servers s")) {
+            return { rows: [...communityServers.values()] };
+        }
+        if (sql.includes("UPDATE csy_private.community_servers") && sql.includes("status = 'approved'")) {
+            const row = communityServers.get(params[0]);
+            if (!row || row.status !== "pending" || !row.verified_at) return { rows: [], rowCount: 0 };
+            row.status = "approved";
+            row.approved_at = new Date();
+            row.approved_by = params[1];
+            return { rows: [{ server_id: row.server_id }], rowCount: 1 };
+        }
+        if (sql.includes("UPDATE csy_private.community_servers") && sql.includes("status = 'revoked'")) {
+            const row = communityServers.get(params[0]);
+            if (!row || row.status === "revoked") return { rows: [], rowCount: 0 };
+            row.status = "revoked";
+            row.revoked_at = new Date();
+            row.revoked_by = params[1];
+            row.revocation_reason = params[2];
+            return { rows: [{ server_id: row.server_id }], rowCount: 1 };
+        }
         if (sql.includes("FROM csy_private.account_sessions s")) {
             return { rows: [{ id: player.id, player_id: player.player_id, username: player.username, password_hash: "hash", rank: player.rank, created_at: player.created_at, display_name: "", bio: "", expires_at: new Date(Date.now() + 60000) }], rowCount: 1 };
         }
@@ -197,6 +225,38 @@ test("only owner can change player roles and owner cannot be assigned", async ()
     });
     assert.equal(updated.response.status, 200);
     assert.equal(updated.data.player.rank, "mod");
+});
+
+
+test("admins can review pending community servers and approve only verified registrations", async () => {
+    const listed = await request("/api/admin/community-servers");
+    assert.equal(listed.response.status, 200);
+    assert.equal(listed.data.servers[0].serverId, "community:pending");
+    assert.equal(Object.hasOwn(listed.data.servers[0], "verificationTokenHash"), false);
+
+    const adminApproval = await request("/api/admin/community-servers/community:pending/approve", {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: "{}"
+    }, adminCookie);
+    assert.equal(adminApproval.response.status, 200);
+    assert.equal(adminApproval.data.status, "approved");
+    assert.equal(communityServers.get("community:pending").approved_by, "test-admin");
+});
+
+test("community server revocation records moderator and reason; invalid actions fail", async () => {
+    const revoked = await request("/api/admin/community-servers/community:pending/revoke", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Review requested" })
+    });
+    assert.equal(revoked.response.status, 200);
+    assert.equal(revoked.data.status, "revoked");
+    assert.equal(communityServers.get("community:pending").revoked_by, "test-owner");
+    assert.equal(communityServers.get("community:pending").revocation_reason, "Review requested");
+
+    const invalid = await request("/api/admin/community-servers/community:pending/revoke", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "x".repeat(241) })
+    });
+    assert.equal(invalid.response.status, 400);
 });
 
 test("admin can create, publish, edit, and delete news posts", async () => {
