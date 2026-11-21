@@ -150,3 +150,22 @@ check persistent ownership/approval records, account eligibility policy, or
 server suspension/revocation. It is available only in
 PostgreSQL account-storage mode. It does not expose the account database or
 session cookie to the community host.
+
+
+## Public signing-key discovery route
+
+The official PostgreSQL account authority also exposes the active issuer's
+public-only JWK set at:
+
+`GET /api/community/join-keys`
+
+The response contains the issuer's Ed25519 public key material and key ID;
+it never includes the private signing key or HMAC subject secret. Successful
+responses use `Cache-Control: public, max-age=300, must-revalidate`. Hosts
+must still authenticate the expected issuer independently (for example,
+through a preconfigured HTTPS origin and pinned issuer identifier), validate
+the JWK schema with `community-join-ticket-keyset.js`, and implement explicit
+rotation/revocation policy. Do not accept a discovery URL supplied by a player.
+The route is available only when PostgreSQL account storage is enabled and
+the issuer environment is correctly configured. It is not a complete trust
+bootstrap or automated key-rotation service.
