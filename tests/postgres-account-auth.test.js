@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
     isAccountRoute,
+    configuredCommunityServerIds,
     sanitizeProfile,
     hashPassword,
     verifyPassword,
@@ -85,4 +86,13 @@ test("saved deck validation enforces catalog IDs and existing size limits", () =
     assert.equal(validDeckCards(["not-a-real-card"]), false);
     assert.equal(validDeckCards(Array(MAX_DECK_CARDS + 1).fill(validId)), false);
     assert.equal(MAX_DECKS, 25);
+});
+
+test("community join-ticket issuance requires an explicit valid server allowlist", () => {
+    assert.equal(configuredCommunityServerIds(""), null);
+    assert.equal(configuredCommunityServerIds(undefined), null);
+    assert.equal(configuredCommunityServerIds("community:one, community-two")?.has("community:one"), true);
+    assert.equal(configuredCommunityServerIds("community:one, community-two")?.has("community-two"), true);
+    assert.equal(configuredCommunityServerIds("community:one, bad%2Fid"), null);
+    assert.equal(configuredCommunityServerIds("community:one,,community-two")?.size, 2);
 });
