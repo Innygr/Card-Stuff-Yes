@@ -71,6 +71,13 @@ sign newly issued tickets. The public JWK set contains every configured
 verification key, while newly issued tickets use only the selected active key.
 This allows operators to distribute a replacement public key before switching
 issuance, then retain the previous public key during the short ticket overlap.
+A safe planned sequence is: publish both public keys; update and verify every
+community host's pinned key set; switch the authority's active key; retain the
+old public key for at least the maximum ticket lifetime plus clock-skew
+allowance and any deployment/cache propagation window; then remove the retired
+key. Do not remove a key while a valid ticket signed by it may still exist.
+Emergency compromise requires a separate immediate revocation decision and
+may invalidate outstanding tickets.
 
 The legacy single-key variables
 `CSY_JOIN_SIGNING_PRIVATE_KEY` and `CSY_JOIN_SIGNING_KEY_ID` remain
