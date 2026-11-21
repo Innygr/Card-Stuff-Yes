@@ -86,6 +86,30 @@ otherwise authenticate the expected issuer, use HTTPS, enforce cache and
 freshness policy, and handle revocation/rotation explicitly. Do not trust an
 arbitrary key-set URL supplied by a joining player.
 
+
+## Community-host redemption primitive
+
+`community-join-ticket-redeemer.js` combines strict public-key import, ticket
+verification, exact issuer/audience checks, and replay-store consumption. The
+host receives only an opaque external subject and the trusted issuer/server
+identifiers; it does not receive an official account ID, cookie, credential,
+or database connection.
+
+The replay store is injected and must implement an atomic `consume({ ticketId,
+expiresAt }, now)` operation. The included PostgreSQL store is suitable for
+shared durable replay protection when configured with a correctly provisioned
+database role and the private-schema migration. A process-local guard is not
+sufficient for multiple host processes or replicas. Storage failures propagate
+and must be treated as redemption failures.
+
+This is still an integration primitive, not an HTTP route or complete game
+login. A production host must create its local guest/player record only after
+successful redemption, enforce its own authorization, and never treat the
+opaque subject as an official account credential. The official account
+authority still needs an authenticated, rate-limited issuer endpoint that
+derives the account reference from the verified session—not from a client
+supplied account ID.
+
 ## Not implemented yet
 
 The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking or account authentication. There is
