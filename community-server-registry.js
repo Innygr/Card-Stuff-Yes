@@ -157,6 +157,20 @@ class PostgresCommunityServerRegistry {
         return result.rows?.length === 1;
     }
 
+    async isApproved(serverId) {
+        if (typeof serverId !== "string" || !SERVER_ID.test(serverId)) {
+            throw new TypeError("A valid community server ID is required.");
+        }
+        const result = await this.pool.query(
+            `SELECT 1
+             FROM csy_private.community_servers
+             WHERE server_id = $1 AND status = 'approved'
+               AND verified_at IS NOT NULL AND revoked_at IS NULL`,
+            [serverId]
+        );
+        return result.rows?.length === 1;
+    }
+
     async listApproved({ limit = 100 } = {}) {
         if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
             throw new TypeError("Directory page size must be between 1 and 500.");
