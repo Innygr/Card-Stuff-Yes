@@ -57,7 +57,10 @@ Set that flag only if the Node process is reachable exclusively through a
 trusted ingress that strips client-supplied forwarding headers and writes
 its own. Do not enable it when clients can reach the application directly.
 The flag also controls whether the server trusts `X-Forwarded-Proto` for
-HTTPS detection and secure-cookie handling.
+HTTPS detection, secure-cookie handling, and same-origin protocol validation
+in the PostgreSQL account adapter. When the flag is unset, a spoofed forwarded
+HTTPS header cannot make an HTTP request appear secure or satisfy an HTTPS
+same-origin check.
 
 ## Validation still required
 
