@@ -28,6 +28,7 @@ function configuredCommunityServerIds(value = process.env.CSY_COMMUNITY_SERVER_I
 
 function isAccountRoute(pathname) {
     return pathname === "/api/me" ||
+        pathname === "/api/community/join-keys" ||
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
@@ -220,6 +221,25 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
     if (["POST", "PUT"].includes(req.method) &&
         !String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
         send(res, 415, { error: "Content-Type must be application/json." });
+        return true;
+    }
+
+    if (route === "/api/community/join-keys") {
+        if (req.method !== "GET") {
+            send(res, 405, { error: "Method not allowed." }, { Allow: "GET" });
+            return true;
+        }
+        try {
+            if (!communityJoinIssuer) {
+                communityJoinIssuer = createCommunityJoinIssuerFromEnvironment();
+            }
+            send(res, 200, communityJoinIssuer.publicKeySet, {
+                "Cache-Control": "public, max-age=300, must-revalidate"
+            });
+        } catch (error) {
+            console.error("Community join public-key discovery is unavailable:", error.message);
+            send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+        }
         return true;
     }
 
