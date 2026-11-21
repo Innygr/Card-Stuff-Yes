@@ -34,7 +34,7 @@ function isAccountRoute(pathname) {
     return pathname === "/api/me" ||
         pathname === "/api/community/join-keys" ||
         pathname === "/api/community/servers" ||
-        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}(?:/(verify))?$").test(pathname) ||
+        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}(?:/(verify|challenge))?$").test(pathname) ||
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
@@ -252,11 +252,12 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         return true;
     }
 
-    const registryRouteMatch = route.match(new RegExp("^/api/community/servers(?:/([A-Za-z0-9._:-]{1,128})(?:/(verify))?)?$"));
+    const registryRouteMatch = route.match(new RegExp("^/api/community/servers(?:/([A-Za-z0-9._:-]{1,128})(?:/(verify|challenge))?)?$"));
     if (route === "/api/community/servers" || registryRouteMatch) {
         const serverId = registryRouteMatch?.[1] || null;
         const verifyRoute = registryRouteMatch?.[2] === "verify";
-        const allowedMethods = verifyRoute ? ["POST"] : serverId ? ["GET"] : ["GET", "POST"];
+        const challengeRoute = registryRouteMatch?.[2] === "challenge";
+        const allowedMethods = (verifyRoute || challengeRoute) ? ["POST"] : serverId ? ["GET"] : ["GET", "POST"];
         if (!allowedMethods.includes(req.method)) {
             send(res, 405, { error: "Method not allowed." }, { Allow: allowedMethods.join(", ") });
             return true;
@@ -303,6 +304,37 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
                 return true;
             }
             send(res, 200, { server: registration });
+            return true;
+        }
+        if (challengeRoute) {
+            const registration = await registry.getOwned({
+                serverId,
+                ownerAccountId: current.account.id
+            });
+            if (!registration || registration.status !== "pending" || registration.verifiedAt) {
+                send(res, 409, { error: "A new ownership challenge is available only for an unverified pending registration." });
+                return true;
+            }
+            const challenge = createOwnershipChallenge(registration.endpoint);
+            const renewed = await registry.renewOwnershipChallenge({
+                serverId,
+                ownerAccountId: current.account.id,
+                challengeTokenHash: challenge.tokenHash,
+                challengeExpiresAt: challenge.expiresAt
+            });
+            if (!renewed) {
+                send(res, 409, { error: "The registration changed before the challenge could be renewed." });
+                return true;
+            }
+            send(res, 200, {
+                serverId,
+                ownership: {
+                    recordName: challenge.recordName,
+                    recordType: "TXT",
+                    recordValue: challenge.recordValue,
+                    expiresAt: challenge.expiresAt.toISOString()
+                }
+            }, { "Cache-Control": "no-store" });
             return true;
         }
         if (verifyRoute) {
