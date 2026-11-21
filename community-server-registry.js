@@ -103,6 +103,26 @@ class PostgresCommunityServerRegistry {
         });
     }
 
+    async renewOwnershipChallenge({ serverId, ownerAccountId, challengeTokenHash, challengeExpiresAt, now = new Date() }) {
+        if (typeof serverId !== "string" || !SERVER_ID.test(serverId) ||
+            typeof ownerAccountId !== "string" || ownerAccountId.length < 1 ||
+            typeof challengeTokenHash !== "string" || !TOKEN_HASH.test(challengeTokenHash) ||
+            !(challengeExpiresAt instanceof Date) || !Number.isFinite(challengeExpiresAt.getTime()) ||
+            !(now instanceof Date) || !Number.isFinite(now.getTime()) ||
+            challengeExpiresAt.getTime() <= now.getTime()) {
+            throw new TypeError("A valid replacement ownership challenge is required.");
+        }
+        const result = await this.pool.query(
+            `UPDATE csy_private.community_servers
+             SET verification_token_hash = $3, verification_expires_at = $4, updated_at = $5
+             WHERE server_id = $1 AND owner_account_id = $2
+               AND status = 'pending' AND verified_at IS NULL
+             RETURNING server_id`,
+            [serverId, ownerAccountId, challengeTokenHash, challengeExpiresAt, now]
+        );
+        return result.rows?.length === 1;
+    }
+
     async verifyOwnership({ serverId, ownerAccountId, challengeTokenHash, now = new Date() }) {
         if (typeof serverId !== "string" || !SERVER_ID.test(serverId) ||
             typeof ownerAccountId !== "string" || ownerAccountId.length < 1 ||
