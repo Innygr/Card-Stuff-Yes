@@ -217,3 +217,39 @@ it, then ensure the resulting local player is loaded into the host's own
 multiplayer state. The current `server.js` flow does not yet do this, and
 the local game state still needs a durable player record strategy that works
 across restarts and multiple host processes.
+
+
+## Opt-in community-host HTTP integration
+
+The game server now mounts `POST /api/community/join` only when
+`CSY_COMMUNITY_JOIN_ENABLED=true`. The host must configure:
+
+- `CSY_COMMUNITY_JOIN_ISSUER`: the exact trusted account-authority issuer.
+- `CSY_COMMUNITY_SERVER_ID`: the exact audience/server ID assigned by that authority.
+- `CSY_COMMUNITY_JOIN_PUBLIC_JWKS`: a pinned JSON JWK set containing public
+  Ed25519 signing keys for that issuer.
+
+The host also needs its own PostgreSQL database configured through the normal
+server database configuration. The route uses that host-local database for
+one-time ticket replay protection and issuer-scoped local player identities.
+It does not connect to the official account database. Operators must apply
+migrations 004 and 005 to the community host's own database before enabling
+the feature. No migration is automatically run by server startup.
+
+On successful redemption, the server creates or resolves the local player,
+loads that player into its multiplayer state, and sets the normal HttpOnly
+player cookie. The player ID is a host-local UUID. Existing guest play remains
+available when federation is disabled. The endpoint is disabled by default;
+if explicitly enabled with invalid configuration, startup fails closed.
+
+The current rate limiter is process-local and keyed by the direct TCP peer
+address. Put the host behind a correctly configured trusted proxy/rate limiter
+before relying on forwarded client IP headers; this implementation deliberately
+does not trust client-supplied forwarding headers. Multi-process deployments
+need a shared distributed rate limiter and shared durable multiplayer state.
+The public JWK set is pinned through operator configuration; key rotation
+requires an operator-managed update/restart and is not automated.
+
+This enables account-authority sign-in to establish a local host identity, but
+it does not yet create a global server directory, self-service server
+registration, ownership verification, or a federation key-rotation service.
