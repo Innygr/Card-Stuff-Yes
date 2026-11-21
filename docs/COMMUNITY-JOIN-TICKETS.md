@@ -271,11 +271,14 @@ player cookie. The player ID is a host-local UUID. Existing guest play remains
 available when federation is disabled. The endpoint is disabled by default;
 if explicitly enabled with invalid configuration, startup fails closed.
 
-The current rate limiter is process-local and keyed by the direct TCP peer
-address. Put the host behind a correctly configured trusted proxy/rate limiter
-before relying on forwarded client IP headers; this implementation deliberately
-does not trust client-supplied forwarding headers. Multi-process deployments
-need a shared distributed rate limiter and shared durable multiplayer state.
+The community-join limiter is process-local and keyed by the direct TCP peer
+address. The shared account-auth limiter also uses the direct peer address by
+default; it honors Cloudflare/X-Forwarded-For client-address headers only when
+the operator explicitly sets `CSY_TRUST_PROXY=true`. Set that flag only when
+the application is reachable exclusively through a trusted ingress that
+removes client-supplied forwarding headers and writes its own. Multi-process
+deployments need a shared distributed rate limiter and shared durable
+multiplayer state.
 The public JWK set is pinned through operator configuration; key rotation
 requires an operator-managed update/restart and is not automated.
 
