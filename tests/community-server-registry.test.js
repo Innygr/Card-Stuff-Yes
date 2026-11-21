@@ -267,6 +267,29 @@ test("DNS ownership proof is rejected if it expires while DNS is resolving", asy
     assert.equal(verified, false);
 });
 
+test("DNS ownership verification fails closed when the resolver exceeds its timeout", async () => {
+    const tokenHash = hashOwnershipChallenge("z".repeat(43));
+    const registry = new PostgresCommunityServerRegistry({
+        async query() {
+            return { rows: [{
+                endpoint: "https://play.example.net",
+                verification_token_hash: tokenHash,
+                verification_expires_at: new Date("2026-11-20T13:00:00.000Z")
+            }] };
+        }
+    });
+    const started = Date.now();
+    const verified = await registry.verifyOwnershipFromDns({
+        serverId: base.serverId,
+        ownerAccountId: base.ownerAccountId,
+        now: NOW,
+        timeoutMs: 5,
+        resolveTxt: () => new Promise(() => {})
+    });
+    assert.equal(verified, false);
+    assert.ok(Date.now() - started < 1000, "resolver timeout should bound the lookup");
+});
+
 test("DNS ownership verification fails closed for missing, incorrect, and expired proofs", async () => {
     const tokenHash = hashOwnershipChallenge("z".repeat(43));
     let dbCalls = 0;
