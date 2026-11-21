@@ -25,7 +25,7 @@ function isAccountRoute(pathname) {
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
         pathname.startsWith("/api/account/decks/") ||
-        /^\/api\/community\/servers\/[A-Za-z0-9._:-]{1,128}\/join-ticket$/.test(pathname);
+        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}/join-ticket$").test(pathname);
 }
 
 function sanitizeProfile(input) {
@@ -216,7 +216,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         return true;
     }
 
-    const communityJoinMatch = route.match(/^\/api\/community\/servers\/([A-Za-z0-9._:-]{1,128})\/join-ticket$/);
+    const communityJoinMatch = route.match(new RegExp("^/api/community/servers/([A-Za-z0-9._:-]{1,128})/join-ticket$"));
     if (communityJoinMatch) {
         if (req.method !== "POST") {
             send(res, 405, { error: "Method not allowed." }, { Allow: "POST" });
