@@ -103,3 +103,11 @@ test("redeemer requires exact server identity and replay store", () => {
         issuer: "issuer", serverId: "community:ok", publicKeySet: f.issuer.publicKeySet
     }), /replay store/);
 });
+
+test("redeemer classifies malformed or forged tickets as authentication failures", async () => {
+    const f = fixture();
+    assert.deepEqual(await f.redeemer.redeem("not-a-valid-ticket"), {
+        accepted: false,
+        reason: "invalid_ticket"
+    });
+});
