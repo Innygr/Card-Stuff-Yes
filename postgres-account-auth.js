@@ -261,11 +261,9 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             send(res, 405, { error: "Method not allowed." }, { Allow: allowedMethods.join(", ") });
             return true;
         }
-        if (route !== "/api/community/servers" || req.method !== "GET") {
-            if (rateLimited(req)) {
-                send(res, 429, { error: "Too many attempts. Try again later." });
-                return true;
-            }
+        if (rateLimited(req)) {
+            send(res, 429, { error: "Too many attempts. Try again later." });
+            return true;
         }
         if (route === "/api/community/servers" && req.method === "GET") {
             const rawLimit = url.searchParams.get("limit");
