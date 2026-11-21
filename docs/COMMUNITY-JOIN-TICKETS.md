@@ -393,9 +393,10 @@ limiter. A server cannot approve itself.
 checks, or DNS propagation diagnostics. The account-authority join-ticket
 endpoint still defaults to its configuration allowlist. Registry enforcement
 is an explicit opt-in after migration 006. Migration 006 is not applied.
-Dedicated immutable moderation-event history is also outstanding. Do not
-enable registry enforcement until the migration and operator workflow have
-been reviewed and tested.
+Migration 007 adds append-only moderation-event history; apply it alongside
+migration 006 before using the full registry workflow. Do not enable registry
+enforcement until both migrations and the operator workflow have been
+reviewed and tested.
 
 
 ## Community server operator moderation API
