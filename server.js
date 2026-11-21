@@ -79,9 +79,11 @@ function saveState() {
         fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true, mode: 0o700 });
         fs.writeFileSync(temporaryFile, snapshot, { encoding: "utf8", mode: 0o600 });
         fs.renameSync(temporaryFile, STATE_FILE);
+        return true;
     } catch (error) {
         console.error("Could not persist multiplayer state:", error.message);
         try { fs.rmSync(temporaryFile, { force: true }); } catch {}
+        return false;
     }
 }
 
@@ -691,7 +693,10 @@ if (process.env.CSY_COMMUNITY_JOIN_ENABLED === "true") {
                         throw new Error("Local player capacity reached.");
                     }
                     players.set(local.id, { id: local.id, name: cleanName(local.name) || "Player" });
-                    saveState();
+                    if (!saveState()) {
+                        players.delete(local.id);
+                        throw new Error("Could not persist the local community player.");
+                    }
                 }
                 return players.get(local.id);
             },
