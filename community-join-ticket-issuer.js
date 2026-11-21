@@ -122,6 +122,9 @@ function createCommunityJoinIssuerFromEnvironment({ now } = {}) {
     // switching issuance. Legacy single-key variables remain supported.
     const keyDocument = process.env.CSY_JOIN_SIGNING_KEYS;
     if (keyDocument) {
+        if (process.env.CSY_JOIN_SIGNING_PRIVATE_KEY || process.env.CSY_JOIN_SIGNING_KEY_ID) {
+            throw new Error("Configure either CSY_JOIN_SIGNING_KEYS or the legacy single-key variables, not both.");
+        }
         let entries;
         try {
             entries = JSON.parse(keyDocument);
