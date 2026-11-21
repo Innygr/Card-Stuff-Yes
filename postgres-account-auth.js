@@ -13,6 +13,10 @@ const PASSWORD_MIN = 12;
 const PASSWORD_MAX = 128;
 const { rateLimited } = require("./login-rate-limit");
 const { createCommunityJoinIssuerFromEnvironment } = require("./community-join-ticket-issuer");
+const {
+    PostgresCommunityServerRegistry,
+    createOwnershipChallenge
+} = require("./community-server-registry");
 let communityJoinIssuer = null;
 
 function postgresAccountStorageEnabled() {
@@ -29,6 +33,8 @@ function configuredCommunityServerIds(value = process.env.CSY_COMMUNITY_SERVER_I
 function isAccountRoute(pathname) {
     return pathname === "/api/me" ||
         pathname === "/api/community/join-keys" ||
+        pathname === "/api/community/servers" ||
+        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}/(verify)?$").test(pathname) ||
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
@@ -242,6 +248,92 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         } catch (error) {
             console.error("Community join public-key discovery is unavailable:", error.message);
             send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+        }
+        return true;
+    }
+
+    const registryRouteMatch = route.match(new RegExp("^/api/community/servers(?:/([A-Za-z0-9._:-]{1,128})(?:/(verify))?)?$"));
+    if (route === "/api/community/servers" || registryRouteMatch) {
+        const serverId = registryRouteMatch?.[1] || null;
+        const verifyRoute = registryRouteMatch?.[2] === "verify";
+        const allowedMethods = verifyRoute ? "POST" : serverId ? "GET" : "POST";
+        if (req.method !== allowedMethods) {
+            send(res, 405, { error: "Method not allowed." }, { Allow: allowedMethods });
+            return true;
+        }
+        if (rateLimited(req)) {
+            send(res, 429, { error: "Too many attempts. Try again later." });
+            return true;
+        }
+        const current = await accountForSession(req);
+        if (!current) {
+            send(res, 401, { error: "Sign in to manage community servers." });
+            return true;
+        }
+        const registry = new PostgresCommunityServerRegistry(getPool());
+        if (req.method === "GET") {
+            const registration = await registry.getOwned({
+                serverId,
+                ownerAccountId: current.account.id
+            });
+            if (!registration) {
+                send(res, 404, { error: "Community server registration not found." });
+                return true;
+            }
+            send(res, 200, { server: registration });
+            return true;
+        }
+        if (verifyRoute) {
+            const verified = await registry.verifyOwnershipFromDns({
+                serverId,
+                ownerAccountId: current.account.id
+            });
+            if (!verified) {
+                send(res, 409, { error: "Ownership could not be verified. Check the DNS TXT record and try again." });
+                return true;
+            }
+            send(res, 200, { serverId, status: "verified" });
+            return true;
+        }
+        let body;
+        try { body = await readJson(req); }
+        catch (error) { send(res, 400, { error: error.message }); return true; }
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            Object.keys(body).some(key => !["serverId", "endpoint", "displayName"].includes(key)) ||
+            typeof body.serverId !== "string" || typeof body.endpoint !== "string" ||
+            typeof body.displayName !== "string") {
+            send(res, 400, { error: "Provide only serverId, endpoint, and displayName." });
+            return true;
+        }
+        try {
+            const challenge = createOwnershipChallenge(body.endpoint);
+            const result = await registry.registerPending({
+                serverId: body.serverId,
+                ownerAccountId: current.account.id,
+                endpoint: body.endpoint,
+                displayName: body.displayName,
+                challengeTokenHash: challenge.tokenHash,
+                challengeExpiresAt: challenge.expiresAt
+            });
+            if (!result.created) {
+                send(res, 409, { error: "That community server ID is already registered." });
+                return true;
+            }
+            send(res, 201, {
+                server: result,
+                ownership: {
+                    recordName: challenge.recordName,
+                    recordType: "TXT",
+                    recordValue: challenge.recordValue,
+                    expiresAt: challenge.expiresAt.toISOString()
+                }
+            }, { "Cache-Control": "no-store" });
+        } catch (error) {
+            if (error instanceof TypeError) {
+                send(res, 400, { error: error.message });
+                return true;
+            }
+            throw error;
         }
         return true;
     }
