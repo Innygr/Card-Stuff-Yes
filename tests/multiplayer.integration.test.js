@@ -129,6 +129,9 @@ function startServer(extraEnv = {}) {
             PORT: String(serverPort),
             CSY_STATE_FILE: stateFile,
             CSY_ALLOWED_ORIGINS: "https://frontend.example,https://pvp.cardstuffyes.ca,https://admin.cardstuffyes.ca",
+            // The integration harness simulates TLS termination at a trusted
+            // reverse proxy; production defaults remain proxy-untrusted.
+            CSY_TRUST_PROXY: "true",
             CSY_ADMIN_USERS: adminUsers,
             ...extraEnv
         },
