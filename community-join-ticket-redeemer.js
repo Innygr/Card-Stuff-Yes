@@ -25,11 +25,12 @@ function createCommunityJoinRedeemer({
 
     return Object.freeze({
         async redeem(token) {
+            const currentTime = now();
             const verified = verifyJoinTicket(token, {
                 publicKeys,
                 issuer,
                 audience: serverId,
-                now: now(),
+                now: currentTime,
                 clockSkewSeconds
             });
             // The replay store must atomically claim the ticket ID. A storage
@@ -37,7 +38,7 @@ function createCommunityJoinRedeemer({
             const consumed = await replayStore.consume({
                 ticketId: verified.ticketId,
                 expiresAt: verified.expiresAt
-            }, now());
+            }, currentTime);
             if (consumed !== true) {
                 return Object.freeze({ accepted: false, reason: "ticket_already_used_or_expired" });
             }
