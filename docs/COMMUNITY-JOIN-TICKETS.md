@@ -333,6 +333,9 @@ cookies. When in doubt, leave it disabled and terminate TLS directly at the
 application.
 
 
+For the HTTP route contract, request/response examples, and current
+status codes, see [Community Server API](COMMUNITY-SERVER-API.md).
+
 ## Persistent community-server directory foundation
 
 Migration `006_community_server_registry.sql` and
