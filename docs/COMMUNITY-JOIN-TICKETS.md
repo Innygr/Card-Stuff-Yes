@@ -408,9 +408,13 @@ The admin-management API exposes these owner/admin-only routes:
   pending registration with a completed DNS ownership proof.
 - `PATCH /api/admin/community-servers/{serverId}/revoke` — revoke an existing
   registration and record the operator and optional reason.
+- `GET /api/admin/community-servers/{serverId}/events` — inspect the latest
+  100 append-only moderation events for a server.
 
 These routes use the existing admin session, same-origin mutation protection,
 and JSON validation. Approval/revocation state is written to the registry
-record. Admin UI and dedicated immutable moderation-event history are not
-implemented yet; the current record retains the latest approval/revocation
-metadata. Apply migration 006 before using these routes.
+record, and approval/revocation plus their event records are committed in one
+SQL statement. Migration 007 adds the append-only event table and a database
+trigger that rejects event updates/deletes. Apply migrations 006 and 007
+before using directory moderation and history features. Admin UI remains
+incomplete.
