@@ -11,7 +11,7 @@ function writeJson(res, status, body) {
     res.end(JSON.stringify(body));
 }
 
-function createCommunityJoinHttpHandler({ redeemer, provisionPlayer, rateLimit }) {
+function createCommunityJoinHttpHandler({ redeemer, provisionPlayer, rateLimit, establishSession = async () => {} }) {
     if (!redeemer || typeof redeemer.redeem !== "function") {
         throw new TypeError("A configured community join redeemer is required.");
     }
