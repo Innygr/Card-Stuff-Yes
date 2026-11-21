@@ -23,7 +23,7 @@ test("moderation UI calls the documented operator endpoints", () => {
     assert.match(script, /\/events/);
     assert.match(script, /"approve"/);
     assert.match(script, /"revoke"/);
-    assert.match(apiDocs, /Admin panel's \*\*Community Server Moderation\*\*/);
+    assert.match(apiDocs, /### Admin panel workflow[\s\S]*?\*\*Community Server Moderation\*\*/);
 });
 
 test("moderation UI renders server-controlled values as text, not HTML", () => {
