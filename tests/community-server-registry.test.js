@@ -102,7 +102,9 @@ test("public directory returns only approved records and omits owner and moderat
     const registry = new PostgresCommunityServerRegistry({
         async query(sql, values) {
             assert.match(sql, /status = 'approved' AND verified_at IS NOT NULL/);
-            assert.deepEqual(values, [25]);
+            assert.match(sql, /revoked_at IS NULL/);
+            assert.match(sql, /ORDER BY server_id ASC/);
+            assert.deepEqual(values, [26, null]);
             return { rows: [{
                 server_id: base.serverId,
                 endpoint: "https://cards.example.net",
@@ -111,15 +113,34 @@ test("public directory returns only approved records and omits owner and moderat
             }] };
         }
     });
-    const list = await registry.listApproved({ limit: 25 });
-    assert.deepEqual(list[0], {
+    const page = await registry.listApproved({ limit: 25 });
+    assert.deepEqual(page.servers[0], {
         serverId: base.serverId,
         endpoint: "https://cards.example.net",
         displayName: "Example Community",
         verifiedAt: NOW.toISOString()
     });
-    assert.equal(Object.hasOwn(list[0], "ownerAccountId"), false);
-    await assert.rejects(registry.listApproved({ limit: 501 }), TypeError);
+    assert.equal(page.nextCursor, null);
+    assert.equal(Object.hasOwn(page.servers[0], "ownerAccountId"), false);
+    await assert.rejects(registry.listApproved({ limit: 101 }), TypeError);
+    await assert.rejects(registry.listApproved({ afterServerId: "bad/id" }), TypeError);
+});
+
+test("public directory pagination uses a stable server ID cursor", async () => {
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql, values) {
+            assert.match(sql, /server_id > \$2/);
+            assert.deepEqual(values, [3, "community:first"]);
+            return { rows: [
+                { server_id: "community:a", endpoint: "https://a.example.net", display_name: "A", verified_at: NOW },
+                { server_id: "community:b", endpoint: "https://b.example.net", display_name: "B", verified_at: NOW },
+                { server_id: "community:c", endpoint: "https://c.example.net", display_name: "C", verified_at: NOW }
+            ] };
+        }
+    });
+    const page = await registry.listApproved({ limit: 2, afterServerId: "community:first" });
+    assert.equal(page.servers.length, 2);
+    assert.equal(page.nextCursor, "community:b");
 });
 
 test("registry scopes owner lookup and propagates database errors", async () => {
