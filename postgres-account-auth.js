@@ -345,14 +345,31 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             return true;
         }
         const serverId = communityJoinMatch[1];
-        const approvedServerIds = configuredCommunityServerIds();
-        if (!approvedServerIds) {
-            send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
-            return true;
-        }
-        if (!approvedServerIds.has(serverId)) {
-            send(res, 403, { error: "This community server is not approved for account sign-in." });
-            return true;
+        if (process.env.CSY_COMMUNITY_REGISTRY_ENFORCE === "true") {
+            // Explicit cutover mode: migration 006 must be applied first.
+            // Every issuance checks the live approved state so revocation
+            // takes effect without waiting for an allowlist refresh.
+            try {
+                const registry = new PostgresCommunityServerRegistry(getPool());
+                if (!await registry.isApproved(serverId)) {
+                    send(res, 403, { error: "This community server is not approved for account sign-in." });
+                    return true;
+                }
+            } catch (error) {
+                console.error("Community server eligibility lookup failed:", error.message);
+                send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+                return true;
+            }
+        } else {
+            const approvedServerIds = configuredCommunityServerIds();
+            if (!approvedServerIds) {
+                send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+                return true;
+            }
+            if (!approvedServerIds.has(serverId)) {
+                send(res, 403, { error: "This community server is not approved for account sign-in." });
+                return true;
+            }
         }
         if (rateLimited(req)) {
             send(res, 429, { error: "Too many attempts. Try again later." });
