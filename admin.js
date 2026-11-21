@@ -76,7 +76,7 @@ async function loadCommunityServerEvents(serverId, target) {
         target.replaceChildren();
         if (!events.length) {
             target.textContent = "No moderation events recorded.";
-            return;
+            return true;
         }
         for (const event of events) {
             const item = document.createElement("li");
@@ -85,8 +85,10 @@ async function loadCommunityServerEvents(serverId, target) {
                 (event.reason ? " · " + event.reason : "");
             target.appendChild(item);
         }
+        return true;
     } catch (error) {
         target.textContent = "Could not load history: " + error.message;
+        return false;
     }
 }
 
@@ -182,8 +184,11 @@ async function loadCommunityServers() {
             history.append(summary, events);
             history.addEventListener("toggle", () => {
                 if (history.open && !history.dataset.loaded) {
-                    history.dataset.loaded = "true";
-                    loadCommunityServerEvents(server.serverId, events);
+                    history.dataset.loaded = "loading";
+                    loadCommunityServerEvents(server.serverId, events).then(loaded => {
+                        if (loaded) history.dataset.loaded = "true";
+                        else delete history.dataset.loaded;
+                    });
                 }
             });
             card.appendChild(history);
