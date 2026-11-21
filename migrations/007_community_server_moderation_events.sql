@@ -24,6 +24,8 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION csy_private.reject_community_server_event_mutation() FROM PUBLIC;
+
 DROP TRIGGER IF EXISTS community_server_moderation_events_immutable
     ON csy_private.community_server_moderation_events;
 CREATE TRIGGER community_server_moderation_events_immutable
