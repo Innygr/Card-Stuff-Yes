@@ -64,6 +64,21 @@ same account receives unrelated subjects at different community servers. It
 issues 60-second tickets and exposes a public-only Ed25519 JWK set containing
 no private key material.
 
+The issuer supports overlapping signing keys for planned rotation. Configure
+`CSY_JOIN_SIGNING_KEYS` as a JSON array of objects with `kid` and PEM
+`privateKey` fields, and set `CSY_JOIN_ACTIVE_KEY_ID` to the key that should
+sign newly issued tickets. The public JWK set contains every configured
+verification key, while newly issued tickets use only the selected active key.
+This allows operators to distribute a replacement public key before switching
+issuance, then retain the previous public key during the short ticket overlap.
+
+The legacy single-key variables
+`CSY_JOIN_SIGNING_PRIVATE_KEY` and `CSY_JOIN_SIGNING_KEY_ID` remain
+supported when `CSY_JOIN_SIGNING_KEYS` is unset. Do not configure both modes.
+The multi-key JSON value contains private PEM material: store it only in the
+official authority's secret manager, never in source control or community-host
+configuration. Keep the subject HMAC secret independent of signing keys.
+
 The authenticated HTTP issuance route and public-key discovery endpoint are
 implemented in PostgreSQL account-storage mode; automated key rotation policy
 is not implemented. Keep the private signing key and HMAC secret only in the
