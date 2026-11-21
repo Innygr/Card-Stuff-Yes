@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const { createRateLimiter } = require("./login-rate-limit");
+const { accountForSession, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 
 const COOKIE = "csyAdminSession";
 const SESSION_MS = 8 * 60 * 60 * 1000;
@@ -54,7 +55,16 @@ function cookies(req) {
     return result;
 }
 
-function adminFor(req) {
+async function adminFor(req) {
+    if (postgresAccountStorageEnabled()) {
+        const current = await accountForSession(req);
+        if (!current) return null;
+        return {
+            username: current.account.username,
+            rank: String(current.account.rank || "player").toLowerCase(),
+            accountId: current.account.id
+        };
+    }
     const token = cookies(req)[COOKIE];
     if (!token) return null;
     const session = sessions.get(crypto.createHash("sha256").update(token).digest("hex"));
@@ -125,6 +135,10 @@ async function handleAdminLogs(req, res, url) {
     if (!url.pathname.startsWith("/api/admin/")) return false;
 
     if (url.pathname === "/api/admin/login" && req.method === "POST") {
+        if (postgresAccountStorageEnabled()) {
+            send(res, 410, { error: "Use your Card Stuff Yes account to sign in. Admin access is granted by your database rank." });
+            return true;
+        }
         if (!isAllowedOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
         if (loginRateLimited(req)) {
             send(res, 429, { error: "Too many login attempts. Try again in one minute." });
@@ -161,8 +175,12 @@ async function handleAdminLogs(req, res, url) {
     }
 
     if (url.pathname === "/api/admin/me" && req.method === "GET") {
-        const admin = adminFor(req);
-        if (!admin) { send(res, 401, { error: "Admin authentication required." }); return true; }
+        const admin = await adminFor(req);
+        if (!admin) { send(res, 401, { error: "Sign in to your Card Stuff Yes account." }); return true; }
+        if (!["owner", "admin"].includes(admin.rank)) {
+            send(res, 403, { error: "Owner or admin access required.", rank: admin.rank });
+            return true;
+        }
         send(res, 200, { admin }); return true;
     }
 
@@ -175,7 +193,7 @@ async function handleAdminLogs(req, res, url) {
     }
 
     if (url.pathname === "/api/admin/server-logs" && req.method === "GET") {
-        const admin = adminFor(req);
+        const admin = await adminFor(req);
         if (!admin || !["owner", "admin"].includes(admin.rank)) {
             send(res, 403, { error: "Owner or admin access required." }); return true;
         }
@@ -196,8 +214,8 @@ async function handleAdminLogs(req, res, url) {
     }
 
     if (url.pathname.startsWith("/api/admin/")) {
-        const admin = adminFor(req);
-        if (!admin) send(res, 401, { error: "Admin authentication required." });
+        const admin = await adminFor(req);
+        if (!admin) send(res, 401, { error: "Sign in to your Card Stuff Yes account." });
         else send(res, 404, { error: "Admin endpoint not found." });
         return true;
     }
