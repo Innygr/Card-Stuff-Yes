@@ -178,13 +178,19 @@ becomes the ticket's exact audience. Successful responses contain a
 60-second ticket, its expiry duration, and the server ID. The response is
 `no-store`.
 
-Configure `CSY_COMMUNITY_SERVER_IDS` as a comma-separated allowlist of
-approved server IDs. An absent or malformed allowlist fails closed with a
-service-unavailable response; a server ID not on the list receives a forbidden
-response. This is an interim deployment gate. The persistent registry and owner
-registration/DNS verification APIs now exist, but the join-ticket route has
-not yet been switched to database-backed approval and revocation checks.
-Health checks and operator moderation APIs remain outstanding.
+By default, configure `CSY_COMMUNITY_SERVER_IDS` as a comma-separated
+allowlist of approved server IDs. An absent or malformed allowlist fails
+closed with a service-unavailable response; a server ID not on the list
+receives a forbidden response.
+
+After migration 006 has been reviewed and applied, operators can explicitly
+switch join-ticket eligibility to the live registry by setting
+`CSY_COMMUNITY_REGISTRY_ENFORCE=true`. In this mode, each ticket request
+queries `community_servers` and requires the server to be approved, verified,
+and not revoked. Database lookup errors fail closed with 503; unapproved or
+revoked servers receive 403. The static allowlist is ignored in this mode.
+Leave the flag unset until migration 006 is applied and the registry/admin
+workflow has been tested against the intended database.
 
 Required issuer environment variables are
 `CSY_JOIN_SIGNING_PRIVATE_KEY`, `CSY_JOIN_SIGNING_KEY_ID`,
@@ -385,3 +391,21 @@ endpoint still uses its configuration allowlist; it has not yet switched to
 database-backed eligibility. Migration 006 is not applied. Do not remove the
 allowlist or enable self-service federation eligibility until operator
 controls, audit logging, health checks, and end-to-end tests are complete.
+
+
+## Community server operator moderation API
+
+The admin-management API exposes these owner/admin-only routes:
+
+- `GET /api/admin/community-servers` — list registrations and moderation
+  state for review. Verification token hashes are never returned.
+- `PATCH /api/admin/community-servers/{serverId}/approve` — approve only a
+  pending registration with a completed DNS ownership proof.
+- `PATCH /api/admin/community-servers/{serverId}/revoke` — revoke an existing
+  registration and record the operator and optional reason.
+
+These routes use the existing admin session, same-origin mutation protection,
+and JSON validation. Approval/revocation state is written to the registry
+record. Admin UI and a dedicated immutable moderation-event history are not
+implemented yet; the current record retains the latest approval/revocation
+metadata. Apply migration 006 before using these routes.
