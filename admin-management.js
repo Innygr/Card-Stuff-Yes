@@ -67,7 +67,7 @@ async function handleAdminManagement(req, res, url) {
 
     if (route === "/api/admin/players" && req.method === "GET") {
         const result = await database.getPool().query(`
-            SELECT id, player_id, username, rank, email, email_verified_at, created_at
+            SELECT id, player_id, username, "rank" AS rank, email, email_verified_at, created_at
             FROM csy_private.accounts
             ORDER BY created_at DESC
             LIMIT 500
@@ -95,7 +95,7 @@ async function handleAdminManagement(req, res, url) {
             return true;
         }
         const result = await database.getPool().query(
-            "UPDATE csy_private.accounts SET rank = $1, updated_at = now() WHERE id = $2 RETURNING id, username, rank",
+            "UPDATE csy_private.accounts SET "rank" = $1, updated_at = now() WHERE id = $2 RETURNING id, username, "rank" AS rank",
             [rank, rankMatch[1]]
         );
         if (!result.rowCount) { send(res, 404, { error: "Player not found." }); return true; }
