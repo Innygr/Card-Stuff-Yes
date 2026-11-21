@@ -46,3 +46,8 @@ test("moderation panel styles status, action, and history elements", () => {
     assert.match(styles, /\.danger-button/);
     assert.match(styles, /\.community-server-history/);
 });
+
+test("failed moderation history loads can be retried when expanded again", () => {
+    assert.match(script, /loadCommunityServerEvents\(server\.serverId, events\)\.then\(loaded =>/);
+    assert.match(script, /else delete history\.dataset\.loaded/);
+});
