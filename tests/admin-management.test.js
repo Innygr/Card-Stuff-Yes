@@ -26,6 +26,7 @@ const player = {
     created_at: new Date("2026-01-01T00:00:00Z")
 };
 const posts = new Map();
+const moderationEvents = [];
 const communityServers = new Map([[
     "community:pending",
     { server_id: "community:pending", owner_account_id: player.id, owner_username: player.username,
@@ -37,6 +38,9 @@ const communityServers = new Map([[
 const db = require("../db");
 db.getPool = () => ({
     async query(sql, params = []) {
+        if (sql.includes("FROM csy_private.community_server_moderation_events")) {
+            return { rows: moderationEvents.filter(event => event.server_id === params[0]) };
+        }
         if (sql.includes("FROM csy_private.community_servers s")) {
             return { rows: [...communityServers.values()] };
         }
@@ -46,6 +50,8 @@ db.getPool = () => ({
             row.status = "approved";
             row.approved_at = new Date();
             row.approved_by = params[1];
+            moderationEvents.push({ event_id: moderationEvents.length + 1, server_id: row.server_id,
+                actor: params[1], action: "approved", reason: "", created_at: new Date() });
             return { rows: [{ server_id: row.server_id }], rowCount: 1 };
         }
         if (sql.includes("UPDATE csy_private.community_servers") && sql.includes("status = 'revoked'")) {
@@ -55,6 +61,8 @@ db.getPool = () => ({
             row.revoked_at = new Date();
             row.revoked_by = params[1];
             row.revocation_reason = params[2];
+            moderationEvents.push({ event_id: moderationEvents.length + 1, server_id: row.server_id,
+                actor: params[1], action: "revoked", reason: params[2], created_at: new Date() });
             return { rows: [{ server_id: row.server_id }], rowCount: 1 };
         }
         if (sql.includes("FROM csy_private.account_sessions s")) {
@@ -240,6 +248,15 @@ test("admins can review pending community servers and approve only verified regi
     assert.equal(adminApproval.response.status, 200);
     assert.equal(adminApproval.data.status, "approved");
     assert.equal(communityServers.get("community:pending").approved_by, "test-admin");
+});
+
+test("community server moderation history is available to administrators", async () => {
+    const response = await request("/api/admin/community-servers/community:pending/events");
+    assert.equal(response.response.status, 200);
+    assert.ok(Array.isArray(response.data.events));
+    assert.equal(response.data.events.length, 1);
+    assert.equal(response.data.events[0].action, "approved");
+    assert.equal(response.data.events[0].actor, "test-admin");
 });
 
 test("community server revocation records moderator and reason; invalid actions fail", async () => {
