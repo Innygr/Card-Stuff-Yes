@@ -1,608 +1,150 @@
 <!DOCTYPE html>
-<!--hi there--> 
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Card Stuff Yes</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080812">
+    <meta name="description" content="Card Stuff Yes is a multiplayer card game. Build your deck, discover cards, and get ready to battle.">
+    <title>Card Stuff Yes — Multiplayer Card Game</title>
     <style>
-
-        /* =========================================================
-           BASIC PAGE
-           ========================================================= */
-
-        * {
-            box-sizing: border-box;
+        :root {
+            color-scheme: dark;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #080812;
+            color: #f7f5ff;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+            --muted: #b8b4ca;
+            --line: rgba(255,255,255,.13);
+            --panel: rgba(255,255,255,.055);
+            --accent: #c084fc;
+            --accent-2: #67e8f9;
         }
-
-        html,
+        * { box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            min-height: 100%;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
-            background: #050509;
-            color: white;
-        }
-
-
-        /* =========================================================
-           ANIMATED BACKGROUND
-           ========================================================= */
-
-        body {
+            min-width: 320px;
             min-height: 100vh;
-            overflow-x: hidden;
-
-            background:
-                radial-gradient(
-                    circle at 20% 20%,
-                    rgba(100, 0, 255, 0.25),
-                    transparent 35%
-                ),
-
-                radial-gradient(
-                    circle at 80% 70%,
-                    rgba(255, 0, 150, 0.20),
-                    transparent 35%
-                ),
-
-                radial-gradient(
-                    circle at 50% 100%,
-                    rgba(0, 150, 255, 0.15),
-                    transparent 40%
-                ),
-
-                #050509;
-        }
-
-
-        /* =========================================================
-           MOVING GRID
-           ========================================================= */
-
-        body::before {
-            content: "";
-
-            position: fixed;
-            inset: 0;
-
-            z-index: 0;
-            pointer-events: none;
-
-            background-image:
-                linear-gradient(
-                    rgba(255,255,255,0.035) 1px,
-                    transparent 1px
-                ),
-
-                linear-gradient(
-                    90deg,
-                    rgba(255,255,255,0.035) 1px,
-                    transparent 1px
-                );
-
-            background-size: 50px 50px;
-
-            mask-image:
-                linear-gradient(
-                    to bottom,
-                    black,
-                    transparent
-                );
-        }
-
-
-        /* =========================================================
-           MAIN CONTAINER
-           ========================================================= */
-
-        .container {
-            position: relative;
-
-            z-index: 2;
-
-            width: min(
-                900px,
-                calc(100% - 40px)
-            );
-
-            margin: 0 auto;
-
-            padding: 80px 0;
-        }
-
-
-        /* =========================================================
-           TITLE
-           ========================================================= */
-
-        h1 {
             margin: 0;
-
-            text-align: center;
-
-            font-size: clamp(
-                50px,
-                10vw,
-                110px
-            );
-
-            font-weight: 900;
-
-            letter-spacing: -5px;
-
-            text-transform: uppercase;
-
             background:
-                linear-gradient(
-                    90deg,
-                    #ff00cc,
-                    #8a2be2,
-                    #00c8ff,
-                    #ff00cc
-                );
-
-            background-size: 300% 100%;
-
-            -webkit-background-clip: text;
-            background-clip: text;
-
-            -webkit-text-fill-color: transparent;
-
-            animation:
-                titleRainbow 6s linear infinite;
-
-            filter:
-                drop-shadow(
-                    0 0 20px
-                    rgba(180, 0, 255, 0.5)
-                );
+                radial-gradient(ellipse at 16% 8%, rgba(147,51,234,.25), transparent 38rem),
+                radial-gradient(ellipse at 88% 40%, rgba(8,145,178,.16), transparent 34rem),
+                #080812;
         }
-
-
-        @keyframes titleRainbow {
-
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-
-        }
-
-
-        /* =========================================================
-           SUBTITLE
-           ========================================================= */
-
-        .subtitle {
-            margin-top: 10px;
-            margin-bottom: 60px;
-
-            text-align: center;
-
-            color: #aaa;
-
-            font-size: 18px;
-
-            letter-spacing: 4px;
-
-            text-transform: uppercase;
-        }
-
-
-        /* =========================================================
-           CARD GRID
-           ========================================================= */
-
-        .cards {
-            display: grid;
-
-            grid-template-columns:
-                repeat(
-                    3,
-                    1fr
-                );
-
-            gap: 25px;
-        }
-
-
-        /* =========================================================
-           CARD
-           ========================================================= */
-
-        .card {
-            position: relative;
-
-            min-height: 300px;
-
-            padding: 30px;
-
+        a { color: inherit; }
+        .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+        .topbar {
+            min-height: 76px;
             display: flex;
-
-            flex-direction: column;
-
+            align-items: center;
             justify-content: space-between;
-
-            overflow: hidden;
-
-            text-decoration: none;
-
-            color: white;
-
-            border: 1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.15
-                );
-
-            border-radius: 18px;
-
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,0.10),
-                    rgba(255,255,255,0.025)
-                );
-
-            backdrop-filter: blur(15px);
-
-            box-shadow:
-                0 20px 50px
-                rgba(0,0,0,0.4);
-
-            transition:
-                transform 0.3s ease,
-                border-color 0.3s ease,
-                box-shadow 0.3s ease;
+            gap: 20px;
+            border-bottom: 1px solid var(--line);
         }
-
-
-        /* =========================================================
-           CARD SHINE
-           ========================================================= */
-
-        .card::before {
-            content: "";
-
-            position: absolute;
-
-            width: 250px;
-            height: 250px;
-
-            top: -120px;
-            right: -100px;
-
-            border-radius: 50%;
-
-            background:
-                radial-gradient(
-                    circle,
-                    rgba(255,255,255,0.18),
-                    transparent 70%
-                );
-
-            transition:
-                transform 0.4s ease;
+        .brand { font-weight: 850; letter-spacing: .09em; text-decoration: none; }
+        nav { display: flex; flex-wrap: wrap; gap: 22px; }
+        nav a, .text-link { color: var(--muted); text-decoration: none; }
+        nav a:hover, .text-link:hover { color: white; }
+        .hero { padding: clamp(76px, 12vw, 142px) 0 90px; text-align: center; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 9px;
+            padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px;
+            background: var(--panel); color: #e9d5ff; font-size: 13px; font-weight: 650;
         }
-
-
-        .card:hover::before {
-            transform: scale(1.5);
+        .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fbbf24; }
+        h1 {
+            max-width: 900px; margin: 25px auto 18px;
+            font-size: clamp(48px, 10vw, 94px); line-height: .98; letter-spacing: -.065em;
+            background: linear-gradient(100deg, #fff 15%, #d8b4fe 58%, #67e8f9);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
         }
-
-
-        .card:hover {
-            transform:
-                translateY(-12px)
-                rotateX(3deg);
-
-            border-color:
-                rgba(
-                    255,
-                    0,
-                    220,
-                    0.7
-                );
-
-            box-shadow:
-                0 30px 80px
-                rgba(160,0,255,0.25),
-
-                0 0 30px
-                rgba(255,0,200,0.15);
+        .intro { max-width: 650px; margin: 0 auto; color: var(--muted); font-size: clamp(17px, 2.4vw, 21px); line-height: 1.7; }
+        .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 13px; margin-top: 34px; }
+        .button {
+            min-height: 50px; display: inline-flex; align-items: center; justify-content: center;
+            padding: 0 22px; border: 1px solid var(--line); border-radius: 10px;
+            background: var(--panel); font-weight: 750; text-decoration: none;
+            transition: transform .16s ease, border-color .16s ease, background .16s ease;
         }
-
-
-        /* =========================================================
-           CARD ICON
-           ========================================================= */
-
-        .card-icon {
-            font-size: 55px;
-
-            filter:
-                drop-shadow(
-                    0 0 15px
-                    rgba(255,0,255,0.6)
-                );
+        .button:hover { transform: translateY(-2px); border-color: rgba(216,180,254,.65); }
+        .button.primary { color: #160b25; border-color: transparent; background: linear-gradient(100deg, #d8b4fe, #67e8f9); }
+        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 92px; }
+        .feature {
+            min-height: 190px; padding: 25px; border: 1px solid var(--line);
+            border-radius: 16px; background: var(--panel);
         }
-
-
-        /* =========================================================
-           CARD TEXT
-           ========================================================= */
-
-        .card h2 {
-            margin:
-                20px
-                0
-                10px;
-
-            font-size: 28px;
-        }
-
-
-        .card p {
-            margin: 0;
-
-            color: #aaa;
-
-            line-height: 1.5;
-        }
-
-
-        /* =========================================================
-           CARD BUTTON
-           ========================================================= */
-
-        .card-button {
-            display: inline-block;
-
-            margin-top: 25px;
-
-            padding:
-                12px
-                18px;
-
-            width: fit-content;
-
-            border-radius: 8px;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    #7b00ff,
-                    #ff00bb
-                );
-
-            font-weight: bold;
-
-            color: white;
-
-            box-shadow:
-                0 0 20px
-                rgba(180,0,255,0.25);
-        }
-
-
-        /* =========================================================
-           FOOTER
-           ========================================================= */
-
+        .icon { font-size: 27px; }
+        .feature h2 { margin: 18px 0 8px; font-size: 19px; }
+        .feature p { margin: 0; color: var(--muted); line-height: 1.65; }
         footer {
-            margin-top: 70px;
-
-            text-align: center;
-
-            color: #555;
-
-            font-size: 14px;
+            display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+            padding: 25px 0 34px; border-top: 1px solid var(--line);
+            color: var(--muted); font-size: 13px;
         }
-
-
-        /* =========================================================
-           MOBILE
-           ========================================================= */
-
-        @media (max-width: 700px) {
-
-            .cards {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding-top: 50px;
-            }
-
-            h1 {
-                letter-spacing: -2px;
-            }
-
+        footer a { color: var(--muted); text-decoration: none; }
+        footer a:hover { color: white; }
+        a:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 4px; }
+        @media (max-width: 720px) {
+            .topbar { align-items: flex-start; flex-direction: column; justify-content: center; padding: 18px 0; }
+            nav { gap: 15px; }
+            .features { grid-template-columns: 1fr; }
+            .feature { min-height: 0; }
+            footer { flex-direction: column; }
         }
-
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
     </style>
-
 </head>
-
-
 <body>
+    <header class="shell topbar">
+        <a class="brand" href="./index.html" aria-label="Card Stuff Yes home">CARD STUFF YES</a>
+        <nav aria-label="Main navigation">
+            <a href="./how-to-play.html">How to play</a>
+            <a href="./news.html">News</a>
+            <a href="https://discord.gg/3Vt2vEDJt" target="_blank" rel="noopener noreferrer">Community</a>
+        </nav>
+    </header>
 
+    <main>
+        <section class="shell hero">
+            <span class="eyebrow">A multiplayer card game in development</span>
+            <h1>Build your deck.<br>Play your way.</h1>
+            <p class="intro">
+                Discover cards, put together your strategy, and get ready to take on other players
+                in Card Stuff Yes.
+            </p>
+            <div class="actions">
+                <a class="button primary" href="./homepage.html">Enter Card Stuff Yes <span aria-hidden="true">&nbsp;→</span></a>
+                <a class="button" href="./how-to-play.html">Learn how to play</a>
+            </div>
+        </section>
 
-    <div class="container">
+        <section class="shell features" aria-label="Game highlights">
+            <article class="feature">
+                <div class="icon" aria-hidden="true">🃏</div>
+                <h2>Build your deck</h2>
+                <p>Explore the card collection and prepare a deck that fits the way you want to play.</p>
+            </article>
+            <article class="feature">
+                <div class="icon" aria-hidden="true">⚔️</div>
+                <h2>Battle other players</h2>
+                <p>Card Stuff Yes is being built around multiplayer card battles and player-versus-player matches.</p>
+            </article>
+            <article class="feature">
+                <div class="icon" aria-hidden="true">✨</div>
+                <h2>Follow development</h2>
+                <p>Check the latest public announcements and join the community as the game grows.</p>
+            </article>
+        </section>
+    </main>
 
-
-        <!-- =====================================================
-             TITLE
-             ===================================================== -->
-
-        <h1>
-            Card Stuff Yes
-        </h1>
-
-
-        <div class="subtitle">
-            The Card Stuff™
-        </div>
-
-
-        <!-- =====================================================
-             CARDS
-             ===================================================== -->
-
-        <div class="cards">
-
-
-            <!-- =================================================
-                 GITHUB
-                 ================================================= -->
-
-            <a
-                class="card"
-                href="https://github.com/Innygr/Card-Stuff-Yes/tree/Server"
-            >
-
-                <div>
-
-                    <div class="card-icon">
-                        💻
-                    </div>
-
-                    <h2>
-                        GitHub
-                    </h2>
-
-                    <p>
-                        Look at the code,
-                        projects, and other
-                        questionable decisions.
-                    </p>
-
-                </div>
-
-
-                <div class="card-button">
-                    View Code →
-                </div>
-
-            </a>
-
-
-            <!-- =================================================
-                 MAIN WEBSITE
-                 ================================================= -->
-
-            <a
-                class="card"
-                href="https://cardstuffyes.ca"
-            >
-
-                <div>
-
-                    <div class="card-icon">
-                        🃏
-                    </div>
-
-                    <h2>
-                        Website
-                    </h2>
-
-                    <p>
-                        Enter the actual
-                        Card Stuff Yes website.
-                    </p>
-
-                </div>
-
-
-                <div class="card-button">
-                    Enter →
-                </div>
-
-            </a>
-
-
-            <!-- =================================================
-                 INDEV HOMEPAGE
-                 ================================================= -->
-
-            <a
-                class="card"
-                href="https://innygr.github.io/Card-Stuff-Yes/homepage.html"
-            >
-
-                <div>
-
-                    <div class="card-icon">
-                        ⚙️
-                    </div>
-
-                    <h2>
-                        Indev
-                    </h2>
-
-                    <p>
-                        Open the development
-                        homepage and see what
-                        is currently being built.
-                    </p>
-
-                </div>
-
-
-                <div class="card-button">
-                    Open Homepage →
-                </div>
-
-            </a>
-
-
-        </div>
-
-
-        <!-- =====================================================
-             FOOTER
-             ===================================================== -->
-
-        <footer>
-
-            CARD STUFF YES © 2026
-
-            <br>
-            <br>
-
-            Made with questionable amounts of HTML
-
-        </footer>
-
-
-    </div>
-
-
+    <footer class="shell">
+        <span>© 2026 Card Stuff Yes</span>
+        <span>
+            <a href="./news.html">News</a> ·
+            <a href="./how-to-play.html">How to play</a> ·
+            <a href="https://github.com/Innygr/Card-Stuff-Yes" target="_blank" rel="noopener noreferrer">Source code</a>
+        </span>
+    </footer>
 </body>
-
 </html>
