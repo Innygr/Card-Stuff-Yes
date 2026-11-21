@@ -26,6 +26,22 @@ function setStatus(message, type = "") {
     status.className = "status" + (type ? " " + type : "");
 }
 
+function postLoginDestination() {
+    const fallback = window.CSY_CONFIG?.routes?.account || "./account.html";
+    const requested = new URLSearchParams(window.location.search).get("returnTo");
+    if (!requested) return fallback;
+    try {
+        const target = new URL(requested);
+        if (target.protocol === "https:" &&
+            target.hostname === "admin.cardstuffyes.ca" &&
+            (target.pathname === "/" || target.pathname === "/admin.html") &&
+            !target.search && !target.hash) {
+            return target.href;
+        }
+    } catch {}
+    return fallback;
+}
+
 async function submitAuth(form, route) {
     const button = form.querySelector("button[type=submit]");
     const fields = new FormData(form);
@@ -45,7 +61,7 @@ async function submitAuth(form, route) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "Could not complete sign-in.");
         setStatus(route.endsWith("register") ? "Account created. Opening your account…" : "Signed in. Opening your account…", "success");
-        window.location.assign(window.CSY_CONFIG?.routes?.account || "./account.html");
+        window.location.assign(route.endsWith("/login") ? postLoginDestination() : (window.CSY_CONFIG?.routes?.account || "./account.html"));
     } catch (error) {
         setStatus(error.message, "error");
     } finally {
@@ -67,6 +83,6 @@ registerForm.addEventListener("submit", event => {
 (async function redirectIfSignedIn() {
     try {
         const response = await fetch(API_BASE + "/api/auth/me", { credentials: "include", cache: "no-store" });
-        if (response.ok) window.location.replace(window.CSY_CONFIG?.routes?.account || "./account.html");
+        if (response.ok) window.location.replace(postLoginDestination());
     } catch {}
 })();
