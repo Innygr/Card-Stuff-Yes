@@ -194,10 +194,12 @@ replay claim; if local persistence fails, the ticket remains consumed and the
 client must obtain a fresh ticket. This avoids unsafe replay but means hosts
 should make provisioning reliable and idempotent.
 
-This is a reusable handler primitive, not yet mounted in `server.js` or
-connected to the current in-memory multiplayer player store. No community
-server should advertise official-account sign-in until that integration,
-persistent identity mapping, and end-to-end tests are complete.
+The handler is mounted by `server.js` at `POST /api/community/join` when
+`CSY_COMMUNITY_JOIN_ENABLED=true`. The server injects a host-local PostgreSQL
+identity store and replay store, provisions the local player in the existing
+multiplayer state, and establishes the normal HttpOnly player cookie. The
+integration remains opt-in and requires the host's own database migrations.
+It is not yet a complete multi-process multiplayer deployment.
 
 
 ## Durable community player identity mapping
@@ -214,9 +216,10 @@ inside the private `csy_private` schema and revokes PUBLIC table privileges.
 It has not been applied to any database. The store is an integration
 primitive: the HTTP handler's injected provisioning function can delegate to
 it, then ensure the resulting local player is loaded into the host's own
-multiplayer state. The current `server.js` flow does not yet do this, and
-the local game state still needs a durable player record strategy that works
-across restarts and multiple host processes.
+multiplayer state. `server.js` now resolves this mapping during the opt-in join flow and loads
+the resulting player into the local multiplayer state. The local state
+snapshot persists player records across a single host process restart, but
+does not provide shared transactional state across multiple server processes.
 
 
 ## Opt-in community-host HTTP integration
@@ -253,3 +256,16 @@ requires an operator-managed update/restart and is not automated.
 This enables account-authority sign-in to establish a local host identity, but
 it does not yet create a global server directory, self-service server
 registration, ownership verification, or a federation key-rotation service.
+
+
+## Reverse-proxy HTTPS trust
+
+The server treats a request as HTTPS when its socket is encrypted. It honors
+`X-Forwarded-Proto: https` only when the operator explicitly sets
+`CSY_TRUST_PROXY=true`. Set this only when the application is reachable
+exclusively through a trusted ingress/reverse proxy that removes any
+client-supplied `X-Forwarded-Proto` header and writes its own value. Do not
+enable it when clients can reach the Node process directly. This setting
+affects same-origin protocol detection and the `Secure` attribute on player
+cookies. When in doubt, leave it disabled and terminate TLS directly at the
+application.
