@@ -23,7 +23,7 @@ function response() {
 }
 
 function handler(overrides = {}) {
-    const calls = { provision: [], rate: 0, redeem: [] };
+    const calls = { provision: [], rate: 0, redeem: [], session: [] };
     const value = createCommunityJoinHttpHandler({
         redeemer: {
             async redeem(token) {
@@ -38,7 +38,7 @@ function handler(overrides = {}) {
             calls.provision.push(identity);
             return { id: "local-player-1", name: "Player One", secret: "must-not-leak" };
         },
-        async rateLimit() { calls.rate += 1; return true; },
+        async rateLimit() { calls.rate += 1; return true; },\n        async establishSession(req, res, player) { calls.session.push(player.id); res.setHeader("Set-Cookie", "csyPlayerId=" + player.id); },
         ...overrides
     });
     return { handle: value, calls };
@@ -60,7 +60,7 @@ test("community join HTTP handler redeems ticket and exposes only local public p
         issuer: "https://accounts.example.test",
         serverId: "community:test"
     }]);
-    assert.deepEqual(f.calls.redeem, ["t".repeat(64)]);
+    assert.deepEqual(f.calls.redeem, ["t".repeat(64)]);\n    assert.deepEqual(f.calls.session, ["local-player-1"]);
 });
 
 test("community join HTTP handler rejects wrong method and content type before rate limiting", async () => {
