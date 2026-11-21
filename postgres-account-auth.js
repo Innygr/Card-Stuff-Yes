@@ -256,14 +256,16 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
     if (route === "/api/community/servers" || registryRouteMatch) {
         const serverId = registryRouteMatch?.[1] || null;
         const verifyRoute = registryRouteMatch?.[2] === "verify";
-        const allowedMethods = verifyRoute ? "POST" : serverId ? "GET" : "POST";
-        if (req.method !== allowedMethods) {
-            send(res, 405, { error: "Method not allowed." }, { Allow: allowedMethods });
+        const allowedMethods = verifyRoute ? ["POST"] : serverId ? ["GET"] : ["GET", "POST"];
+        if (!allowedMethods.includes(req.method)) {
+            send(res, 405, { error: "Method not allowed." }, { Allow: allowedMethods.join(", ") });
             return true;
         }
-        if (rateLimited(req)) {
-            send(res, 429, { error: "Too many attempts. Try again later." });
-            return true;
+        if (route !== "/api/community/servers" || req.method !== "GET") {
+            if (rateLimited(req)) {
+                send(res, 429, { error: "Too many attempts. Try again later." });
+                return true;
+            }
         }
         if (route === "/api/community/servers" && req.method === "GET") {
             const rawLimit = url.searchParams.get("limit");
@@ -272,10 +274,6 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             if (!Number.isInteger(limit) || limit < 1 || limit > 100 ||
                 (afterServerId !== null && !/^[A-Za-z0-9._:-]{1,128}$/.test(afterServerId))) {
                 send(res, 400, { error: "Invalid directory pagination parameters." });
-                return true;
-            }
-            if (rateLimited(req)) {
-                send(res, 429, { error: "Too many attempts. Try again later." });
                 return true;
             }
             try {
@@ -296,6 +294,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             return true;
         }
         const registry = new PostgresCommunityServerRegistry(getPool());
+
         if (req.method === "GET") {
             const registration = await registry.getOwned({
                 serverId,
