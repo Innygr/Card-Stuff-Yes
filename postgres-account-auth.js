@@ -747,5 +747,7 @@ module.exports = {
     hashPassword,
     verifyPassword,
     handlePostgresAccountAuth,
-    accountForSession
+    accountForSession,
+    isSecure,
+    trustedOrigin
 };
