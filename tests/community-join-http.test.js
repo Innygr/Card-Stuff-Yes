@@ -17,7 +17,8 @@ function response() {
         status: 0,
         headers: {},
         body: "",
-        writeHead(status, headers) { this.status = status; this.headers = headers; },
+        writeHead(status, headers) { this.status = status; this.headers = { ...this.headers, ...headers }; },
+        setHeader(name, value) { this.headers[name] = value; },
         end(body) { this.body = body || ""; }
     };
 }
