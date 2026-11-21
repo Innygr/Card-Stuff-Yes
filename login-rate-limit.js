@@ -3,13 +3,23 @@
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ENTRIES = 10000;
 
-function createRateLimiter({ windowMs = WINDOW_MS, maxEntries = MAX_ENTRIES, limit = 10, now = Date.now } = {}) {
+function createRateLimiter({
+    windowMs = WINDOW_MS,
+    maxEntries = MAX_ENTRIES,
+    limit = 10,
+    now = Date.now,
+    trustProxy = process.env.CSY_TRUST_PROXY === "true"
+} = {}) {
     const attempts = new Map();
 
     function rateLimited(req) {
-        const ip = String(req.headers["cf-connecting-ip"] ||
-            String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-            req.socket.remoteAddress || "unknown");
+        // Forwarded client-address headers are attacker-controlled unless the
+        // deployment explicitly confirms a trusted proxy strips incoming copies.
+        const forwardedIp = trustProxy
+            ? (req.headers["cf-connecting-ip"] ||
+                String(req.headers["x-forwarded-for"] || "").split(",")[0].trim())
+            : "";
+        const ip = String(forwardedIp || (req.socket && req.socket.remoteAddress) || "unknown");
         const currentTime = now();
         for (const [key, value] of attempts) {
             if (value.resetAt <= currentTime) attempts.delete(key);
