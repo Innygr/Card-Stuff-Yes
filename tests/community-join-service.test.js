@@ -35,3 +35,14 @@ test("community join service validates its configured issuer and pinned keys", (
         publicKeySet: { keys: [] }, provisionPlayer() {}
     }), /public key|key set|keys/i);
 });
+
+test("community join limiter ignores spoofed forwarded client addresses", () => {
+    const limit = createBoundedJoinRateLimiter({ limit: 1, windowMs: 5000, maxSources: 4, now: () => 1000 });
+    const request = (peer, forwarded) => ({
+        socket: { remoteAddress: peer },
+        headers: { "x-forwarded-for": forwarded }
+    });
+    assert.equal(limit(request("198.51.100.10", "203.0.113.1")), true);
+    assert.equal(limit(request("198.51.100.10", "203.0.113.2")), false);
+    assert.equal(limit(request("198.51.100.11", "203.0.113.1")), true);
+});
