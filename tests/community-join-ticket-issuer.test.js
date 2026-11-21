@@ -103,3 +103,57 @@ test("environment factory fails clearly when issuer secrets are absent", () => {
         });
     }
 });
+
+test("issuer publishes overlapping public keys but signs only with the selected active key", () => {
+    const oldPair = crypto.generateKeyPairSync("ed25519");
+    const newPair = crypto.generateKeyPairSync("ed25519");
+    const issuer = createCommunityJoinIssuer({
+        signingKeys: [
+            { keyId: "issuer-old", privateKey: oldPair.privateKey },
+            { keyId: "issuer-new", privateKey: newPair.privateKey }
+        ],
+        activeKeyId: "issuer-new",
+        issuer: "https://accounts.example.test",
+        subjectSecret: "test-only-subject-secret-value-which-is-long-enough",
+        now: () => 1800000000
+    });
+    assert.deepEqual(issuer.publicKeySet.keys.map(key => key.kid), ["issuer-old", "issuer-new"]);
+    const token = issuer.issueForAccount({
+        accountId: "internal-account-id-456",
+        serverId: "community:rotation"
+    });
+    const header = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString("utf8"));
+    assert.equal(header.kid, "issuer-new");
+    const verified = verifyJoinTicket(token, {
+        publicKeys: {
+            "issuer-old": oldPair.publicKey,
+            "issuer-new": newPair.publicKey
+        },
+        issuer: "https://accounts.example.test",
+        audience: "community:rotation",
+        now: 1800000000
+    });
+    assert.equal(verified.scope, "game:join");
+});
+
+test("issuer rejects duplicate key IDs and an unknown active key", () => {
+    const first = crypto.generateKeyPairSync("ed25519");
+    const second = crypto.generateKeyPairSync("ed25519");
+    const base = {
+        issuer: "https://accounts.example.test",
+        subjectSecret: "test-only-subject-secret-value-which-is-long-enough"
+    };
+    assert.throws(() => createCommunityJoinIssuer({
+        ...base,
+        signingKeys: [
+            { keyId: "duplicate", privateKey: first.privateKey },
+            { keyId: "duplicate", privateKey: second.privateKey }
+        ],
+        activeKeyId: "duplicate"
+    }), /unique/);
+    assert.throws(() => createCommunityJoinIssuer({
+        ...base,
+        signingKeys: [{ keyId: "configured", privateKey: first.privateKey }],
+        activeKeyId: "missing"
+    }), /active signing key/);
+});
