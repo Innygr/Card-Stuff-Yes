@@ -26,6 +26,9 @@ test("registry validates HTTPS endpoints and rejects credentials or unsafe URL c
         "https://user:password@cards.example.net",
         "https://cards.example.net/?token=secret",
         "https://cards.example.net/#fragment",
+        "https://localhost",
+        "https://127.0.0.1",
+        "https://internal.local",
         "not a URL"
     ]) assert.throws(() => validateEndpoint(endpoint), TypeError);
 });
