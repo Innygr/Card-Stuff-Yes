@@ -5,7 +5,7 @@ const { test } = require("node:test");
 const { createRateLimiter } = require("../login-rate-limit");
 
 function requestFor(ip) {
-    return { headers: { "x-forwarded-for": ip }, socket: { remoteAddress: "127.0.0.1" } };
+    return { headers: {}, socket: { remoteAddress: ip } };
 }
 
 test("login rate limiter blocks attempts after the configured threshold", () => {
@@ -38,16 +38,31 @@ test("login rate limiter resets an address after the window expires", () => {
     assert.equal(rateLimited.size, 1);
 });
 
-test("Cloudflare client address takes precedence over forwarded headers", () => {
-    const rateLimited = createRateLimiter({ limit: 1 });
-    const request = {
+test("untrusted forwarded headers cannot rotate a caller's rate-limit identity", () => {
+    const rateLimited = createRateLimiter({ limit: 1, trustProxy: false });
+    const request = forwarded => ({
         headers: {
-            "cf-connecting-ip": "192.0.2.30",
-            "x-forwarded-for": "192.0.2.31, 192.0.2.32"
+            "cf-connecting-ip": forwarded,
+            "x-forwarded-for": forwarded
+        },
+        socket: { remoteAddress: "192.0.2.30" }
+    });
+    assert.equal(rateLimited(request("198.51.100.1")), false);
+    assert.equal(rateLimited(request("198.51.100.2")), true);
+    assert.equal(rateLimited.size, 1);
+});
+
+test("trusted proxy mode uses the configured proxy client-address header", () => {
+    const rateLimited = createRateLimiter({ limit: 1, trustProxy: true });
+    const request = forwarded => ({
+        headers: {
+            "cf-connecting-ip": forwarded,
+            "x-forwarded-for": forwarded
         },
         socket: { remoteAddress: "127.0.0.1" }
-    };
-    assert.equal(rateLimited(request), false);
-    assert.equal(rateLimited(request), true);
-    assert.equal(rateLimited.size, 1);
+    });
+    assert.equal(rateLimited(request("198.51.100.1")), false);
+    assert.equal(rateLimited(request("198.51.100.2")), false);
+    assert.equal(rateLimited(request("198.51.100.1")), true);
+    assert.equal(rateLimited.size, 2);
 });
