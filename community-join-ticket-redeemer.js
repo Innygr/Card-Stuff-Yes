@@ -26,13 +26,20 @@ function createCommunityJoinRedeemer({
     return Object.freeze({
         async redeem(token) {
             const currentTime = now();
-            const verified = verifyJoinTicket(token, {
-                publicKeys,
-                issuer,
-                audience: serverId,
-                now: currentTime,
-                clockSkewSeconds
-            });
+            let verified;
+            try {
+                verified = verifyJoinTicket(token, {
+                    publicKeys,
+                    issuer,
+                    audience: serverId,
+                    now: currentTime,
+                    clockSkewSeconds
+                });
+            } catch {
+                // Invalid signatures, claims, issuer, or audience are normal
+                // authentication failures, not infrastructure failures.
+                return Object.freeze({ accepted: false, reason: "invalid_ticket" });
+            }
             // The replay store must atomically claim the ticket ID. A storage
             // outage must propagate so the host can fail closed.
             const consumed = await replayStore.consume({
