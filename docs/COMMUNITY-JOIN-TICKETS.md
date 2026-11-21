@@ -64,11 +64,11 @@ same account receives unrelated subjects at different community servers. It
 issues 60-second tickets and exposes a public-only Ed25519 JWK set containing
 no private key material.
 
-This remains a library primitive: no HTTP issuer or public-key endpoint is
-enabled, no account session is currently consulted by a route, and key
-rotation/discovery policy is not yet implemented. Keep the private signing key
-and HMAC secret only in the official account authority's secret store. Never
-copy them to community hosts or commit them.
+This remains a library primitive for signing. An authenticated HTTP issuance
+route is documented below, but public-key discovery and automated key
+rotation policy are not implemented. Keep the private signing key and HMAC
+secret only in the official account authority's secret store. Never copy them
+to community hosts or commit them.
 
 
 ## Community-host public-key import and rotation
@@ -112,11 +112,7 @@ supplied account ID.
 
 ## Not implemented yet
 
-The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking or account authentication. There is
-no production issuer endpoint, public-key discovery/rotation endpoint, durable
-replay store, ticket redemption route, or end-to-end community-hosting flow.
-Those must be implemented and security-tested before community servers are
-advertised as supported.
+The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking. The authenticated issuer endpoint is available only in PostgreSQL account-storage mode. There is no public-key discovery/rotation endpoint, ticket redemption HTTP route, server directory/approval workflow, or end-to-end community-hosting flow. These must be implemented and security-tested before community servers are advertised as supported.
 
 
 ## Official account-authority issuance route
