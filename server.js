@@ -8,6 +8,9 @@ const { handleAdminLogs, serveAdminPage } = require("./admin-logs");
 const { handleAccountAuth } = require("./account-auth");
 const { handlePostgresAccountAuth, postgresAccountStorageEnabled } = require("./postgres-account-auth");
 const { handleEmailAccountRoutes } = require("./email-account");
+const { getPool } = require("./db");
+const { PostgresCommunityPlayerIdentityStore } = require("./community-player-identity-store");
+const { createCommunityJoinServiceFromEnvironment } = require("./community-join-service");
 const { handleAdminManagement, handlePublicNews, handleAccountCollection } = require("./admin-management");
 
 const ROOT = __dirname;
@@ -669,6 +672,38 @@ function applyDomainRouting(req, res, url) {
     return true;
 }
 
+let communityJoinHandler = null;
+if (process.env.CSY_COMMUNITY_JOIN_ENABLED === "true") {
+    try {
+        const identityStore = new PostgresCommunityPlayerIdentityStore(getPool());
+        communityJoinHandler = createCommunityJoinServiceFromEnvironment({
+            pool: getPool(),
+            provisionPlayer: async identity => {
+                const local = await identityStore.resolveOrCreate(identity);
+                if (!players.has(local.id)) {
+                    if (players.size >= MAX_GUEST_PLAYERS && pruneUnreferencedPlayers()) saveState();
+                    if (players.size >= MAX_GUEST_PLAYERS) {
+                        throw new Error("Local player capacity reached.");
+                    }
+                    players.set(local.id, { id: local.id, name: cleanName(local.name) || "Player" });
+                    saveState();
+                }
+                return players.get(local.id);
+            },
+            establishSession: async (req, res, player) => {
+                const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+                const secure = req.socket.encrypted || proto === "https" || COOKIE_SAMESITE === "None" ? "; Secure" : "";
+                res.setHeader("Set-Cookie", COOKIE + "=" + encodeURIComponent(player.id) +
+                    "; HttpOnly; SameSite=" + COOKIE_SAMESITE + "; Path=/; Max-Age=2592000" + secure);
+            }
+        });
+        console.log("Community join federation is enabled for this host.");
+    } catch (error) {
+        console.error("Community join federation configuration failed:", error.message);
+        process.exit(1);
+    }
+}
+
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     try {
@@ -680,6 +715,14 @@ const server = http.createServer(async (req, res) => {
             // reach this layer and admin login can bypass the shared policy.
             if (!applyCors(req, res)) {
                 sendJson(res, 403, { error: "Origin is not allowed." });
+                return;
+            }
+            if (url.pathname === "/api/community/join") {
+                if (!communityJoinHandler) {
+                    sendJson(res, 404, { error: "Community sign-in is not enabled on this host." });
+                    return;
+                }
+                await communityJoinHandler(req, res);
                 return;
             }
             if (req.method === "OPTIONS") {
