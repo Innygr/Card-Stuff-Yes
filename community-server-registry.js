@@ -173,7 +173,6 @@ class PostgresCommunityServerRegistry {
                         error.code = "ETIMEOUT";
                         reject(error);
                     }, timeoutMs);
-                    dnsTimeout.unref?.();
                 })
             ]);
         } catch (error) {
