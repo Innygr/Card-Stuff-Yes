@@ -186,7 +186,7 @@ async function accountForSession(req) {
     if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
     const hash = tokenHash(token);
     const result = await getPool().query(`
-        SELECT a.id, a.player_id, a.username, a.password_hash, a.rank, a.created_at,
+        SELECT a.id, a.player_id, a.username, a.password_hash, a."rank", a.created_at,
                p.display_name, p.bio, s.expires_at
         FROM csy_private.account_sessions s
         JOIN csy_private.accounts a ON a.id = s.account_id
@@ -485,7 +485,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
                 INSERT INTO csy_private.accounts
                     (id, player_id, username, username_key, password_hash, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, now(), now())
-                RETURNING id, player_id, username, rank, created_at
+                RETURNING id, player_id, username, "rank", created_at
             `, ["acct_" + crypto.randomBytes(16).toString("hex"), guestPlayer.id,
                 username, username.toLowerCase(), passwordHash]);
             const account = inserted.rows[0];
@@ -529,7 +529,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
         const username = typeof body.username === "string" ? body.username.trim() : "";
         const password = typeof body.password === "string" ? body.password : "";
         const result = await getPool().query(`
-            SELECT a.id, a.player_id, a.username, a.password_hash, a.rank, a.created_at,
+            SELECT a.id, a.player_id, a.username, a.password_hash, a."rank", a.created_at,
                    p.display_name, p.bio
             FROM csy_private.accounts a
             LEFT JOIN csy_private.profiles p ON p.account_id = a.id
