@@ -9,6 +9,8 @@ const salt = crypto.randomBytes(16);
 const passwordHash = "scrypt:" + salt.toString("hex") + ":" +
     crypto.scryptSync("test-owner-password", salt, 64).toString("hex");
 process.env.CSY_ACCOUNT_STORAGE = "postgres";
+// Test requests model a trusted ingress that sanitizes forwarded IP headers.
+process.env.CSY_TRUST_PROXY = "true";
 process.env.CSY_ADMIN_USERS = JSON.stringify([
     { username: "test-owner", rank: "owner", passwordHash },
     { username: "test-admin", rank: "admin", passwordHash }
