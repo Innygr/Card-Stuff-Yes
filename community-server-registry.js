@@ -49,6 +49,23 @@ function publicServer(row) {
     });
 }
 
+function createOwnershipChallenge(endpoint, { now = new Date(), lifetimeMs = 24 * 60 * 60 * 1000 } = {}) {
+    const normalizedEndpoint = validateEndpoint(endpoint);
+    if (!(now instanceof Date) || !Number.isFinite(now.getTime()) ||
+        !Number.isSafeInteger(lifetimeMs) || lifetimeMs < 60_000 || lifetimeMs > 7 * 24 * 60 * 60 * 1000) {
+        throw new TypeError("A valid clock and ownership-challenge lifetime are required.");
+    }
+    const hostname = new URL(normalizedEndpoint).hostname.toLowerCase();
+    const token = crypto.randomBytes(32).toString("base64url");
+    return Object.freeze({
+        token,
+        tokenHash: hashOwnershipChallenge(token),
+        recordName: "_csy-verify." + hostname,
+        recordValue: token,
+        expiresAt: new Date(now.getTime() + lifetimeMs)
+    });
+}
+
 class PostgresCommunityServerRegistry {
     constructor(pool) {
         if (!pool || typeof pool.query !== "function") {
@@ -189,5 +206,6 @@ function hashOwnershipChallenge(token) {
 module.exports = {
     PostgresCommunityServerRegistry,
     hashOwnershipChallenge,
+    createOwnershipChallenge,
     validateEndpoint
 };
