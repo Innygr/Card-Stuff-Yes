@@ -49,3 +49,160 @@ if (logsRefresh) {
     loadServerLogs();
     window.setInterval(loadServerLogs, 10000);
 }
+
+
+/* ============================================================
+   COMMUNITY SERVER MODERATION
+   ============================================================ */
+const communityServersList = document.getElementById("community-servers-list");
+const communityServersRefresh = document.getElementById("community-servers-refresh");
+const communityServersUpdated = document.getElementById("community-servers-updated");
+
+function addCommunityDetail(container, label, value) {
+    const line = document.createElement("p");
+    line.className = "community-server-detail";
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    line.appendChild(strong);
+    line.appendChild(document.createTextNode(value == null || value === "" ? "—" : String(value)));
+    container.appendChild(line);
+}
+
+async function loadCommunityServerEvents(serverId, target) {
+    target.textContent = "Loading moderation history...";
+    try {
+        const data = await adminFetch("/api/admin/community-servers/" + encodeURIComponent(serverId) + "/events");
+        const events = Array.isArray(data.events) ? data.events : [];
+        target.replaceChildren();
+        if (!events.length) {
+            target.textContent = "No moderation events recorded.";
+            return;
+        }
+        for (const event of events) {
+            const item = document.createElement("li");
+            const when = event.createdAt ? new Date(event.createdAt).toLocaleString() : "Unknown time";
+            item.textContent = when + " · " + event.action + " · " + (event.actor || "Unknown actor") +
+                (event.reason ? " · " + event.reason : "");
+            target.appendChild(item);
+        }
+    } catch (error) {
+        target.textContent = "Could not load history: " + error.message;
+    }
+}
+
+async function moderateCommunityServer(server, action, button) {
+    if (action === "approve" && !window.confirm("Approve this verified server for the public directory?")) return;
+    let reason = "";
+    if (action === "revoke") {
+        reason = window.prompt("Optional revocation reason (up to 240 characters):", "") ;
+        if (reason === null) return;
+        if (reason.length > 240) {
+            setStatus("Revocation reason must be 240 characters or fewer.", "error");
+            return;
+        }
+        if (!window.confirm("Revoke this community server?")) return;
+    }
+    button.disabled = true;
+    try {
+        await adminFetch("/api/admin/community-servers/" + encodeURIComponent(server.serverId) + "/" + action, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(action === "revoke" ? { reason } : {})
+        });
+        setStatus("Community server " + (action === "approve" ? "approved." : "revoked."), "success");
+        await loadCommunityServers();
+    } catch (error) {
+        setStatus(error.message, "error");
+        button.disabled = false;
+    }
+}
+
+async function loadCommunityServers() {
+    if (!communityServersList) return;
+    communityServersRefresh.disabled = true;
+    communityServersList.replaceChildren();
+    const loading = document.createElement("p");
+    loading.className = "loading-text";
+    loading.textContent = "Loading community server registrations...";
+    communityServersList.appendChild(loading);
+    try {
+        const data = await adminFetch("/api/admin/community-servers");
+        const servers = Array.isArray(data.servers) ? data.servers : [];
+        communityServersList.replaceChildren();
+        if (!servers.length) {
+            const empty = document.createElement("p");
+            empty.className = "empty-text";
+            empty.textContent = "No community server registrations found. The registry migration must be installed before this section can load.";
+            communityServersList.appendChild(empty);
+        }
+        for (const server of servers) {
+            const card = document.createElement("article");
+            card.className = "community-server-card";
+            const heading = document.createElement("div");
+            heading.className = "community-server-heading";
+            const title = document.createElement("h3");
+            title.textContent = server.displayName || server.serverId;
+            const status = document.createElement("span");
+            status.className = "community-server-status status-" + String(server.status || "unknown");
+            status.textContent = String(server.status || "unknown");
+            heading.append(title, status);
+            card.appendChild(heading);
+            addCommunityDetail(card, "Server ID", server.serverId);
+            addCommunityDetail(card, "Endpoint", server.endpoint);
+            addCommunityDetail(card, "Owner", server.ownerUsername || server.ownerAccountId);
+            addCommunityDetail(card, "Ownership verified", server.verifiedAt ? new Date(server.verifiedAt).toLocaleString() : "No");
+            if (server.approvedAt) addCommunityDetail(card, "Approved", new Date(server.approvedAt).toLocaleString() + (server.approvedBy ? " by " + server.approvedBy : ""));
+            if (server.revokedAt) addCommunityDetail(card, "Revoked", new Date(server.revokedAt).toLocaleString() + (server.revokedBy ? " by " + server.revokedBy : ""));
+            if (server.revocationReason) addCommunityDetail(card, "Revocation reason", server.revocationReason);
+            const actions = document.createElement("div");
+            actions.className = "community-server-actions";
+            if (server.status === "pending" && server.verifiedAt) {
+                const approve = document.createElement("button");
+                approve.type = "button";
+                approve.className = "admin-button";
+                approve.textContent = "Approve";
+                approve.addEventListener("click", () => moderateCommunityServer(server, "approve", approve));
+                actions.appendChild(approve);
+            }
+            if (server.status !== "revoked") {
+                const revoke = document.createElement("button");
+                revoke.type = "button";
+                revoke.className = "admin-button danger-button";
+                revoke.textContent = "Revoke";
+                revoke.addEventListener("click", () => moderateCommunityServer(server, "revoke", revoke));
+                actions.appendChild(revoke);
+            }
+            card.appendChild(actions);
+            const history = document.createElement("details");
+            history.className = "community-server-history";
+            const summary = document.createElement("summary");
+            summary.textContent = "Moderation history";
+            const events = document.createElement("ol");
+            events.className = "community-server-events";
+            history.append(summary, events);
+            history.addEventListener("toggle", () => {
+                if (history.open && !history.dataset.loaded) {
+                    history.dataset.loaded = "true";
+                    loadCommunityServerEvents(server.serverId, events);
+                }
+            });
+            card.appendChild(history);
+            communityServersList.appendChild(card);
+        }
+        communityServersUpdated.textContent = "Updated " + new Date().toLocaleString() + " · " + servers.length + " registrations";
+    } catch (error) {
+        communityServersList.replaceChildren();
+        const message = document.createElement("p");
+        message.className = "empty-text";
+        message.textContent = error.message;
+        communityServersList.appendChild(message);
+        communityServersUpdated.textContent = "Could not refresh registrations.";
+    } finally {
+        communityServersRefresh.disabled = false;
+    }
+}
+
+if (communityServersRefresh) {
+    communityServersRefresh.addEventListener("click", loadCommunityServers);
+    loadCommunityServers();
+}
