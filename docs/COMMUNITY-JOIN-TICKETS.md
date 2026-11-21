@@ -169,3 +169,32 @@ rotation/revocation policy. Do not accept a discovery URL supplied by a player.
 The route is available only when PostgreSQL account storage is enabled and
 the issuer environment is correctly configured. It is not a complete trust
 bootstrap or automated key-rotation service.
+
+
+## Community-host HTTP redemption handler
+
+`community-join-http.js` provides a framework-neutral HTTP handler for a
+community host's `POST /api/community/join` route. The host application must
+mount it explicitly and inject three dependencies: the configured ticket
+redeemer, a rate limiter, and a local player-provisioning function.
+
+The handler accepts only a JSON object containing a single `ticket` field,
+limits the request body to 8 KiB, rate-limits before ticket verification,
+returns non-cacheable responses, and never returns the opaque external subject
+to the browser. It maps verification/replay rejection to 401, rate limiting to
+429, malformed requests to 400/413/415, and replay-store or provisioning
+failures to generic 503 responses. Internal ticket/database errors are not
+returned to clients.
+
+The injected provisioning function receives only the opaque subject, trusted
+issuer, and server ID. It must persist a unique local mapping for
+(issuer, external subject) and return a local player ID/name. It must not
+create or infer an official account ID. Provisioning occurs after the atomic
+replay claim; if local persistence fails, the ticket remains consumed and the
+client must obtain a fresh ticket. This avoids unsafe replay but means hosts
+should make provisioning reliable and idempotent.
+
+This is a reusable handler primitive, not yet mounted in `server.js` or
+connected to the current in-memory multiplayer player store. No community
+server should advertise official-account sign-in until that integration,
+persistent identity mapping, and end-to-end tests are complete.
