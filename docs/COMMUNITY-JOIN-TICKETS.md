@@ -200,12 +200,11 @@ returns a generic service-unavailable response; internal configuration details
 are logged server-side only. Keep the private signing key and HMAC secret on
 the official account authority.
 
-This endpoint currently checks the configured server-ID allowlist. It does
-not yet consult the persistent registry's ownership/approval records or
-revocation state, and no account eligibility policy is applied beyond
-requiring a valid signed-in account session. It is available only in
-PostgreSQL account-storage mode. It does not expose the account database or
-session cookie to the community host.
+By default this endpoint checks the configured server-ID allowlist.
+When `CSY_COMMUNITY_REGISTRY_ENFORCE=true`, it instead checks the live
+persistent registry's verified, approved, and non-revoked state. The route is
+available only in PostgreSQL account-storage mode. It does not expose the
+account database or session cookie to the community host.
 
 
 ## Public signing-key discovery route
