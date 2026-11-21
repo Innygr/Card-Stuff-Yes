@@ -717,17 +717,17 @@ const server = http.createServer(async (req, res) => {
                 sendJson(res, 403, { error: "Origin is not allowed." });
                 return;
             }
+            if (req.method === "OPTIONS") {
+                res.writeHead(204, { "Cache-Control": "no-store" });
+                res.end();
+                return;
+            }
             if (url.pathname === "/api/community/join") {
                 if (!communityJoinHandler) {
                     sendJson(res, 404, { error: "Community sign-in is not enabled on this host." });
                     return;
                 }
                 await communityJoinHandler(req, res);
-                return;
-            }
-            if (req.method === "OPTIONS") {
-                res.writeHead(204, { "Cache-Control": "no-store" });
-                res.end();
                 return;
             }
             if (await handleAdminManagement(req, res, url)) return;
