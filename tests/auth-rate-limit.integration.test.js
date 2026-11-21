@@ -10,6 +10,8 @@ const { test } = require("node:test");
 const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "csy-auth-rate-limit-"));
 process.env.CSY_ACCOUNT_FILE = path.join(temporaryDirectory, "accounts.json");
 process.env.CSY_ACCOUNT_STORAGE = "";
+// The integration harness models an ingress proxy that sanitizes forwarded headers.
+process.env.CSY_TRUST_PROXY = "true";
 
 const { handleAccountAuth } = require("../account-auth");
 const { handlePostgresAccountAuth } = require("../postgres-account-auth");
