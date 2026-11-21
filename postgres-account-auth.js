@@ -12,6 +12,8 @@ const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_MIN = 12;
 const PASSWORD_MAX = 128;
 const { rateLimited } = require("./login-rate-limit");
+const { createCommunityJoinIssuerFromEnvironment } = require("./community-join-ticket-issuer");
+let communityJoinIssuer = null;
 
 function postgresAccountStorageEnabled() {
     return String(process.env.CSY_ACCOUNT_STORAGE || "").trim().toLowerCase() === "postgres";
@@ -22,7 +24,8 @@ function isAccountRoute(pathname) {
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
-        pathname.startsWith("/api/account/decks/");
+        pathname.startsWith("/api/account/decks/") ||
+        /^\\/api\\/community\\/servers\\/[A-Za-z0-9._:-]{1,128}\\/join-ticket$/.test(pathname);
 }
 
 function sanitizeProfile(input) {
@@ -210,6 +213,43 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
     if (["POST", "PUT"].includes(req.method) &&
         !String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
         send(res, 415, { error: "Content-Type must be application/json." });
+        return true;
+    }
+
+    const communityJoinMatch = route.match(/^\\/api\\/community\\/servers\\/([A-Za-z0-9._:-]{1,128})\\/join-ticket$/);
+    if (communityJoinMatch) {
+        if (req.method !== "POST") {
+            send(res, 405, { error: "Method not allowed." }, { Allow: "POST" });
+            return true;
+        }
+        if (rateLimited(req)) {
+            send(res, 429, { error: "Too many attempts. Try again later." });
+            return true;
+        }
+        const current = await accountForSession(req);
+        if (!current) {
+            send(res, 401, { error: "Sign in to join a community server." });
+            return true;
+        }
+        try {
+            if (!communityJoinIssuer) {
+                communityJoinIssuer = createCommunityJoinIssuerFromEnvironment();
+            }
+            const serverId = communityJoinMatch[1];
+            const ticket = communityJoinIssuer.issueForAccount({
+                accountId: current.account.id,
+                serverId
+            });
+            send(res, 200, {
+                ticket,
+                expiresInSeconds: 60,
+                serverId
+            });
+        } catch (error) {
+            // Configuration errors are deliberately not exposed to clients.
+            console.error("Community join ticket issuance is unavailable:", error.message);
+            send(res, 503, { error: "Community server sign-in is temporarily unavailable." });
+        }
         return true;
     }
 
