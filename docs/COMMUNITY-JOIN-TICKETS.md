@@ -353,17 +353,30 @@ and a public listing that returns only approved and verified servers. Public
 results omit owner IDs and moderation metadata. Database errors propagate;
 the module does not create a pool or apply migrations itself.
 
-**Important integration boundary:** this is a storage and lifecycle
-foundation, not yet a public registration API, DNS resolver, operator UI, or
-automated health-check system. The caller that invokes
-`verifyOwnership` must independently resolve the exact DNS TXT record over a
-trusted DNS path, compare the complete value to the one-time token, and only
-then pass its stored hash to the registry. Never accept a browser-supplied
-"DNS verified" boolean. Operator approval and revocation must be protected by
-a separate server-side administrative authorization check.
+**Current HTTP integration:** when PostgreSQL account storage is enabled,
+the account API now provides:
 
-The existing account-authority join-ticket endpoint still uses its
-configuration allowlist. It has not yet been switched to consult this
-directory, and migration 006 is not applied. Do not remove the allowlist or
-enable self-service registration until route authorization, DNS verification,
-admin controls, rate limits, audit logging, and end-to-end tests are in place.
+- `POST /api/community/servers` — authenticated registration. The response
+  contains a one-time DNS TXT challenge. Store it securely until the owner
+  publishes it; it is not written to application logs.
+- `GET /api/community/servers/:serverId` — retrieve only the signed-in
+  account's own registration.
+- `POST /api/community/servers/:serverId/verify` — authenticated DNS TXT
+  verification. The server resolves the record itself, compares the complete
+  TXT value against the stored hash using a constant-time comparison, and
+  consumes the challenge on success. Missing, mismatched, and expired proofs
+  fail closed.
+
+These routes use the existing account session, same-origin protections, and
+request rate limiter. Registration and verification are not public, and a
+server cannot approve itself.
+
+**Remaining integration boundary:** there is not yet a public directory API,
+operator approval/revocation HTTP interface, operator UI, automated health
+checks, or DNS propagation diagnostics. Approval and revocation currently
+exist only as registry operations and must be called by a separately
+authorized server-side operator workflow. The account-authority join-ticket
+endpoint still uses its configuration allowlist; it has not yet switched to
+database-backed eligibility. Migration 006 is not applied. Do not remove the
+allowlist or enable self-service federation eligibility until operator
+controls, audit logging, health checks, and end-to-end tests are complete.
