@@ -348,10 +348,10 @@ The registry deliberately separates four lifecycle states:
    directory results.
 
 The store exposes registration, owner-bound challenge completion, approval,
-revocation, owner-scoped lookup, and a public listing that returns only
-approved and verified servers. Public results omit owner IDs and moderation
-metadata. Database errors propagate; the module does not create a pool or
-apply migrations itself.
+revocation, owner-scoped lookup, an `isApproved(serverId)` eligibility check,
+and a public listing that returns only approved and verified servers. Public
+results omit owner IDs and moderation metadata. Database errors propagate;
+the module does not create a pool or apply migrations itself.
 
 **Important integration boundary:** this is a storage and lifecycle
 foundation, not yet a public registration API, DNS resolver, operator UI, or
