@@ -95,7 +95,7 @@ async function handleAdminManagement(req, res, url) {
             return true;
         }
         const result = await database.getPool().query(
-            "UPDATE csy_private.accounts SET "rank" = $1, updated_at = now() WHERE id = $2 RETURNING id, username, "rank" AS rank",
+            "UPDATE csy_private.accounts SET \"rank\" = $1, updated_at = now() WHERE id = $2 RETURNING id, username, \"rank\" AS rank",
             [rank, rankMatch[1]]
         );
         if (!result.rowCount) { send(res, 404, { error: "Player not found." }); return true; }
