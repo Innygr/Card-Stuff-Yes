@@ -43,7 +43,7 @@ function isAdminRoute(pathname) {
          pathname === "/api/admin/news" ||
          pathname.startsWith("/api/admin/news/") ||
          pathname === "/api/admin/community-servers" ||
-         /^\/api\/admin\/community-servers\/[A-Za-z0-9._:-]{1,128}\/(approve|revoke)$/.test(pathname));
+         /^\/api\/admin\/community-servers\/[A-Za-z0-9._:-]{1,128}\/(approve|revoke|events)$/.test(pathname));
 }
 
 async function handleAdminManagement(req, res, url) {
@@ -129,6 +129,26 @@ async function handleAdminManagement(req, res, url) {
             revocationReason: row.revocation_reason,
             createdAt: new Date(row.created_at).toISOString(),
             updatedAt: new Date(row.updated_at).toISOString()
+        })) });
+        return true;
+    }
+
+    const communityEventsMatch = route.match(/^\/api\/admin\/community-servers\/([A-Za-z0-9._:-]{1,128})\/events$/);
+    if (communityEventsMatch && req.method === "GET") {
+        const result = await database.getPool().query(`
+            SELECT event_id, server_id, actor, action, reason, created_at
+            FROM csy_private.community_server_moderation_events
+            WHERE server_id = $1
+            ORDER BY created_at DESC, event_id DESC
+            LIMIT 100
+        `, [communityEventsMatch[1]]);
+        send(res, 200, { events: result.rows.map(row => ({
+            eventId: row.event_id,
+            serverId: row.server_id,
+            actor: row.actor,
+            action: row.action,
+            reason: row.reason,
+            createdAt: new Date(row.created_at).toISOString()
         })) });
         return true;
     }
