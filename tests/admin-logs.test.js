@@ -14,6 +14,8 @@ const salt = crypto.randomBytes(16);
 const passwordHash = "scrypt:" + salt.toString("hex") + ":" +
     crypto.scryptSync("correct horse battery staple", salt, 64).toString("hex");
 process.env.CSY_LOG_FILE = logFile;
+// The harness simulates a trusted ingress that sanitizes forwarded headers.
+process.env.CSY_TRUST_PROXY = "true";
 process.env.CSY_ADMIN_USERS = JSON.stringify([
     { username: "site-owner", rank: "owner", passwordHash },
     { username: "ordinary-mod", rank: "mod", passwordHash }
