@@ -157,3 +157,39 @@ test("issuer rejects duplicate key IDs and an unknown active key", () => {
         activeKeyId: "missing"
     }), /active signing key/);
 });
+
+test("environment factory loads an explicit active key and publishes overlap keys", () => {
+    const oldPair = crypto.generateKeyPairSync("ed25519");
+    const newPair = crypto.generateKeyPairSync("ed25519");
+    const names = [
+        "CSY_JOIN_SIGNING_KEYS",
+        "CSY_JOIN_ACTIVE_KEY_ID",
+        "CSY_JOIN_SIGNING_PRIVATE_KEY",
+        "CSY_JOIN_SIGNING_KEY_ID",
+        "CSY_JOIN_ISSUER",
+        "CSY_JOIN_SUBJECT_SECRET"
+    ];
+    const previous = names.map(name => process.env[name]);
+    try {
+        process.env.CSY_JOIN_ISSUER = "https://accounts.example.test";
+        process.env.CSY_JOIN_SUBJECT_SECRET = "test-only-subject-secret-value-which-is-long-enough";
+        process.env.CSY_JOIN_SIGNING_KEYS = JSON.stringify([
+            { kid: "environment-old", privateKey: oldPair.privateKey.export({ type: "pkcs8", format: "pem" }) },
+            { kid: "environment-new", privateKey: newPair.privateKey.export({ type: "pkcs8", format: "pem" }) }
+        ]);
+        process.env.CSY_JOIN_ACTIVE_KEY_ID = "environment-new";
+        delete process.env.CSY_JOIN_SIGNING_PRIVATE_KEY;
+        delete process.env.CSY_JOIN_SIGNING_KEY_ID;
+        const issuer = createCommunityJoinIssuerFromEnvironment({ now: () => 1800000000 });
+        assert.equal(issuer.activeKeyId, "environment-new");
+        assert.deepEqual(issuer.publicKeySet.keys.map(key => key.kid), [
+            "environment-old",
+            "environment-new"
+        ]);
+    } finally {
+        names.forEach((name, index) => {
+            if (previous[index] === undefined) delete process.env[name];
+            else process.env[name] = previous[index];
+        });
+    }
+});
