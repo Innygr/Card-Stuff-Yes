@@ -8,7 +8,9 @@ const {
     sanitizeProfile,
     hashPassword,
     verifyPassword,
-    postgresAccountStorageEnabled
+    postgresAccountStorageEnabled,
+    isSecure,
+    trustedOrigin
 } = require("../postgres-account-auth");
 const {
     sanitizeSettings,
@@ -96,4 +98,48 @@ test("community join-ticket issuance requires an explicit valid server allowlist
     assert.equal(configuredCommunityServerIds("community:one, community-two")?.has("community-two"), true);
     assert.equal(configuredCommunityServerIds("community:one, bad%2Fid"), null);
     assert.equal(configuredCommunityServerIds("community:one,,community-two")?.size, 2);
+});
+
+test("account cookies and same-origin checks ignore spoofed forwarded HTTPS by default", () => {
+    const original = process.env.CSY_TRUST_PROXY;
+    try {
+        delete process.env.CSY_TRUST_PROXY;
+        const req = {
+            headers: {
+                host: "game.example",
+                origin: "https://game.example",
+                "x-forwarded-proto": "https"
+            },
+            socket: { encrypted: false }
+        };
+        assert.equal(isSecure(req), false);
+        assert.equal(trustedOrigin(req), false);
+        assert.equal(isSecure({ ...req, socket: { encrypted: true } }), true);
+    } finally {
+        if (original === undefined) delete process.env.CSY_TRUST_PROXY;
+        else process.env.CSY_TRUST_PROXY = original;
+    }
+});
+
+test("account cookie and origin protocol honor forwarded HTTPS only behind trusted proxy", () => {
+    const original = process.env.CSY_TRUST_PROXY;
+    try {
+        process.env.CSY_TRUST_PROXY = "true";
+        const req = {
+            headers: {
+                host: "game.example",
+                origin: "https://game.example",
+                "x-forwarded-proto": "https, http"
+            },
+            socket: { encrypted: false }
+        };
+        assert.equal(isSecure(req), true);
+        assert.equal(trustedOrigin(req), true);
+        req.headers["x-forwarded-proto"] = "http";
+        assert.equal(isSecure(req), false);
+        assert.equal(trustedOrigin(req), false);
+    } finally {
+        if (original === undefined) delete process.env.CSY_TRUST_PROXY;
+        else process.env.CSY_TRUST_PROXY = original;
+    }
 });
