@@ -144,11 +144,12 @@ class PostgresCommunityServerRegistry {
         return result.rows?.length === 1;
     }
 
-    async verifyOwnershipFromDns({ serverId, ownerAccountId, now = new Date(), resolveTxt = dns.resolveTxt, clock = () => new Date() }) {
+    async verifyOwnershipFromDns({ serverId, ownerAccountId, now = new Date(), resolveTxt = dns.resolveTxt, clock = () => new Date(), timeoutMs = 5000 }) {
         if (typeof serverId !== "string" || !SERVER_ID.test(serverId) ||
             typeof ownerAccountId !== "string" || ownerAccountId.length < 1 ||
             !(now instanceof Date) || !Number.isFinite(now.getTime()) ||
-            typeof resolveTxt !== "function" || typeof clock !== "function") {
+            typeof resolveTxt !== "function" || typeof clock !== "function" ||
+            !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10_000) {
             throw new TypeError("A valid server ownership verification request is required.");
         }
         const pending = await this.pool.query(
@@ -171,7 +172,7 @@ class PostgresCommunityServerRegistry {
                         const error = new Error("DNS ownership lookup timed out.");
                         error.code = "ETIMEOUT";
                         reject(error);
-                    }, 5000);
+                    }, timeoutMs);
                     dnsTimeout.unref?.();
                 })
             ]);
