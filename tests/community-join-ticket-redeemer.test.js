@@ -111,3 +111,43 @@ test("redeemer classifies malformed or forged tickets as authentication failures
         reason: "invalid_ticket"
     });
 });
+
+
+test("concurrent redemption admits exactly one request for a ticket", async () => {
+    const pair = crypto.generateKeyPairSync("ed25519");
+    const issuer = createCommunityJoinIssuer({
+        privateKey: pair.privateKey,
+        keyId: "redeem-race-1",
+        issuer: "https://accounts.example.test",
+        subjectSecret: "test-redeemer-secret-long-enough-for-hmac-sha256",
+        now: () => 1800000000
+    });
+    const claimed = new Set();
+    const replayStore = {
+        async consume(ticket) {
+            // Model the atomic insert/unique-key contract: the claim happens
+            // synchronously before this async method yields.
+            if (claimed.has(ticket.ticketId)) return false;
+            claimed.add(ticket.ticketId);
+            await Promise.resolve();
+            return true;
+        }
+    };
+    const redeemer = createCommunityJoinRedeemer({
+        issuer: "https://accounts.example.test",
+        serverId: "community:redeem-test",
+        publicKeySet: issuer.publicKeySet,
+        replayStore,
+        now: () => 1800000000
+    });
+    const token = issuer.issueForAccount({
+        accountId: "account-race",
+        serverId: "community:redeem-test"
+    });
+    const results = await Promise.all(
+        Array.from({ length: 32 }, () => redeemer.redeem(token))
+    );
+    assert.equal(results.filter(result => result.accepted).length, 1);
+    assert.equal(results.filter(result => !result.accepted &&
+        result.reason === "ticket_already_used_or_expired").length, 31);
+});
