@@ -22,12 +22,19 @@ try {
 }
 const HOST = process.env.HOST || config.host || "127.0.0.1";
 const PORT = Number(process.env.PORT || config.port || 6565);
-const ALLOWED_ORIGINS = new Set(
-    String(process.env.CSY_ALLOWED_ORIGINS || "")
-        .split(",")
-        .map(origin => origin.trim())
-        .filter(Boolean)
-);
+function isAllowedOrigin(origin) {
+    try {
+        const parsed = new URL(origin);
+        const hostname = parsed.hostname.toLowerCase();
+
+        return parsed.protocol === "https:" &&
+            parsed.port === "" &&
+            (hostname === DOMAIN || hostname.endsWith("." + DOMAIN)) &&
+            parsed.origin === origin;
+    } catch {
+        return false;
+    }
+}
 const COOKIE_SAMESITE = ["Strict", "Lax", "None"].includes(process.env.CSY_COOKIE_SAMESITE)
     ? process.env.CSY_COOKIE_SAMESITE
     : "Lax";
@@ -248,7 +255,7 @@ function applyCors(req, res) {
         return false;
     }
 
-    if (!ALLOWED_ORIGINS.has(origin)) return false;
+    if (!isAllowedOrigin(origin)) return false;
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
