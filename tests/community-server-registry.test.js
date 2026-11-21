@@ -150,3 +150,19 @@ test("ownership challenge produces a one-time DNS TXT proof with bounded expiry"
     assert.equal(challenge.token.length, 43);
     assert.throws(() => createOwnershipChallenge("http://play.example.net"), TypeError);
 });
+
+test("approved eligibility lookup requires an approved, verified, non-revoked row", async () => {
+    const calls = [];
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql, values) {
+            calls.push({ sql, values });
+            return { rows: calls.length === 1 ? [{ "?column?": 1 }] : [] };
+        }
+    });
+    assert.equal(await registry.isApproved(base.serverId), true);
+    assert.equal(await registry.isApproved(base.serverId), false);
+    assert.match(calls[0].sql, /status = 'approved'/);
+    assert.match(calls[0].sql, /verified_at IS NOT NULL AND revoked_at IS NULL/);
+    assert.deepEqual(calls[0].values, [base.serverId]);
+    await assert.rejects(registry.isApproved("invalid server id"), TypeError);
+});
