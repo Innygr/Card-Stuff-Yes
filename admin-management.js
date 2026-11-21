@@ -43,7 +43,7 @@ function isAdminRoute(pathname) {
          pathname === "/api/admin/news" ||
          pathname.startsWith("/api/admin/news/") ||
          pathname === "/api/admin/community-servers" ||
-         /^\\/api\\/admin\\/community-servers\\/[A-Za-z0-9._:-]{1,128}\\/(approve|revoke)$/.test(pathname));
+         /^\/api\/admin\/community-servers\/[A-Za-z0-9._:-]{1,128}\/(approve|revoke)$/.test(pathname));
 }
 
 async function handleAdminManagement(req, res, url) {
