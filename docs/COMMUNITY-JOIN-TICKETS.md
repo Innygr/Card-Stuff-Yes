@@ -117,3 +117,33 @@ no production issuer endpoint, public-key discovery/rotation endpoint, durable
 replay store, ticket redemption route, or end-to-end community-hosting flow.
 Those must be implemented and security-tested before community servers are
 advertised as supported.
+
+
+## Official account-authority issuance route
+
+When PostgreSQL account storage is enabled and the official issuer environment
+is configured, the account authority exposes:
+
+`POST /api/community/servers/{serverId}/join-ticket`
+
+The route requires the existing authenticated account session cookie, an
+allowed website Origin, JSON content type, and the shared login rate limit.
+The account ID is read only from the server-verified session; request bodies
+cannot select or override it. The path server ID is strictly validated and
+becomes the ticket's exact audience. Successful responses contain a
+60-second ticket, its expiry duration, and the server ID. The response is
+`no-store`.
+
+Required issuer environment variables are
+`CSY_JOIN_SIGNING_PRIVATE_KEY`, `CSY_JOIN_SIGNING_KEY_ID`,
+`CSY_JOIN_ISSUER`, and `CSY_JOIN_SUBJECT_SECRET`. They are loaded lazily
+when the first authenticated request arrives. Missing or invalid configuration
+returns a generic service-unavailable response; internal configuration details
+are logged server-side only. Keep the private signing key and HMAC secret on
+the official account authority.
+
+This endpoint currently issues tickets for a syntactically valid server ID;
+it does not yet check a server directory, ownership/approval status, account
+eligibility policy, or server suspension/revocation. It is available only in
+PostgreSQL account-storage mode. It does not expose the account database or
+session cookie to the community host.
