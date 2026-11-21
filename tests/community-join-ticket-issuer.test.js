@@ -193,3 +193,35 @@ test("environment factory loads an explicit active key and publishes overlap key
         });
     }
 });
+
+test("environment factory rejects mixed legacy and multi-key configuration", () => {
+    const pair = crypto.generateKeyPairSync("ed25519");
+    const names = [
+        "CSY_JOIN_SIGNING_KEYS",
+        "CSY_JOIN_ACTIVE_KEY_ID",
+        "CSY_JOIN_SIGNING_PRIVATE_KEY",
+        "CSY_JOIN_SIGNING_KEY_ID",
+        "CSY_JOIN_ISSUER",
+        "CSY_JOIN_SUBJECT_SECRET"
+    ];
+    const previous = names.map(name => process.env[name]);
+    try {
+        process.env.CSY_JOIN_ISSUER = "https://accounts.example.test";
+        process.env.CSY_JOIN_SUBJECT_SECRET = "test-only-subject-secret-value-which-is-long-enough";
+        process.env.CSY_JOIN_SIGNING_KEYS = JSON.stringify([
+            { kid: "multi", privateKey: pair.privateKey.export({ type: "pkcs8", format: "pem" }) }
+        ]);
+        process.env.CSY_JOIN_ACTIVE_KEY_ID = "multi";
+        process.env.CSY_JOIN_SIGNING_PRIVATE_KEY = pair.privateKey.export({ type: "pkcs8", format: "pem" });
+        process.env.CSY_JOIN_SIGNING_KEY_ID = "legacy";
+        assert.throws(
+            () => createCommunityJoinIssuerFromEnvironment(),
+            /either CSY_JOIN_SIGNING_KEYS or the legacy/
+        );
+    } finally {
+        names.forEach((name, index) => {
+            if (previous[index] === undefined) delete process.env[name];
+            else process.env[name] = previous[index];
+        });
+    }
+});
