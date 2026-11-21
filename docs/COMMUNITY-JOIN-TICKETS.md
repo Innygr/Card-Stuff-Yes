@@ -64,10 +64,11 @@ same account receives unrelated subjects at different community servers. It
 issues 60-second tickets and exposes a public-only Ed25519 JWK set containing
 no private key material.
 
-An authenticated HTTP issuance route is documented below, but public-key
-discovery and automated key rotation policy are not implemented. Keep the private signing key and HMAC
-secret only in the official account authority's secret store. Never copy them
-to community hosts or commit them.
+The authenticated HTTP issuance route and public-key discovery endpoint are
+implemented in PostgreSQL account-storage mode; automated key rotation policy
+is not implemented. Keep the private signing key and HMAC secret only in the
+official account authority's secret store. Never copy them to community hosts
+or commit them.
 
 
 ## Community-host public-key import and rotation
@@ -101,13 +102,12 @@ database role and the private-schema migration. A process-local guard is not
 sufficient for multiple host processes or replicas. Storage failures propagate
 and must be treated as redemption failures.
 
-This is still an integration primitive, not an HTTP route or complete game
-login. A production host must create its local guest/player record only after
-successful redemption, enforce its own authorization, and never treat the
-opaque subject as an official account credential. The official account
-authority still needs an authenticated, rate-limited issuer endpoint that
-derives the account reference from the verified session—not from a client
-supplied account ID.
+This primitive is integrated into an opt-in HTTP route and local session
+flow, but it is not a complete game login or production federation service.
+The host creates its local player only after successful redemption, enforces
+its own authorization, and never treats the opaque subject as an official
+account credential. The authority's issuer endpoint derives the account
+reference from the verified session—not from a client-supplied account ID.
 
 ## Current integration status and remaining work
 
@@ -198,10 +198,11 @@ bootstrap or automated key-rotation service.
 
 ## Community-host HTTP redemption handler
 
-`community-join-http.js` provides a framework-neutral HTTP handler for a
-community host's `POST /api/community/join` route. The host application must
-mount it explicitly and inject three dependencies: the configured ticket
-redeemer, a rate limiter, and a local player-provisioning function.
+`community-join-http.js` provides the framework-neutral handler mounted by
+`server.js` at `POST /api/community/join` when
+`CSY_COMMUNITY_JOIN_ENABLED=true`. The server injects the configured ticket
+redeemer, a bounded rate limiter, local player provisioning, and local session
+establishment.
 
 The handler accepts only a JSON object containing a single `ticket` field,
 limits the request body to 8 KiB, rate-limits before ticket verification,
@@ -219,12 +220,12 @@ replay claim; if local persistence fails, the ticket remains consumed and the
 client must obtain a fresh ticket. This avoids unsafe replay but means hosts
 should make provisioning reliable and idempotent.
 
-The handler is mounted by `server.js` at `POST /api/community/join` when
-`CSY_COMMUNITY_JOIN_ENABLED=true`. The server injects a host-local PostgreSQL
-identity store and replay store, provisions the local player in the existing
+The route is mounted by `server.js` at `POST /api/community/join` when
+`CSY_COMMUNITY_JOIN_ENABLED=true`. The server injects host-local PostgreSQL
+identity and replay stores, provisions the local player in existing
 multiplayer state, and establishes the normal HttpOnly player cookie. The
 integration remains opt-in and requires the host's own database migrations.
-It is not yet a complete multi-process multiplayer deployment.
+It is not a complete multi-process multiplayer deployment.
 
 
 ## Durable community player identity mapping
