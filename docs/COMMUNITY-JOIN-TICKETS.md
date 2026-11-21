@@ -198,3 +198,22 @@ This is a reusable handler primitive, not yet mounted in `server.js` or
 connected to the current in-memory multiplayer player store. No community
 server should advertise official-account sign-in until that integration,
 persistent identity mapping, and end-to-end tests are complete.
+
+
+## Durable community player identity mapping
+
+`community-player-identity-store.js` adds a PostgreSQL-backed mapping from
+the trusted pair (issuer, opaque external subject) to a locally generated
+player UUID and display name. Repeated sign-ins from the same issuer resolve
+to the same local identity; different issuers remain separate namespaces.
+The SQL uses a unique key and `ON CONFLICT` so concurrent first sign-ins
+converge on one local player identity.
+
+Migration `005_community_player_identities.sql` creates the mapping table
+inside the private `csy_private` schema and revokes PUBLIC table privileges.
+It has not been applied to any database. The store is an integration
+primitive: the HTTP handler's injected provisioning function can delegate to
+it, then ensure the resulting local player is loaded into the host's own
+multiplayer state. The current `server.js` flow does not yet do this, and
+the local game state still needs a durable player record strategy that works
+across restarts and multiple host processes.
