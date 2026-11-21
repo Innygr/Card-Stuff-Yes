@@ -14,6 +14,7 @@ test("community moderation history migration keeps events append-only", () => {
     assert.match(sql, /BEFORE UPDATE OR DELETE ON csy_private\.community_server_moderation_events/i);
     assert.match(sql, /RAISE EXCEPTION 'community server moderation events are append-only'/i);
     assert.match(sql, /REVOKE ALL ON TABLE csy_private\.community_server_moderation_events FROM PUBLIC/i);
+    assert.match(sql, /REVOKE ALL ON FUNCTION csy_private\.reject_community_server_event_mutation\(\) FROM PUBLIC/i);
     assert.match(sql, /REVOKE ALL ON SEQUENCE csy_private\.community_server_moderation_events_event_id_seq FROM PUBLIC/i);
 });
 
