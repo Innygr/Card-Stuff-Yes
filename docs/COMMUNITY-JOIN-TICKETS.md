@@ -109,9 +109,34 @@ authority still needs an authenticated, rate-limited issuer endpoint that
 derives the account reference from the verified session—not from a client
 supplied account ID.
 
-## Not implemented yet
+## Current integration status and remaining work
 
-The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking. The authenticated issuer endpoint is available only in PostgreSQL account-storage mode. A basic public-key discovery endpoint and reusable HTTP redemption handler now exist, but the handler is not yet mounted in the game server. Automated key rotation/revocation, a persistent server directory/approval workflow, persistent local identity mapping, and an end-to-end community-hosting flow are still missing. These must be implemented and security-tested before community servers are advertised as supported.
+The ticket verifier, PostgreSQL replay store, local identity mapping, and HTTP
+redemption handler are implemented. The official account-authority issuance
+route and public-key endpoint are available in PostgreSQL account-storage mode.
+When `CSY_COMMUNITY_JOIN_ENABLED=true` is configured on a community host, the
+server mounts `POST /api/community/join`, consumes a ticket, resolves an
+issuer-scoped opaque subject to a host-local player identity, persists that
+identity, and establishes a host-local session.
+
+This is an opt-in integration foundation, **not a supported public federation
+service yet**. In particular:
+
+- The join flow is not yet integrated into matchmaking or a complete client
+  sign-in experience.
+- Public-key trust distribution, freshness, automated rotation, and emergency
+  revocation policy are not complete. Hosts currently configure a pinned
+  public JWK set.
+- There is no persistent server directory, registration/ownership verification,
+  approval workflow, or operator-facing revocation control.
+- Multiplayer match state remains single-process and is not coordinated across
+  multiple host replicas.
+- Migrations `004_community_join_ticket_uses.sql` and
+  `005_community_player_identities.sql` must be applied by the community
+  operator before enabling the PostgreSQL-backed join integration.
+
+Do not advertise community federation as production-ready until these gaps
+have been implemented, independently reviewed, and tested end to end.
 
 
 ## Official account-authority issuance route
