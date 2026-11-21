@@ -111,7 +111,7 @@ supplied account ID.
 
 ## Not implemented yet
 
-The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking. The authenticated issuer endpoint is available only in PostgreSQL account-storage mode. There is no public-key discovery/rotation endpoint, ticket redemption HTTP route, server directory/approval workflow, or end-to-end community-hosting flow. These must be implemented and security-tested before community servers are advertised as supported.
+The ticket verifier and PostgreSQL replay-store primitive are not wired into matchmaking. The authenticated issuer endpoint is available only in PostgreSQL account-storage mode. A basic public-key discovery endpoint now exists, but automated key rotation/revocation, a ticket redemption HTTP route, a persistent server directory/approval workflow, and an end-to-end community-hosting flow are still missing. These must be implemented and security-tested before community servers are advertised as supported.
 
 
 ## Official account-authority issuance route
