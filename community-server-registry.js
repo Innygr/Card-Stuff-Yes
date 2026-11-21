@@ -124,11 +124,11 @@ class PostgresCommunityServerRegistry {
         return result.rows?.length === 1;
     }
 
-    async verifyOwnershipFromDns({ serverId, ownerAccountId, now = new Date(), resolveTxt = dns.resolveTxt }) {
+    async verifyOwnershipFromDns({ serverId, ownerAccountId, now = new Date(), resolveTxt = dns.resolveTxt, clock = () => new Date() }) {
         if (typeof serverId !== "string" || !SERVER_ID.test(serverId) ||
             typeof ownerAccountId !== "string" || ownerAccountId.length < 1 ||
             !(now instanceof Date) || !Number.isFinite(now.getTime()) ||
-            typeof resolveTxt !== "function") {
+            typeof resolveTxt !== "function" || typeof clock !== "function") {
             throw new TypeError("A valid server ownership verification request is required.");
         }
         const pending = await this.pool.query(
@@ -179,7 +179,10 @@ class PostgresCommunityServerRegistry {
         // DNS resolution may take long enough for the challenge to expire.
         // Re-read the clock after the external lookup; never reuse the
         // pre-resolution timestamp to extend the proof's validity.
-        const verifiedAt = new Date();
+        const verifiedAt = clock();
+        if (!(verifiedAt instanceof Date) || !Number.isFinite(verifiedAt.getTime())) {
+            throw new TypeError("The ownership verification clock returned an invalid timestamp.");
+        }
         if (verifiedAt.getTime() >= new Date(pending.rows[0].verification_expires_at).getTime()) {
             return false;
         }
