@@ -313,10 +313,11 @@ The public JWK set is pinned through operator configuration; key rotation
 requires an operator-managed update/restart and is not automated.
 
 This enables account-authority sign-in to establish a local host identity.
-The project now has persistent server registration and DNS ownership proof,
-plus overlapping signing-key support. It still lacks a public directory,
-operator moderation API/UI, health checks, and automatic key discovery and
-rotation for community hosts.
+The project now includes persistent server registration, DNS ownership proof,
+a public paginated approved-server directory, operator approval/revocation
+routes, append-only moderation history, and overlapping signing-key support.
+An operator-facing moderation UI, automated endpoint health checks, and
+automatic key discovery/rotation for community hosts remain outstanding.
 
 
 ## Reverse-proxy HTTPS trust
