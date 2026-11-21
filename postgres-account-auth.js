@@ -87,8 +87,12 @@ function cookieMap(header) {
 }
 
 function isSecure(req) {
-    const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-    return Boolean(req.socket.encrypted || forwarded === "https");
+    if (req.socket && req.socket.encrypted) return true;
+    // Match the server's proxy trust policy: forwarded protocol is untrusted
+    // unless the operator guarantees the ingress strips client-supplied copies.
+    if (process.env.CSY_TRUST_PROXY !== "true") return false;
+    return String(req.headers["x-forwarded-proto"] || "")
+        .split(",")[0].trim().toLowerCase() === "https";
 }
 
 function setCookie(req, res, name, value, maxAge, sameSite = "Strict") {
@@ -121,8 +125,7 @@ function trustedOrigin(req) {
     if (typeof origin !== "string") return false;
     try {
         const parsed = new URL(origin);
-        const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-        const protocol = req.socket.encrypted || forwarded === "https" ? "https:" : "http:";
+        const protocol = isSecure(req) ? "https:" : "http:";
         if (parsed.origin === protocol + "//" + req.headers.host) return true;
         const allowed = new Set(String(process.env.CSY_ALLOWED_ORIGINS || "")
             .split(",").map(value => value.trim()).filter(Boolean));
