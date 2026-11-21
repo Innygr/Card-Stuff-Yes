@@ -41,6 +41,10 @@ Until that operational checklist is complete:
 
 ## Community server registry APIs
 
+See [Community Server API](COMMUNITY-SERVER-API.md) for the HTTP route
+contract, examples, and response codes.
+
+
 PostgreSQL account mode also exposes the public approved-server directory and
 authenticated owner registration, DNS challenge renewal, and DNS ownership
 verification routes. Operator approval/revocation and moderation-event history
