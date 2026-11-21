@@ -101,6 +101,81 @@ async function handleAdminManagement(req, res, url) {
         return true;
     }
 
+    if (route === "/api/admin/community-servers" && req.method === "GET") {
+        const result = await database.getPool().query(`
+            SELECT s.server_id, s.owner_account_id, a.username AS owner_username,
+                   s.endpoint, s.display_name, s.status, s.verified_at,
+                   s.approved_at, s.approved_by, s.revoked_at, s.revoked_by,
+                   s.revocation_reason, s.created_at, s.updated_at
+            FROM csy_private.community_servers s
+            LEFT JOIN csy_private.accounts a ON a.id = s.owner_account_id
+            ORDER BY s.created_at DESC
+            LIMIT 500
+        `);
+        send(res, 200, { servers: result.rows.map(row => ({
+            serverId: row.server_id,
+            ownerAccountId: row.owner_account_id,
+            ownerUsername: row.owner_username,
+            endpoint: row.endpoint,
+            displayName: row.display_name,
+            status: row.status,
+            verifiedAt: row.verified_at ? new Date(row.verified_at).toISOString() : null,
+            approvedAt: row.approved_at ? new Date(row.approved_at).toISOString() : null,
+            approvedBy: row.approved_by,
+            revokedAt: row.revoked_at ? new Date(row.revoked_at).toISOString() : null,
+            revokedBy: row.revoked_by,
+            revocationReason: row.revocation_reason,
+            createdAt: new Date(row.created_at).toISOString(),
+            updatedAt: new Date(row.updated_at).toISOString()
+        })) });
+        return true;
+    }
+
+    const communityModerationMatch = route.match(/^\/api\/admin\/community-servers\/([A-Za-z0-9._:-]{1,128})\/(approve|revoke)$/);
+    if (communityModerationMatch && req.method === "PATCH") {
+        let body;
+        try { body = await readJson(req); }
+        catch (error) { send(res, 400, { error: error.message }); return true; }
+        const [serverId, action] = communityModerationMatch.slice(1);
+        if (action === "approve") {
+            if (Object.keys(body || {}).length) {
+                send(res, 400, { error: "Approval does not accept a request body." });
+                return true;
+            }
+            const result = await database.getPool().query(`
+                UPDATE csy_private.community_servers
+                SET status = 'approved', approved_at = now(), approved_by = $2, updated_at = now()
+                WHERE server_id = $1 AND status = 'pending' AND verified_at IS NOT NULL
+                RETURNING server_id
+            `, [serverId, admin.username]);
+            if (!result.rowCount) {
+                send(res, 409, { error: "Only a verified pending server can be approved." });
+                return true;
+            }
+            send(res, 200, { serverId, status: "approved" });
+            return true;
+        }
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            Object.keys(body).some(key => key !== "reason") ||
+            (body.reason !== undefined && !validText(body.reason, 240))) {
+            send(res, 400, { error: "Revocation reason must be a string of at most 240 characters." });
+            return true;
+        }
+        const result = await database.getPool().query(`
+            UPDATE csy_private.community_servers
+            SET status = 'revoked', revoked_at = now(), revoked_by = $2,
+                revocation_reason = $3, updated_at = now()
+            WHERE server_id = $1 AND status <> 'revoked'
+            RETURNING server_id
+        `, [serverId, admin.username, (body.reason || "").trim()]);
+        if (!result.rowCount) {
+            send(res, 404, { error: "Community server not found or already revoked." });
+            return true;
+        }
+        send(res, 200, { serverId, status: "revoked" });
+        return true;
+    }
+
     if (route === "/api/admin/news" && req.method === "GET") {
         const result = await database.getPool().query(
             "SELECT id, title, summary, content, published, featured, created_at, updated_at, published_at FROM csy_private.news_posts ORDER BY featured DESC, updated_at DESC LIMIT 200"
