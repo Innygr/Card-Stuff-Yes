@@ -34,7 +34,7 @@ function isAccountRoute(pathname) {
     return pathname === "/api/me" ||
         pathname === "/api/community/join-keys" ||
         pathname === "/api/community/servers" ||
-        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}/(verify)?$").test(pathname) ||
+        new RegExp("^/api/community/servers/[A-Za-z0-9._:-]{1,128}(?:/(verify))?$").test(pathname) ||
         ["/api/auth/register", "/api/auth/login", "/api/auth/me", "/api/auth/logout",
             "/api/auth/change-password", "/api/account/profile", "/api/account/settings",
             "/api/account/decks"].includes(pathname) ||
