@@ -140,7 +140,17 @@ Approval and revocation update the current registry state and insert the
 corresponding moderation event in one SQL statement. Migration 007 adds a
 database trigger that rejects updates and deletes to the event table. This is
 append-only at the SQL trigger layer; it is not a tamper-proof external audit
-service. Operator UI and event pagination are not yet implemented.
+service. Operator UI is available in the admin panel. Event retrieval is currently limited to the latest 100 records and does not yet support pagination.
+
+### Admin panel workflow
+
+The admin panel's **Community Server Moderation** section lists registrations
+for review. Operators can approve only verified pending registrations, revoke
+active registrations with an optional reason, and expand a registration's
+moderation history. The interface uses the operator endpoints above; it does
+not expose ownership challenge values or hashes. Registry migrations 006 and
+007 must be applied to the official authority database before this section can
+operate. Access is limited by the same owner/admin session checks as the API.
 
 ## Join-ticket eligibility
 
@@ -153,8 +163,7 @@ operator workflow have been validated against the intended database.
 
 ## Operational limitations
 
-The registry does not yet provide endpoint health checks, server-side
-moderation UI, event pagination, abuse analytics, or automated public-key
-discovery and rotation. Directory listing confirms approval and ownership
+The registry does not yet provide endpoint health checks, event pagination,
+abuse analytics, or automated public-key discovery and rotation. Directory listing confirms approval and ownership
 proof, not current server uptime or gameplay compatibility. Community hosts
 remain responsible for their own game-state persistence and operations.
