@@ -64,9 +64,8 @@ same account receives unrelated subjects at different community servers. It
 issues 60-second tickets and exposes a public-only Ed25519 JWK set containing
 no private key material.
 
-This remains a library primitive for signing. An authenticated HTTP issuance
-route is documented below, but public-key discovery and automated key
-rotation policy are not implemented. Keep the private signing key and HMAC
+An authenticated HTTP issuance route is documented below, but public-key
+discovery and automated key rotation policy are not implemented. Keep the private signing key and HMAC
 secret only in the official account authority's secret store. Never copy them
 to community hosts or commit them.
 
@@ -123,12 +122,20 @@ is configured, the account authority exposes:
 `POST /api/community/servers/{serverId}/join-ticket`
 
 The route requires the existing authenticated account session cookie, an
-allowed website Origin, JSON content type, and the shared login rate limit.
+allowed website Origin, JSON content type, the shared login rate limit, and an
+explicit server-ID allowlist.
 The account ID is read only from the server-verified session; request bodies
 cannot select or override it. The path server ID is strictly validated and
 becomes the ticket's exact audience. Successful responses contain a
 60-second ticket, its expiry duration, and the server ID. The response is
 `no-store`.
+
+Configure `CSY_COMMUNITY_SERVER_IDS` as a comma-separated allowlist of
+approved server IDs. An absent or malformed allowlist fails closed with a
+service-unavailable response; a server ID not on the list receives a forbidden
+response. This is an interim deployment gate, not a substitute for the planned
+persistent server directory, ownership verification, health checks, or
+revocation controls.
 
 Required issuer environment variables are
 `CSY_JOIN_SIGNING_PRIVATE_KEY`, `CSY_JOIN_SIGNING_KEY_ID`,
@@ -138,8 +145,8 @@ returns a generic service-unavailable response; internal configuration details
 are logged server-side only. Keep the private signing key and HMAC secret on
 the official account authority.
 
-This endpoint currently issues tickets for a syntactically valid server ID;
-it does not yet check a server directory, ownership/approval status, account
-eligibility policy, or server suspension/revocation. It is available only in
+This endpoint checks the configured server-ID allowlist, but does not yet
+check persistent ownership/approval records, account eligibility policy, or
+server suspension/revocation. It is available only in
 PostgreSQL account-storage mode. It does not expose the account database or
 session cookie to the community host.
