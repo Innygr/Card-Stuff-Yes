@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { isIP } = require("node:net");
 
 const SERVER_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const TOKEN_HASH = /^[a-f0-9]{64}$/;
@@ -15,7 +16,7 @@ function validateEndpoint(value) {
     const hostname = url.hostname.toLowerCase();
     if (url.protocol !== "https:" || !hostname || hostname === "localhost" ||
         hostname.endsWith(".localhost") || hostname.endsWith(".local") ||
-        !hostname.includes(".") || crypto.isIP(hostname) ||
+        !hostname.includes(".") || isIP(hostname) ||
         url.username || url.password || url.search || url.hash || url.origin === "null") {
         throw new TypeError("The server endpoint must use a public DNS hostname over HTTPS without credentials, query, or fragment.");
     }
