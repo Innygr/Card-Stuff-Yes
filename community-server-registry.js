@@ -12,9 +12,12 @@ function validateEndpoint(value) {
     let url;
     try { url = new URL(value); }
     catch { throw new TypeError("A valid HTTPS server endpoint is required."); }
-    if (url.protocol !== "https:" || !url.hostname || url.username || url.password ||
-        url.search || url.hash || url.origin === "null") {
-        throw new TypeError("The server endpoint must be an HTTPS URL without credentials, query, or fragment.");
+    const hostname = url.hostname.toLowerCase();
+    if (url.protocol !== "https:" || !hostname || hostname === "localhost" ||
+        hostname.endsWith(".localhost") || hostname.endsWith(".local") ||
+        !hostname.includes(".") || crypto.isIP(hostname) ||
+        url.username || url.password || url.search || url.hash || url.origin === "null") {
+        throw new TypeError("The server endpoint must use a public DNS hostname over HTTPS without credentials, query, or fragment.");
     }
     return url.toString().replace(/\/$/, "");
 }
