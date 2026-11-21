@@ -60,6 +60,33 @@ test("registry does not overwrite an existing server ID registration", async () 
     assert.deepEqual(await registry.registerPending(base), { created: false });
 });
 
+test("owners can renew only unverified pending ownership challenges", async () => {
+    const calls = [];
+    const registry = new PostgresCommunityServerRegistry({
+        async query(sql, values) {
+            calls.push({ sql, values });
+            return { rows: [{ server_id: base.serverId }] };
+        }
+    });
+    const expiresAt = new Date("2026-11-21T12:00:00.000Z");
+    assert.equal(await registry.renewOwnershipChallenge({
+        serverId: base.serverId,
+        ownerAccountId: base.ownerAccountId,
+        challengeTokenHash: base.challengeTokenHash,
+        challengeExpiresAt: expiresAt,
+        now: NOW
+    }), true);
+    assert.match(calls[0].sql, /status = 'pending' AND verified_at IS NULL/);
+    assert.equal(calls[0].values[1], base.ownerAccountId);
+    await assert.rejects(registry.renewOwnershipChallenge({
+        serverId: base.serverId,
+        ownerAccountId: base.ownerAccountId,
+        challengeTokenHash: base.challengeTokenHash,
+        challengeExpiresAt: NOW,
+        now: NOW
+    }), TypeError);
+});
+
 test("ownership verification is one-time, owner-bound, and expiry-bound", async () => {
     const calls = [];
     const registry = new PostgresCommunityServerRegistry({
