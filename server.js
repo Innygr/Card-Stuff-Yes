@@ -27,10 +27,24 @@ function isAllowedOrigin(origin) {
         const parsed = new URL(origin);
         const hostname = parsed.hostname.toLowerCase();
 
-        return parsed.protocol === "https:" &&
-            parsed.port === "" &&
-            (hostname === DOMAIN || hostname.endsWith("." + DOMAIN)) &&
-            parsed.origin === origin;
+        if (
+            parsed.protocol !== "https:" ||
+            parsed.port !== "" ||
+            parsed.origin !== origin
+        ) {
+            return false;
+        }
+
+        const explicitlyAllowed = String(process.env.CSY_ALLOWED_ORIGINS || "")
+            .split(",")
+            .map(value => value.trim())
+            .filter(Boolean);
+
+        return (
+            hostname === DOMAIN ||
+            hostname.endsWith("." + DOMAIN) ||
+            explicitlyAllowed.includes(origin)
+        );
     } catch {
         return false;
     }
