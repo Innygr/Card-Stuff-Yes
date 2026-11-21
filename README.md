@@ -46,9 +46,11 @@ contract, examples, and response codes.
 
 
 Community federation is an opt-in, multi-component feature. PostgreSQL account
-storage is required for the official registry APIs. Apply migrations
-`004` through `007` only to an explicitly selected test database while
-validating the full workflow; no migration runs automatically at startup.
+storage is required for the official registry APIs. The official account
+authority uses migrations `006` and `007` for its registry and moderation
+history; each community host uses migrations `004` and `005` for local
+ticket replay and player identities. Validate each set against its intended
+disposable test database first; no migration runs automatically at startup.
 The official account authority retains accounts and credentials. Community
 hosts receive short-lived join tickets and keep their own local player state.
 
