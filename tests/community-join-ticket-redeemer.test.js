@@ -73,7 +73,7 @@ test("redeemer rejects tickets for another audience before claiming replay state
         replayStore: { async consume() { calls += 1; return true; } },
         now: () => 1800000000
     });
-    await assert.rejects(redeemer.redeem(token), /not valid for this server/);
+    assert.deepEqual(await redeemer.redeem(token), { accepted: false, reason: "invalid_ticket" });
     assert.equal(calls, 0);
 });
 
