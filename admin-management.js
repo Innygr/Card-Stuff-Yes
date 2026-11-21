@@ -145,9 +145,16 @@ async function handleAdminManagement(req, res, url) {
                 return true;
             }
             const result = await database.getPool().query(`
-                UPDATE csy_private.community_servers
-                SET status = 'approved', approved_at = now(), approved_by = $2, updated_at = now()
-                WHERE server_id = $1 AND status = 'pending' AND verified_at IS NOT NULL
+                WITH changed AS (
+                    UPDATE csy_private.community_servers
+                    SET status = 'approved', approved_at = now(), approved_by = $2, updated_at = now()
+                    WHERE server_id = $1 AND status = 'pending' AND verified_at IS NOT NULL
+                    RETURNING server_id
+                )
+                INSERT INTO csy_private.community_server_moderation_events
+                    (server_id, actor, action, reason)
+                SELECT server_id, $2, 'approved', ''
+                FROM changed
                 RETURNING server_id
             `, [serverId, admin.username]);
             if (!result.rowCount) {
@@ -164,10 +171,17 @@ async function handleAdminManagement(req, res, url) {
             return true;
         }
         const result = await database.getPool().query(`
-            UPDATE csy_private.community_servers
-            SET status = 'revoked', revoked_at = now(), revoked_by = $2,
-                revocation_reason = $3, updated_at = now()
-            WHERE server_id = $1 AND status <> 'revoked'
+            WITH changed AS (
+                UPDATE csy_private.community_servers
+                SET status = 'revoked', revoked_at = now(), revoked_by = $2,
+                    revocation_reason = $3, updated_at = now()
+                WHERE server_id = $1 AND status <> 'revoked'
+                RETURNING server_id
+            )
+            INSERT INTO csy_private.community_server_moderation_events
+                (server_id, actor, action, reason)
+            SELECT server_id, $2, 'revoked', $3
+            FROM changed
             RETURNING server_id
         `, [serverId, admin.username, (body.reason || "").trim()]);
         if (!result.rowCount) {
