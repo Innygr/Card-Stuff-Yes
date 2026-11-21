@@ -96,6 +96,7 @@ function createCommunityJoinHttpHandler({ redeemer, provisionPlayer, rateLimit, 
             if (!player || typeof player.id !== "string" || typeof player.name !== "string") {
                 throw new Error("Local player provisioning returned an invalid player.");
             }
+            await establishSession(req, res, player);
             writeJson(res, 200, {
                 player: { id: player.id, name: player.name },
                 serverId: redemption.player.serverId
