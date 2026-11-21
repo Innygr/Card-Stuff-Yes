@@ -710,7 +710,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/account/")) {
+        if (url.pathname === "/api/me" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/account/") || url.pathname.startsWith("/api/community/")) {
             const guestPlayer = url.pathname === "/api/auth/register" ? getPlayer(req, res) : null;
             if (postgresAccountStorageEnabled()) {
                 if (await handlePostgresAccountAuth(req, res, url, guestPlayer)) return;
