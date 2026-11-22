@@ -651,3 +651,41 @@ button:hover,
     }
 
 }
+
+
+.ability-effects {
+    display: grid;
+    gap: 10px;
+    margin: 8px 0 14px;
+}
+
+.ability-effect-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.ability-effect-row label {
+    display: grid;
+    gap: 6px;
+}
+
+.ability-effect-row button {
+    white-space: nowrap;
+}
+
+.ability-effects:empty::after {
+    content: "No effects added yet.";
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+@media (max-width: 650px) {
+    .ability-effect-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
