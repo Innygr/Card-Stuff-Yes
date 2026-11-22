@@ -81,7 +81,7 @@ async function handleAdminManagement(req, res, url) {
             return true;
         }
         let body;
-        try { body = await readJson(req); }
+        try { body = await readJson(req, 2_000_000); }
         catch (error) { send(res, 400, { error: error.message }); return true; }
         const cards = body && body.cards;
         const validTypes = new Set(["attack", "guard", "heal", "draw"]);
@@ -123,6 +123,7 @@ async function handleAdminManagement(req, res, url) {
         const client = await database.getPool().connect();
         try {
             await client.query("BEGIN");
+            await client.query("LOCK TABLE csy_private.card_catalogue_versions IN EXCLUSIVE MODE");
             const previous = await client.query(
                 "SELECT cards, version FROM csy_private.card_catalogue_versions ORDER BY version DESC LIMIT 1 FOR UPDATE"
             );
