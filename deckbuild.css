@@ -1098,3 +1098,15 @@ html.reduce-flashing .flash-effect {
 .deck-status[data-state="error"] {
     border-color: #b84a4a;
 }
+
+
+.card-button:disabled,
+.card-action:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+}
+.card-button:disabled:hover {
+    transform: none;
+    border-color: var(--color-border);
+}
