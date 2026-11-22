@@ -106,3 +106,11 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--color-link-
 .online-resource span { color: var(--color-text-secondary); }
 .online-resource strong { white-space: nowrap; }
 @media(max-width:420px) { .online-resource-pools { grid-template-columns: 1fr; } }
+
+
+.resource-rules {
+    margin: 10px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.55;
+}
