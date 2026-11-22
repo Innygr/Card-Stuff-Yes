@@ -286,6 +286,22 @@ async function handleAdminManagement(req, res, url) {
         return true;
     }
 
+    if (route.startsWith("/api/admin/players/") && route.includes("/packs/") && req.method === "PUT") {
+        if (admin.rank !== "owner" && admin.rank !== "admin") { send(res, 403, { error: "Admin access required." }); return true; }
+        const match = route.match(/^\\/api\\/admin\\/players\\/([A-Za-z0-9_-]+)\\/packs\\/([a-z0-9-]+)$/);
+        const packIds = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, "card-packs.json"), "utf8")).packs.map(pack => pack.id));
+        if (!match || !packIds.has(match[2])) { send(res, 400, { error: "Invalid player or pack ID." }); return true; }
+        let body;
+        try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
+        if (!Number.isInteger(body.quantity) || body.quantity < 0 || body.quantity > 999) { send(res, 400, { error: "Quantity must be an integer from 0 to 999." }); return true; }
+        const result = await database.getPool().query(
+            "INSERT INTO csy_private.account_pack_inventory (account_id, pack_id, quantity) SELECT id, $2, $3 FROM csy_private.accounts WHERE id = $1 ON CONFLICT (account_id, pack_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_at = now() RETURNING account_id, pack_id, quantity",
+            [match[1], match[2], body.quantity]
+        );
+        if (!result.rowCount) { send(res, 404, { error: "Player not found." }); return true; }
+        send(res, 200, { inventory: result.rows[0] }); return true;
+    }
+
     if (route.startsWith("/api/admin/players/") && route.includes("/collection/") && req.method === "PUT") {
         if (admin.rank !== "owner" && admin.rank !== "admin") {
             send(res, 403, { error: "Admin access required." });
