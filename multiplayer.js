@@ -346,7 +346,7 @@
 
             const cost = document.createElement("span");
             cost.className = "card-cost";
-            const resourceLabel = ({ magik: "Magik", "astral-magik": "Astral", "gilded-magik": "Gilded", "blood-magik": "Blood", "dark-magik": "Dark" })[card.resource] || "Astral";
+            const resourceLabel = ({ magik: "Magik", "astral-magik": "Astral Magik", "gilded-magik": "Gilded Magik", "blood-magik": "Blood Magik", "dark-magik": "Dark Magik" })[card.resource] || "Astral";
             cost.textContent = card.cost + " " + resourceLabel;
             const symbol = document.createElement("span");
             symbol.className = "card-symbol";
