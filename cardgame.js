@@ -29,6 +29,34 @@
     function cardResourceKey(definition) {
         return RESOURCE_BY_ID[definition.resource] || "astralMagik";
     }
+    const ABILITY_RESOURCE_MAP = {
+        magik: "magik",
+        astralMagik: "astralMagik",
+        gildedMagik: "gildedMagik",
+        bloodMagik: "bloodMagik",
+        darkMagik: "darkMagik"
+    };
+
+    function abilityCosts(definition) {
+        const totals = {};
+        (Array.isArray(definition.abilities) ? definition.abilities : []).forEach(function (ability) {
+            Object.entries(ability.costs || {}).forEach(function ([key, amount]) {
+                if (ABILITY_RESOURCE_MAP[key] && Number.isInteger(amount) && amount > 0) {
+                    totals[key] = (totals[key] || 0) + amount;
+                }
+            });
+        });
+        return totals;
+    }
+
+    function canAffordCard(combatant, definition) {
+        const baseKey = cardResourceKey(definition);
+        if ((combatant.resources[baseKey] || 0) < definition.cost) return false;
+        return Object.entries(abilityCosts(definition)).every(([key, amount]) =>
+            (combatant.resources[ABILITY_RESOURCE_MAP[key]] || 0) >= amount
+        );
+    }
+
     const MAX_HAND = 10;
     const STARTING_HAND = 5;
 
@@ -248,7 +276,8 @@
         }
 
         const resourceKey = cardResourceKey(definition);
-        if (combatant.resources[resourceKey] < definition.cost) {
+        const extraCosts = abilityCosts(definition);
+        if (!canAffordCard(combatant, definition)) {
             if (isPlayer) {
                 const resource = RESOURCE_META.find(function (item) { return item.key === resourceKey; });
                 setStatus("Not enough " + resource.label + " to play " + definition.name + ".", "error");
@@ -257,6 +286,9 @@
         }
 
         combatant.resources[resourceKey] -= definition.cost;
+        Object.entries(extraCosts).forEach(function ([key, amount]) {
+            combatant.resources[ABILITY_RESOURCE_MAP[key]] -= amount;
+        });
         combatant.hand = combatant.hand.filter(function (item) {
             return item.instanceId !== card.instanceId;
         });
@@ -306,6 +338,27 @@
             const drawn = drawCards(combatant, definition.value, false);
             addLog(combatant.name + " plays " + definition.name + " and draws " + drawn + " card(s).");
         }
+
+        (Array.isArray(definition.abilities) ? definition.abilities : []).forEach(function (ability) {
+            (Array.isArray(ability.effects) ? ability.effects : []).forEach(function (effect) {
+                const recipient = effect.target === "self" ? combatant : target;
+                const amount = effect.value;
+                if (!Number.isInteger(amount) || amount < 1 || amount > 99) return;
+                if (effect.type === "damage") {
+                    const hit = damage(recipient, amount);
+                    addLog(combatant.name + " resolves " + ability.name + ": " + recipient.name + " takes " + hit.healthDamage + " damage" + (hit.blocked ? " (" + hit.blocked + " blocked)" : "") + ".");
+                } else if (effect.type === "shield") {
+                    recipient.shield += amount;
+                    addLog(combatant.name + " resolves " + ability.name + ": " + recipient.name + " gains " + amount + " shield.");
+                } else if (effect.type === "heal") {
+                    const restored = heal(recipient, amount);
+                    addLog(combatant.name + " resolves " + ability.name + ": " + recipient.name + " restores " + restored + " health.");
+                } else if (effect.type === "draw") {
+                    const drawn = drawCards(recipient, amount, false);
+                    addLog(combatant.name + " resolves " + ability.name + ": " + recipient.name + " draws " + drawn + " card(s).");
+                }
+            });
+        });
 
         checkGameOver();
         render();
@@ -385,8 +438,7 @@
 
     function chooseAiCard() {
         const affordable = state.opponent.hand.filter(function (card) {
-            const key = cardResourceKey(card.definition);
-            return card.definition.cost <= state.opponent.resources[key];
+            return canAffordCard(state.opponent, card.definition);
         });
 
         if (!affordable.length) {
@@ -532,12 +584,16 @@
                 state.finished ||
                 state.locked ||
                 state.activeSide !== "player" ||
-                state.player.resources[cardResourceKey(definition)] < definition.cost;
+                !canAffordCard(state.player, definition);
 
             const cost = document.createElement("span");
             cost.className = "game-card-cost";
             const resourceLabel = RESOURCE_META.find(function (item) { return item.key === cardResourceKey(definition); }).label;
-            cost.textContent = definition.cost + " " + resourceLabel;
+            const extraCosts = abilityCosts(definition);
+            const costParts = [definition.cost + " " + resourceLabel].concat(Object.entries(extraCosts).map(function ([key, amount]) {
+                return amount + " " + RESOURCE_META.find(function (item) { return item.key === ABILITY_RESOURCE_MAP[key]; }).label;
+            }));
+            cost.textContent = costParts.join(" + ");
             cost.setAttribute("aria-label", definition.cost + " " + resourceLabel);
             cost.setAttribute("aria-label", "Cost " + definition.cost);
 
