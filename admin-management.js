@@ -368,6 +368,7 @@ async function handleAccountCollection(req, res, url) {
         return true;
     }
     if (req.method !== "POST") { send(res, 405, { error: "Method not allowed." }, { Allow: "POST" }); return true; }
+    if (!isAllowedOrigin(req)) { send(res, 403, { error: "Cross-origin request rejected." }); return true; }
     let body;
     try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
     if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(k => !["packId", "requestId"].includes(k)) ||
@@ -382,6 +383,7 @@ async function handleAccountCollection(req, res, url) {
     const client = await database.getPool().connect();
     try {
         await client.query("BEGIN");
+        await client.query("SELECT id FROM csy_private.accounts WHERE id = $1 FOR UPDATE", [accountSession.account.id]);
         const prior = await client.query("SELECT pack_id, cards FROM csy_private.pack_openings WHERE account_id = $1 AND request_id = $2", [accountSession.account.id, body.requestId]);
         if (prior.rowCount) {
             if (prior.rows[0].pack_id !== pack.id) { await client.query("ROLLBACK"); send(res, 409, { error: "Request ID already used for another pack." }); return true; }
