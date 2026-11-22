@@ -592,3 +592,25 @@ button {
     width: min(calc(100% - 32px), 1180px);
     margin: 16px auto 0;
 }
+
+
+.solo-deck-picker {
+    width: min(calc(100% - 32px), 1180px);
+    margin: 14px auto 0;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(160px, 240px) auto auto;
+    align-items: end;
+    gap: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-background-secondary);
+}
+.solo-deck-picker h2 { margin: 3px 0; font-size: 19px; }
+.solo-deck-picker p:not(.eyebrow) { margin: 4px 0 0; color: var(--color-text-secondary); font-size: 13px; }
+.solo-deck-picker label { font-size: 13px; color: var(--color-text-secondary); }
+.solo-deck-picker select { min-height: 42px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); color: var(--color-text); font: inherit; }
+.solo-deck-picker button:disabled { opacity: .5; cursor: not-allowed; }
+.solo-deck-picker > a { color: var(--color-link); font-size: 13px; white-space: nowrap; }
+@media(max-width:800px) { .solo-deck-picker { grid-template-columns: 1fr 1fr; } .solo-deck-picker > div { grid-column: 1/-1; } }
+@media(max-width:480px) { .solo-deck-picker { grid-template-columns: 1fr; } .solo-deck-picker > div { grid-column: auto; } }
