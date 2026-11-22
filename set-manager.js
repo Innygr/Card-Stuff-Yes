@@ -143,6 +143,7 @@ const cardValueInput = document.getElementById("card-value");
 const cardSymbolInput = document.getElementById("card-symbol");
 const cardEffectInput = document.getElementById("card-effect");
 const playableExportButton = document.getElementById("playable-export-button");
+const publishCatalogueButton = document.getElementById("publish-catalogue-button");
 
 
 /* ============================================================
@@ -1205,44 +1206,60 @@ exportButton.addEventListener(
    PLAYABLE CATALOGUE EXPORT
    ============================================================ */
 
-playableExportButton.addEventListener("click", () => {
+function buildPlayableCatalogue() {
     updateSetFromInputs();
-    if (!state.set.cards.length) {
-        setStatus("Add or import cards before exporting a playable catalogue.", "error");
-        return;
-    }
+    if (!state.set.cards.length) throw new Error("Add or import cards before exporting or publishing.");
     const ids = new Set();
-    const output = [];
-    for (const card of state.set.cards) {
-        const validationError = validateCard(card);
-        if (validationError) {
-            setStatus("Cannot export " + (card.name || card.id) + ": " + validationError, "error");
-            return;
-        }
-        if (ids.has(card.id)) {
-            setStatus("Duplicate card ID: " + card.id, "error");
-            return;
-        }
+    return state.set.cards.map(card => {
+        const error = validateCard(card);
+        if (error) throw new Error("Cannot use " + (card.name || card.id) + ": " + error);
+        if (ids.has(card.id)) throw new Error("Duplicate card ID: " + card.id);
         ids.add(card.id);
-        output.push({
+        return {
             id: card.id, name: card.name, type: card.battleType, resource: card.resource,
             cost: card.cost, value: card.value, symbol: card.symbol, description: card.description,
             effect: card.effect, rarity: card.rarity, art: card.art, health: card.health,
-            attack: card.attack, setType: card.type, setId: state.set.id || "custom-set",
-            temporary: true,
+            attack: card.attack, setType: card.type, setId: state.set.id || "custom-set", temporary: true,
             abilities: (card.abilities || []).map(ability => ({
                 id: ability.id, name: ability.name, description: ability.description,
                 costs: { magik: 0, astralMagik: 0, gildedMagik: 0, bloodMagik: 0, darkMagik: 0, ...(ability.costs || {}) },
                 effects: (ability.effects || []).map(effect => ({ type: effect.type, target: effect.target, value: effect.value }))
             }))
+        };
+    });
+}
+
+playableExportButton.addEventListener("click", () => {
+    try {
+        const output = buildPlayableCatalogue();
+        const blob = new Blob([JSON.stringify(output, null, 4)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url; link.download = "cards.json";
+        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        setStatus("Playable cards.json exported. Import the existing catalogue first to preserve current cards.", "success");
+    } catch (error) { setStatus(error.message, "error"); }
+});
+
+publishCatalogueButton.addEventListener("click", async () => {
+    let cards;
+    try { cards = buildPlayableCatalogue(); }
+    catch (error) { setStatus(error.message, "error"); return; }
+    if (!window.confirm("Publish " + cards.length + " cards to the live catalogue? This creates a new version and cannot remove existing card IDs.")) return;
+    publishCatalogueButton.disabled = true;
+    setStatus("Publishing catalogue…");
+    try {
+        const apiBase = String(window.CSY_CONFIG?.apiBaseUrl || "").replace(/\\/+$/, "");
+        const response = await fetch(apiBase + "/api/admin/cards", {
+            method: "PUT", credentials: "include",
+            headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cards })
         });
-    }
-    const blob = new Blob([JSON.stringify(output, null, 4)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url; link.download = "cards.json";
-    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-    setStatus("Playable cards.json exported. Import the existing catalogue first to preserve current cards.", "success");
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Catalogue publishing failed.");
+        setStatus("Published catalogue version " + data.version + " (" + data.count + " cards).", "success");
+    } catch (error) {
+        setStatus(error.message + " Check that you are signed in with Owner permissions.", "error");
+    } finally { publishCatalogueButton.disabled = false; }
 });
 
 /* ============================================================
