@@ -940,5 +940,6 @@ module.exports = {
     handlePostgresAccountAuth,
     accountForSession,
     isSecure,
-    trustedOrigin
+    trustedOrigin,
+    ownedDeckCardShortages
 };
