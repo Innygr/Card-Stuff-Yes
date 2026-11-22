@@ -167,7 +167,9 @@ function createEmptyAbility() {
 
             darkMagik: 0
 
-        }
+        },
+
+        effects: []
 
     };
 
@@ -517,7 +519,18 @@ function readEditorCard() {
             Number(cardAttackInput.value) || 0,
 
         abilities:
-            temporaryCard.abilities || []
+            (temporaryCard.abilities || []).map(ability => ({
+                ...ability,
+                costs: {
+                    magik: 0,
+                    astralMagik: 0,
+                    gildedMagik: 0,
+                    bloodMagik: 0,
+                    darkMagik: 0,
+                    ...(ability.costs || {})
+                },
+                effects: Array.isArray(ability.effects) ? ability.effects : []
+            }))
 
     };
 
@@ -532,270 +545,185 @@ function renderAbilities(abilities) {
 
     abilityList.innerHTML = "";
 
-
-    abilities.forEach(
-        (ability, index) => {
-
-            const entry =
-                document.createElement("div");
-
-            entry.className =
-                "ability-entry";
-
-
-            const header =
-                document.createElement("div");
-
-            header.className =
-                "ability-header";
-
-
-            const title =
-                document.createElement("h4");
-
-            title.textContent =
-                ability.name ||
-                `Ability ${index + 1}`;
-
-
-            const remove =
-                document.createElement("button");
-
-            remove.type =
-                "button";
-
-            remove.textContent =
-                "Remove";
-
-            remove.addEventListener(
-                "click",
-                () => {
-
-                    const card =
-                        JSON.parse(
-                            cardForm.dataset
-                                .temporaryCard
-                        );
-
-                    card.abilities.splice(
-                        index,
-                        1
-                    );
-
-                    cardForm.dataset
-                        .temporaryCard =
-                        JSON.stringify(card);
-
-                    renderAbilities(
-                        card.abilities
-                    );
-
-                }
-            );
-
-
-            header.append(
-                title,
-                remove
-            );
-
-
-            const grid =
-                document.createElement("div");
-
-            grid.className =
-                "form-grid";
-
-
-            const nameLabel =
-                document.createElement("label");
-
-            nameLabel.innerHTML =
-                `
-                    Ability Name
-                    <input
-                        type="text"
-                        value=""
-                    >
-                `;
-
-
-            const descriptionLabel =
-                document.createElement("label");
-
-            descriptionLabel.innerHTML =
-                `
-                    Description
-                    <input
-                        type="text"
-                        value=""
-                    >
-                `;
-
-
-            grid.append(
-                nameLabel,
-                descriptionLabel
-            );
-
-
-            const costs =
-                document.createElement("div");
-
-            costs.className =
-                "form-grid";
-
-
-            [
-                ["magik", "Magik"],
-                ["astralMagik", "Astral Magik"],
-                ["gildedMagik", "Gilded Magik"],
-                ["bloodMagik", "Blood Magik"],
-                ["darkMagik", "Dark Magik"]
-            ].forEach(
-                ([key, label]) => {
-
-                    const costLabel =
-                        document.createElement("label");
-
-                    costLabel.innerHTML =
-                        `
-                            ${label}
-                            <input
-                                type="number"
-                                min="0"
-                                value="${
-                                    ability.costs[key] || 0
-                                }"
-                            >
-                        `;
-
-                    costs.appendChild(
-                        costLabel
-                    );
-
-                }
-            );
-
-
-            const nameInput =
-                nameLabel.querySelector("input");
-
-            const descriptionInput =
-                descriptionLabel.querySelector("input");
-
-            nameInput.value =
-                ability.name;
-
-            descriptionInput.value =
-                ability.description;
-
-
-            nameInput.addEventListener(
-                "input",
-                () => {
-
-                    const card =
-                        JSON.parse(
-                            cardForm.dataset
-                                .temporaryCard
-                        );
-
-                    card.abilities[index].name =
-                        nameInput.value;
-
-                    cardForm.dataset
-                        .temporaryCard =
-                        JSON.stringify(card);
-
-                    title.textContent =
-                        nameInput.value ||
-                        `Ability ${index + 1}`;
-
-                }
-            );
-
-
-            descriptionInput.addEventListener(
-                "input",
-                () => {
-
-                    const card =
-                        JSON.parse(
-                            cardForm.dataset
-                                .temporaryCard
-                        );
-
-                    card.abilities[index]
-                        .description =
-                        descriptionInput.value;
-
-                    cardForm.dataset
-                        .temporaryCard =
-                        JSON.stringify(card);
-
-                }
-            );
-
-
-            const costInputs =
-                costs.querySelectorAll(
-                    "input"
-                );
-
-
-            costInputs.forEach(
-                (input, costIndex) => {
-
-                    input.addEventListener(
-                        "input",
-                        () => {
-
-                            const keys = [
-                                "magik",
-                                "astralMagik",
-                                "gildedMagik",
-                                "bloodMagik",
-                                "darkMagik"
-                            ];
-
-                            const card =
-                                JSON.parse(
-                                    cardForm.dataset
-                                        .temporaryCard
-                                );
-
-                            card.abilities[index]
-                                .costs[keys[costIndex]] =
-                                Number(input.value) || 0;
-
-                            cardForm.dataset
-                                .temporaryCard =
-                                JSON.stringify(card);
-
-                        }
-                    );
-
-                }
-            );
-
-
-            entry.append(
-                header,
-                grid,
-                costs
-            );
-
-
-            abilityList.appendChild(
-                entry
-            );
-
-        }
-    );
-
+    const resourceCosts = [
+        ["magik", "Magik"],
+        ["astralMagik", "Astral Magik"],
+        ["gildedMagik", "Gilded Magik"],
+        ["bloodMagik", "Blood Magik"],
+        ["darkMagik", "Dark Magik"]
+    ];
+
+    const effectTypes = [
+        ["damage", "Damage"],
+        ["shield", "Gain shield"],
+        ["heal", "Restore health"],
+        ["draw", "Draw cards"]
+    ];
+
+    abilities.forEach((ability, index) => {
+        ability.costs = {
+            magik: 0,
+            astralMagik: 0,
+            gildedMagik: 0,
+            bloodMagik: 0,
+            darkMagik: 0,
+            ...(ability.costs || {})
+        };
+        if (!Array.isArray(ability.effects)) ability.effects = [];
+
+        const entry = document.createElement("section");
+        entry.className = "ability-entry";
+
+        const header = document.createElement("div");
+        header.className = "ability-header";
+
+        const title = document.createElement("h4");
+        title.textContent = ability.name || `Ability ${index + 1}`;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Remove ability";
+        remove.addEventListener("click", () => {
+            const card = JSON.parse(cardForm.dataset.temporaryCard);
+            card.abilities.splice(index, 1);
+            cardForm.dataset.temporaryCard = JSON.stringify(card);
+            renderAbilities(card.abilities);
+        });
+        header.append(title, remove);
+
+        const details = document.createElement("div");
+        details.className = "form-grid";
+
+        const nameLabel = document.createElement("label");
+        nameLabel.append(document.createTextNode("Ability name"));
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.maxLength = 80;
+        nameInput.value = ability.name || "";
+        nameLabel.append(nameInput);
+
+        const descriptionLabel = document.createElement("label");
+        descriptionLabel.append(document.createTextNode("Description"));
+        const descriptionInput = document.createElement("input");
+        descriptionInput.type = "text";
+        descriptionInput.maxLength = 240;
+        descriptionInput.value = ability.description || "";
+        descriptionLabel.append(descriptionInput);
+        details.append(nameLabel, descriptionLabel);
+
+        const costs = document.createElement("div");
+        costs.className = "form-grid";
+        resourceCosts.forEach(([key, label]) => {
+            const costLabel = document.createElement("label");
+            costLabel.append(document.createTextNode(label + " cost"));
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = "0";
+            input.max = "99";
+            input.step = "1";
+            input.value = ability.costs[key];
+            input.addEventListener("input", () => updateAbility(index, current => {
+                current.costs[key] = Math.max(0, Math.min(99, Math.floor(Number(input.value) || 0)));
+            }));
+            costLabel.append(input);
+            costs.append(costLabel);
+        });
+
+        const effectsHeading = document.createElement("div");
+        effectsHeading.className = "ability-header";
+        const effectsTitle = document.createElement("h5");
+        effectsTitle.textContent = "Effects (resolve in listed order)";
+        const addEffectButton = document.createElement("button");
+        addEffectButton.type = "button";
+        addEffectButton.textContent = "+ Effect";
+        addEffectButton.addEventListener("click", () => {
+            updateAbility(index, current => {
+                current.effects.push({ type: "damage", target: "opponent", value: 1 });
+            });
+            renderAbilities(JSON.parse(cardForm.dataset.temporaryCard).abilities);
+        });
+        effectsHeading.append(effectsTitle, addEffectButton);
+
+        const effectsList = document.createElement("div");
+        effectsList.className = "ability-effects";
+        ability.effects.forEach((effect, effectIndex) => {
+            const effectRow = document.createElement("div");
+            effectRow.className = "ability-effect-row";
+
+            const typeLabel = document.createElement("label");
+            typeLabel.append(document.createTextNode("Effect"));
+            const typeSelect = document.createElement("select");
+            effectTypes.forEach(([value, label]) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = label;
+                typeSelect.append(option);
+            });
+            typeSelect.value = effectTypes.some(([value]) => value === effect.type) ? effect.type : "damage";
+            typeSelect.addEventListener("change", () => updateEffect(index, effectIndex, current => { current.type = typeSelect.value; }));
+            typeLabel.append(typeSelect);
+
+            const targetLabel = document.createElement("label");
+            targetLabel.append(document.createTextNode("Target"));
+            const targetSelect = document.createElement("select");
+            [["self", "You"], ["opponent", "Opponent"]].forEach(([value, label]) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = label;
+                targetSelect.append(option);
+            });
+            targetSelect.value = effect.target === "self" ? "self" : "opponent";
+            targetSelect.addEventListener("change", () => updateEffect(index, effectIndex, current => { current.target = targetSelect.value; }));
+            targetLabel.append(targetSelect);
+
+            const valueLabel = document.createElement("label");
+            valueLabel.append(document.createTextNode("Amount"));
+            const valueInput = document.createElement("input");
+            valueInput.type = "number";
+            valueInput.min = "1";
+            valueInput.max = "99";
+            valueInput.step = "1";
+            valueInput.value = Number.isInteger(effect.value) && effect.value > 0 ? effect.value : 1;
+            valueInput.addEventListener("input", () => updateEffect(index, effectIndex, current => {
+                current.value = Math.max(1, Math.min(99, Math.floor(Number(valueInput.value) || 1)));
+            }));
+            valueLabel.append(valueInput);
+
+            const removeEffect = document.createElement("button");
+            removeEffect.type = "button";
+            removeEffect.textContent = "Remove effect";
+            removeEffect.addEventListener("click", () => {
+                updateAbility(index, current => { current.effects.splice(effectIndex, 1); });
+                renderAbilities(JSON.parse(cardForm.dataset.temporaryCard).abilities);
+            });
+
+            effectRow.append(typeLabel, targetLabel, valueLabel, removeEffect);
+            effectsList.append(effectRow);
+        });
+
+        nameInput.addEventListener("input", () => {
+            updateAbility(index, current => { current.name = nameInput.value; });
+            title.textContent = nameInput.value || `Ability ${index + 1}`;
+        });
+        descriptionInput.addEventListener("input", () => updateAbility(index, current => { current.description = descriptionInput.value; }));
+
+        entry.append(header, details, costs, effectsHeading, effectsList);
+        abilityList.append(entry);
+    });
 }
 
+function updateAbility(index, updater) {
+    const card = JSON.parse(cardForm.dataset.temporaryCard || "{}");
+    if (!card.abilities || !card.abilities[index]) return;
+    updater(card.abilities[index]);
+    cardForm.dataset.temporaryCard = JSON.stringify(card);
+}
+
+function updateEffect(abilityIndex, effectIndex, updater) {
+    updateAbility(abilityIndex, ability => {
+        if (ability.effects && ability.effects[effectIndex]) updater(ability.effects[effectIndex]);
+    });
+}
 
 function addAbility() {
 
@@ -863,6 +791,22 @@ function validateCard(card) {
         return "Attack must be a non-negative whole number.";
     }
 
+    for (const ability of card.abilities || []) {
+        if (!ability.name || !ability.name.trim()) return "Every ability needs a name.";
+        for (const [resource, cost] of Object.entries(ability.costs || {})) {
+            if (!["magik", "astralMagik", "gildedMagik", "bloodMagik", "darkMagik"].includes(resource) ||
+                !Number.isInteger(cost) || cost < 0 || cost > 99) {
+                return "Ability resource costs must be whole numbers from 0 to 99.";
+            }
+        }
+        for (const effect of ability.effects || []) {
+            if (!["damage", "shield", "heal", "draw"].includes(effect.type) ||
+                !["self", "opponent"].includes(effect.target) ||
+                !Number.isInteger(effect.value) || effect.value < 1 || effect.value > 99) {
+                return "Ability effects need a supported type, target, and amount from 1 to 99.";
+            }
+        }
+    }
 
     return null;
 
