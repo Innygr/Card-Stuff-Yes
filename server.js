@@ -419,7 +419,7 @@ function startTurn(match, combatant, drawOne) {
     combatant.shield = 0;
     combatant.maxEnergy = Math.min(MAX_ENERGY, combatant.turnCount);
     combatant.energy = combatant.maxEnergy;
-    combatant.magik = Math.min(MAX_ENERGY, combatant.turnCount);
+    combatant.magik = 1;
     combatant.gildedMagik = Math.min(MAX_ENERGY, combatant.turnCount);
     combatant.bloodMagik = Math.min(MAX_ENERGY, combatant.turnCount);
     combatant.darkMagik = Math.min(MAX_ENERGY, combatant.turnCount);
