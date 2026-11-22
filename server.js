@@ -277,7 +277,7 @@ async function refreshPublishedCatalogue(force = false) {
         CARD_BY_ID = new Map(cards.map(card => [card.id, card]));
     } catch (error) {
         // Before migration 009 is applied, the bundled catalogue remains authoritative.
-        if (error.code !== "42P01") throw error;
+        if (error.code !== "42P01") console.warn("Published card catalogue refresh failed; retaining the last valid catalogue:", error.message);
     }
 }
 
