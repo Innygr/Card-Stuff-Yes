@@ -330,30 +330,62 @@ async function handlePublicNews(req, res, url) {
 }
 
 async function handleAccountCollection(req, res, url) {
-    if (url.pathname !== "/api/account/collection") return false;
-    if (!postgresAccountStorageEnabled()) {
-        send(res, 503, { error: "Card collection requires PostgreSQL account storage." });
-        return true;
-    }
-    if (req.method !== "GET") {
-        send(res, 405, { error: "Method not allowed." }, { Allow: "GET" });
-        return true;
-    }
+    const route = url.pathname;
+    if (!["/api/account/collection", "/api/account/packs", "/api/account/packs/open"].includes(route)) return false;
+    if (!postgresAccountStorageEnabled()) { send(res, 503, { error: "Card systems require PostgreSQL account storage." }); return true; }
     const accountSession = await accountForSession(req);
-    if (!accountSession) {
-        send(res, 401, { error: "Sign in to view your card collection." });
+    if (!accountSession) { send(res, 401, { error: "Sign in to manage your cards and packs." }); return true; }
+    if (route === "/api/account/collection") {
+        if (req.method !== "GET") { send(res, 405, { error: "Method not allowed." }, { Allow: "GET" }); return true; }
+        const result = await database.getPool().query("SELECT card_id, quantity FROM csy_private.account_card_inventory WHERE account_id = $1 ORDER BY card_id", [accountSession.account.id]);
+        const owned = new Map(result.rows.map(row => [row.card_id, row.quantity]));
+        const cards = CARD_CATALOG.map(card => ({ ...card, quantity: owned.get(card.id) || 0 }));
+        send(res, 200, { cards, count: cards.length, ownedCount: cards.filter(card => card.quantity > 0).length });
         return true;
     }
-    const result = await database.getPool().query(
-        "SELECT card_id, quantity, updated_at FROM csy_private.account_card_inventory WHERE account_id = $1 ORDER BY card_id",
-        [accountSession.account.id]
-    );
-    const owned = new Map(result.rows.map(row => [row.card_id, row]));
-    const cards = CARD_CATALOG.map(card => ({
-        ...card,
-        quantity: owned.has(card.id) ? owned.get(card.id).quantity : 0
-    }));
-    send(res, 200, { cards, count: cards.length, ownedCount: cards.filter(card => card.quantity > 0).length });
+    const config = JSON.parse(fs.readFileSync(path.join(__dirname, "card-packs.json"), "utf8"));
+    if (route === "/api/account/packs") {
+        if (req.method !== "GET") { send(res, 405, { error: "Method not allowed." }, { Allow: "GET" }); return true; }
+        const result = await database.getPool().query("SELECT pack_id, quantity FROM csy_private.account_pack_inventory WHERE account_id = $1", [accountSession.account.id]);
+        const owned = new Map(result.rows.map(row => [row.pack_id, row.quantity]));
+        send(res, 200, { packs: config.packs.map(p => ({ id: p.id, name: p.name, description: p.description, cardsPerOpen: p.cardsPerOpen, quantity: owned.get(p.id) || 0 })) });
+        return true;
+    }
+    if (req.method !== "POST") { send(res, 405, { error: "Method not allowed." }, { Allow: "POST" }); return true; }
+    let body;
+    try { body = await readJson(req); } catch (error) { send(res, 400, { error: error.message }); return true; }
+    if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(k => !["packId", "requestId"].includes(k)) ||
+        typeof body.packId !== "string" || typeof body.requestId !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.requestId)) {
+        send(res, 400, { error: "Provide a valid packId and UUID requestId." }); return true;
+    }
+    const pack = config.packs.find(p => p.id === body.packId);
+    if (!pack || !Array.isArray(pack.poolCardIds) || pack.poolCardIds.length < pack.cardsPerOpen || !pack.poolCardIds.every(id => CARD_IDS.has(id))) {
+        send(res, 400, { error: "That pack is not configured correctly." }); return true;
+    }
+    const client = await database.getPool().connect();
+    try {
+        await client.query("BEGIN");
+        const prior = await client.query("SELECT pack_id, cards FROM csy_private.pack_openings WHERE account_id = $1 AND request_id = $2", [accountSession.account.id, body.requestId]);
+        if (prior.rowCount) {
+            if (prior.rows[0].pack_id !== pack.id) { await client.query("ROLLBACK"); send(res, 409, { error: "Request ID already used for another pack." }); return true; }
+            await client.query("COMMIT");
+            send(res, 200, { packId: pack.id, cards: prior.rows[0].cards, replayed: true }); return true;
+        }
+        const spent = await client.query("UPDATE csy_private.account_pack_inventory SET quantity = quantity - 1, updated_at = now() WHERE account_id = $1 AND pack_id = $2 AND quantity > 0 RETURNING quantity", [accountSession.account.id, pack.id]);
+        if (!spent.rowCount) { await client.query("ROLLBACK"); send(res, 409, { error: "You do not own an unopened copy of this pack." }); return true; }
+        const pool = pack.poolCardIds.slice();
+        for (let i = pool.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+        const drawn = pool.slice(0, pack.cardsPerOpen).map(id => CARD_CATALOG.find(card => card.id === id));
+        for (const card of drawn) await client.query(
+            "INSERT INTO csy_private.account_card_inventory (account_id, card_id, quantity) VALUES ($1, $2, 1) ON CONFLICT (account_id, card_id) DO UPDATE SET quantity = LEAST(999, csy_private.account_card_inventory.quantity + 1), updated_at = now()",
+            [accountSession.account.id, card.id]);
+        const resultCards = drawn.map(card => ({ id: card.id, name: card.name, rarity: card.rarity || "common", resource: card.resource || "astral-magik" }));
+        await client.query("INSERT INTO csy_private.pack_openings (account_id, request_id, pack_id, cards) VALUES ($1, $2, $3, $4::jsonb)", [accountSession.account.id, body.requestId, pack.id, JSON.stringify(resultCards)]);
+        await client.query("COMMIT");
+        send(res, 200, { packId: pack.id, cards: drawn, remaining: spent.rows[0].quantity, replayed: false });
+    } catch (error) { try { await client.query("ROLLBACK"); } catch {} throw error; }
+    finally { client.release(); }
     return true;
 }
 
