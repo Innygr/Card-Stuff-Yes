@@ -38,3 +38,15 @@ test("each resource has a distinct authoritative multiplayer effect", () => {
     assert.match(server, /opponent\.health = Math\.max\(0, opponent\.health - 1\)/);
     assert.match(server, /own\.shield \+= card\.cost/);
 });
+
+test("custom card abilities are charged and resolved by multiplayer", () => {
+    assert.match(server, /function cardAbilityCosts/);
+    assert.match(server, /function canAffordCard/);
+    assert.match(server, /required\[resourceKey\] = \(required\[resourceKey\] \|\| 0\) \+ amount/);
+    assert.match(server, /function resolveCardAbilities/);
+    for (const effect of ["damage", "shield", "heal", "draw"]) {
+        assert.ok(server.includes('effect.type === "' + effect + '"'));
+    }
+    assert.match(server, /resolveCardAbilities\(match, own, opponent, card\)/);
+    assert.match(server, /Not enough Magik resources to pay for that card and its abilities/);
+});
