@@ -181,6 +181,19 @@ function publicAccount(row) {
     };
 }
 
+async function ownedDeckCardShortages(client, accountId, cards) {
+    const required = new Map();
+    for (const cardId of cards) required.set(cardId, (required.get(cardId) || 0) + 1);
+    if (!required.size) return [];
+    const result = await client.query(
+        "SELECT card_id, quantity FROM csy_private.account_card_inventory WHERE account_id = $1 AND card_id = ANY($2::text[]) FOR UPDATE",
+        [accountId, [...required.keys()]]
+    );
+    const owned = new Map(result.rows.map(row => [row.card_id, Number(row.quantity)]));
+    return [...required].filter(([cardId, count]) => (owned.get(cardId) || 0) < count)
+        .map(([cardId, count]) => ({ cardId, required: count, owned: owned.get(cardId) || 0 }));
+}
+
 async function accountForSession(req) {
     const token = cookieMap(req.headers.cookie)[ACCOUNT_COOKIE];
     if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
@@ -752,6 +765,12 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             try {
                 await client.query("BEGIN");
                 await client.query("SELECT id FROM csy_private.accounts WHERE id = $1 FOR UPDATE", [current.account.id]);
+                const shortages = await ownedDeckCardShortages(client, current.account.id, body.cards);
+                if (shortages.length) {
+                    await client.query("ROLLBACK");
+                    send(res, 409, { error: "Your deck contains cards you do not own in sufficient quantity.", shortages });
+                    return true;
+                }
                 const count = await client.query(
                     "SELECT count(*)::int AS count FROM csy_private.decks WHERE account_id = $1",
                     [current.account.id]
@@ -834,6 +853,7 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
             const client = await getPool().connect();
             try {
                 await client.query("BEGIN");
+                await client.query("SELECT id FROM csy_private.accounts WHERE id = $1 FOR UPDATE", [current.account.id]);
                 const found = await client.query(
                     "SELECT id, name, created_at FROM csy_private.decks WHERE id = $1 AND account_id = $2 FOR UPDATE",
                     [deckId, current.account.id]
@@ -842,6 +862,14 @@ async function handlePostgresAccountAuth(req, res, url, guestPlayer) {
                     await client.query("ROLLBACK");
                     send(res, 404, { error: "Saved deck not found." });
                     return true;
+                }
+                if (body.cards !== undefined) {
+                    const shortages = await ownedDeckCardShortages(client, current.account.id, body.cards);
+                    if (shortages.length) {
+                        await client.query("ROLLBACK");
+                        send(res, 409, { error: "Your deck contains cards you do not own in sufficient quantity.", shortages });
+                        return true;
+                    }
                 }
                 const now = new Date();
                 const name = body.name === undefined ? found.rows[0].name : body.name.trim();
