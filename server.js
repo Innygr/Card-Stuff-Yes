@@ -509,7 +509,7 @@ function playCard(match, own, opponent, instanceId) {
         own.shield += card.cost;
         log(match, own.name + " gains " + card.cost + " Gilded shield.");
     } else if (resourceKey === "bloodMagik") {
-        damage(own, 1);
+        own.health = Math.max(0, own.health - 1);
         log(match, own.name + " pays 1 health to Blood Magik.");
     } else if (resourceKey === "darkMagik") {
         opponent.health = Math.max(0, opponent.health - 1);
