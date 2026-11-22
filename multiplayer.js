@@ -324,6 +324,17 @@
         renderLog(match.log || []);
     }
 
+    function onlineAbilityCosts(card) {
+        const totals = {};
+        (Array.isArray(card.abilities) ? card.abilities : []).forEach(ability => {
+            Object.entries(ability.costs || {}).forEach(([key, amount]) => {
+                if (["magik", "astralMagik", "gildedMagik", "bloodMagik", "darkMagik"].includes(key) &&
+                    Number.isInteger(amount) && amount > 0) totals[key] = (totals[key] || 0) + amount;
+            });
+        });
+        return totals;
+    }
+
     function renderHand(cards, isMyTurn) {
         ui.hand.innerHTML = "";
         if (!cards.length) {
@@ -340,14 +351,23 @@
             button.className = "online-card";
             const resourceKey = ({ magik: "magik", "astral-magik": "astralMagik", "gilded-magik": "gildedMagik", "blood-magik": "bloodMagik", "dark-magik": "darkMagik" })[card.resource] || "astralMagik";
             const resourceValue = (currentMatch.you.resources || {})[resourceKey] ?? (resourceKey === "astralMagik" ? currentMatch.you.energy : currentMatch.you[resourceKey]);
-            const affordable = card.cost <= Number(resourceValue || 0);
+            const abilityCosts = onlineAbilityCosts(card);
+            const resources = currentMatch.you.resources || {};
+            const affordable = card.cost <= Number(resourceValue || 0) &&
+                Object.entries(abilityCosts).every(([key, amount]) => {
+                    const keyValue = resources[key] ?? currentMatch.you[key];
+                    return Number(keyValue || 0) >= amount;
+                });
             button.dataset.affordable = String(affordable);
             button.disabled = !isMyTurn || !affordable || requestBusy;
 
             const cost = document.createElement("span");
             cost.className = "card-cost";
             const resourceLabel = ({ magik: "Magik", "astral-magik": "Astral Magik", "gilded-magik": "Gilded Magik", "blood-magik": "Blood Magik", "dark-magik": "Dark Magik" })[card.resource] || "Astral";
-            cost.textContent = card.cost + " " + resourceLabel;
+            const costParts = [card.cost + " " + resourceLabel];
+            const resourceLabels = { magik: "Magik", astralMagik: "Astral Magik", gildedMagik: "Gilded Magik", bloodMagik: "Blood Magik", darkMagik: "Dark Magik" };
+            Object.entries(abilityCosts).forEach(([key, amount]) => costParts.push(amount + " " + resourceLabels[key]));
+            cost.textContent = costParts.join(" + ");
             const symbol = document.createElement("span");
             symbol.className = "card-symbol";
             symbol.textContent = card.symbol;
