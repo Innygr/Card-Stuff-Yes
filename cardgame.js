@@ -187,7 +187,8 @@
         state.activeSide = "player";
         state.locked = false;
         state.player.shield = 0;
-        RESOURCE_META.forEach(function (resource) {
+        state.player.resources.magik = 1;
+        RESOURCE_META.filter(function (resource) { return resource.key !== "magik"; }).forEach(function (resource) {
             state.player.resources[resource.key] = Math.min(MAX_ENERGY, state.turn);
         });
 
@@ -406,7 +407,8 @@
         }
 
         const opponent = state.opponent;
-        RESOURCE_META.forEach(function (resource) {
+        opponent.resources.magik = 1;
+        RESOURCE_META.filter(function (resource) { return resource.key !== "magik"; }).forEach(function (resource) {
             opponent.resources[resource.key] = Math.min(MAX_ENERGY, state.turn);
         });
         drawCards(opponent, 1, true);
