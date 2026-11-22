@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card Packs — Card Stuff Yes</title>
+  <link rel="stylesheet" href="./colors.css">
+  <link rel="stylesheet" href="./packs.css">
+</head>
+<body>
+  <header class="packs-header">
+    <a href="./homepage.html">← Card Stuff Yes</a>
+    <div><p class="eyebrow">CARD SET 1</p><h1>Pack Opening</h1><p>Open your packs and add new cards to your collection.</p></div>
+    <a class="collection-link" href="./collection.html">My Collection →</a>
+  </header>
+  <main class="packs-main">
+    <div id="status" class="status" role="status" aria-live="polite">Loading your packs…</div>
+    <section id="pack-list" class="pack-grid" aria-label="Your unopened packs"></section>
+    <section id="reveal" class="reveal hidden" aria-live="polite">
+      <div class="reveal-heading"><p class="eyebrow">PACK OPENED</p><h2 id="reveal-title">Your cards</h2><p id="reveal-subtitle"></p></div>
+      <div id="card-results" class="card-grid"></div>
+      <button id="close-reveal" class="primary-button" type="button">Back to packs</button>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./api.js"></script>
+  <script src="./packs.js"></script>
+</body>
+</html>
