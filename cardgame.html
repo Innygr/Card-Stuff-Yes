@@ -14,6 +14,7 @@
     <script src="./mobile.js" defer></script>
     <script src="./homepage-alerts.js" defer></script>
     <script src="./runtime-config.js" defer></script>
+    <script src="./api.js" defer></script>
     <script src="./cardgame.js" defer></script>
 </head>
 <body>
@@ -30,6 +31,20 @@
     <p class="online-entry">
         <a id="online-pvp-link" class="button secondary-button" href="./multiplayer.html">Play Online PvP</a>
     </p>
+
+    <section class="solo-deck-picker" aria-label="Choose your battle deck">
+        <div>
+            <p class="eyebrow">YOUR LOADOUT</p>
+            <h2>Choose a saved deck</h2>
+            <p id="deck-picker-status" role="status" aria-live="polite">Loading your saved decks…</p>
+        </div>
+        <label for="battle-deck-select">Battle deck</label>
+        <select id="battle-deck-select" disabled>
+            <option value="">Loading decks…</option>
+        </select>
+        <button id="use-battle-deck" class="button primary-button" type="button" disabled>Start with this deck</button>
+        <a href="./deckbuild.html">Build or edit a deck</a>
+    </section>
 
     <main class="game-layout">
         <p id="game-status" class="game-status" role="status" aria-live="polite">
