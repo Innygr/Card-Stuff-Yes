@@ -9,6 +9,7 @@ on:
       - "server.js"
       - "multiplayer.js"
       - "package.json"
+      - "package-lock.json"
       - "tests/**"
       - "Dockerfile"
       - ".dockerignore"
@@ -36,6 +37,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install locked server dependencies
+        run: npm ci
 
       - name: Check JavaScript syntax
         run: npm run check
