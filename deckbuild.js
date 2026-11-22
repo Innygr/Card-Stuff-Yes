@@ -43,13 +43,14 @@
         }
     }
 
-    function createCardTile(card, actionLabel, onAction) {
+    function createCardTile(card, actionLabel, onAction, disabled = false) {
         const item = document.createElement("article");
         item.className = "card-item";
         const button = document.createElement("button");
         button.type = "button";
         button.className = "card-button";
         button.setAttribute("aria-label", card.name + " — " + actionLabel);
+        button.disabled = disabled;
 
         const fallback = document.createElement("span");
         fallback.className = "card-image-fallback";
@@ -70,6 +71,7 @@
         action.type = "button";
         action.className = "card-action";
         action.textContent = actionLabel;
+        action.disabled = disabled;
         action.addEventListener("click", onAction);
         item.append(button, action);
         return item;
@@ -79,17 +81,30 @@
         ui.catalog.replaceChildren();
         const grid = document.createElement("div");
         grid.className = "card-grid";
-        for (const card of catalog) {
-            grid.appendChild(createCardTile(card, "ADD TO DECK", () => {
+        for (const card of catalog.filter(item => Number(item.quantity) > 0)) {
+            const copiesInDeck = cards.filter(cardId => cardId === card.id).length;
+            const unavailable = copiesInDeck >= Number(card.quantity);
+            grid.appendChild(createCardTile(card, unavailable ? "MAX OWNED COPIES" : "ADD TO DECK", () => {
                 if (busy) return;
                 if (cards.length >= MAX_CARDS) {
                     status("A saved deck can contain up to " + MAX_CARDS + " cards.", true);
                     return;
                 }
+                if (cards.filter(cardId => cardId === card.id).length >= Number(card.quantity)) {
+                    status("You do not own another copy of " + card.name + ".", true);
+                    return;
+                }
                 cards.push(card.id);
                 renderDeck();
+                renderCatalog();
                 status(card.name + " added.");
-            }));
+            }, unavailable));
+        }
+        if (!catalog.some(card => Number(card.quantity) > 0)) {
+            const empty = document.createElement("p");
+            empty.className = "empty-deck";
+            empty.textContent = "You do not own any cards yet. Open a pack to add cards to your collection.";
+            grid.appendChild(empty);
         }
         ui.catalog.appendChild(grid);
     }
@@ -113,6 +128,7 @@
                 if (busy) return;
                 cards.splice(index, 1);
                 renderDeck();
+                renderCatalog();
                 status(card.name + " removed.");
             }));
         });
@@ -166,6 +182,16 @@
         }
         if (!cards.length) {
             status("Add at least one card before saving.", true);
+            return;
+        }
+        const required = new Map();
+        for (const cardId of cards) required.set(cardId, (required.get(cardId) || 0) + 1);
+        const shortages = [...required].filter(([cardId, count]) => {
+            const card = catalog.find(item => item.id === cardId);
+            return !card || count > Number(card.quantity || 0);
+        });
+        if (shortages.length) {
+            status("This deck includes cards you do not own in sufficient quantity. Remove those cards or open more packs.", true);
             return;
         }
         busy = true;
@@ -237,12 +263,12 @@
             status("Ready to build a new deck.");
         });
         try {
-            const [catalogData] = await Promise.all([request("/api/cards"), refreshDecks()]);
-            catalog = Array.isArray(catalogData.cards) ? catalogData.cards : [];
+            const [collectionData] = await Promise.all([request("/api/account/collection"), refreshDecks()]);
+            catalog = Array.isArray(collectionData.cards) ? collectionData.cards : [];
             renderCatalog();
             renderDeck();
             if (!catalog.length) status("The card catalog is empty.", true);
-            else status("Loaded " + catalog.length + " catalog cards and " + decks.length + " saved decks.");
+            else status("Loaded " + catalog.filter(card => Number(card.quantity) > 0).length + " owned card types and " + decks.length + " saved decks.");
         } catch (error) {
             status(error.message || "Could not load the deck builder.", true);
             ui.catalog.textContent = "The card catalog could not be loaded.";
