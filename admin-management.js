@@ -401,7 +401,7 @@ async function handleAccountCollection(req, res, url) {
         const resultCards = drawn.map(card => ({ id: card.id, name: card.name, rarity: card.rarity || "common", resource: card.resource || "astral-magik" }));
         await client.query("INSERT INTO csy_private.pack_openings (account_id, request_id, pack_id, cards) VALUES ($1, $2, $3, $4::jsonb)", [accountSession.account.id, body.requestId, pack.id, JSON.stringify(resultCards)]);
         await client.query("COMMIT");
-        send(res, 200, { packId: pack.id, cards: drawn, remaining: spent.rows[0].quantity, replayed: false });
+        send(res, 200, { packId: pack.id, cards: resultCards, remaining: spent.rows[0].quantity, replayed: false });
     } catch (error) { try { await client.query("ROLLBACK"); } catch {} throw error; }
     finally { client.release(); }
     return true;
