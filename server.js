@@ -907,6 +907,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (url.pathname === "/api/cards" && req.method === "GET") {
+            await refreshPublishedCatalogue(true);
             sendJson(res, 200, { cards: CARDS, count: CARDS.length });
             return;
         }
@@ -924,7 +925,8 @@ const server = http.createServer(async (req, res) => {
                 sendJson(res, 503, { error: "The guest player service is at capacity. Please try again later." });
                 return;
             }
-            await refreshPublishedCatalogue();\n            await handleApi(req, res, url, player);
+            await refreshPublishedCatalogue();
+            await handleApi(req, res, url, player);
             return;
         }
         if (url.pathname.startsWith("/api/")) { sendJson(res, 404, { error: "API endpoint not implemented on this server." }); return; }
