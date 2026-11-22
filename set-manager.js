@@ -136,6 +136,13 @@ const cardHealthInput =
 
 const cardAttackInput =
     document.getElementById("card-attack");
+const cardBattleTypeInput = document.getElementById("card-battle-type");
+const cardResourceInput = document.getElementById("card-resource");
+const cardCostInput = document.getElementById("card-cost");
+const cardValueInput = document.getElementById("card-value");
+const cardSymbolInput = document.getElementById("card-symbol");
+const cardEffectInput = document.getElementById("card-effect");
+const playableExportButton = document.getElementById("playable-export-button");
 
 
 /* ============================================================
@@ -195,7 +202,12 @@ function createEmptyCard() {
         health: 0,
 
         attack: 0,
-
+        battleType: "attack",
+        resource: "astral-magik",
+        cost: 1,
+        value: 1,
+        symbol: "✦",
+        effect: "",
         abilities: []
 
     };
@@ -453,6 +465,12 @@ function openCardEditor(index = null) {
 
     cardAttackInput.value =
         card.attack;
+    cardBattleTypeInput.value = card.battleType || "attack";
+    cardResourceInput.value = card.resource || "astral-magik";
+    cardCostInput.value = Number.isInteger(card.cost) ? card.cost : 1;
+    cardValueInput.value = Number.isInteger(card.value) ? card.value : (card.attack || 1);
+    cardSymbolInput.value = card.symbol || "✦";
+    cardEffectInput.value = card.effect || "";
 
 
     renderAbilities(
@@ -517,6 +535,12 @@ function readEditorCard() {
 
         attack:
             Number(cardAttackInput.value) || 0,
+        battleType: cardBattleTypeInput.value,
+        resource: cardResourceInput.value,
+        cost: Number(cardCostInput.value),
+        value: Number(cardValueInput.value),
+        symbol: cardSymbolInput.value.trim(),
+        effect: cardEffectInput.value.trim(),
 
         abilities:
             (temporaryCard.abilities || []).map(ability => ({
@@ -797,6 +821,11 @@ function validateCard(card) {
         return "Attack must be a non-negative whole number.";
     }
 
+    if (!["attack", "guard", "heal", "draw"].includes(card.battleType)) return "Choose a supported battle type.";
+    if (!["magik", "astral-magik", "gilded-magik", "blood-magik", "dark-magik"].includes(card.resource)) return "Choose a supported Magik resource.";
+    if (!Number.isInteger(card.cost) || card.cost < 0 || card.cost > 99) return "Battle cost must be a whole number from 0 to 99.";
+    if (!Number.isInteger(card.value) || card.value < 0 || card.value > 99) return "Battle value must be a whole number from 0 to 99.";
+    if (!card.symbol || card.symbol.length > 12) return "A symbol of 1–12 characters is required.";
     for (const ability of card.abilities || []) {
         if (!ability.name || !ability.name.trim()) return "Every ability needs a name.";
         for (const [resource, cost] of Object.entries(ability.costs || {})) {
@@ -997,28 +1026,28 @@ importFile.addEventListener(
             }
 
 
-            if (
-                !Array.isArray(
-                    imported.cards
-                )
-            ) {
-                throw new Error(
-                    "Set must contain a cards array."
-                );
+            const importedCards = Array.isArray(imported) ? imported : imported.cards;
+            if (!Array.isArray(importedCards)) throw new Error("Import must be a Set Manager file or playable cards.json catalogue.");
+            const importingPlayableCatalog = Array.isArray(imported);
+            const normalizedCards = importedCards.map(card => importingPlayableCatalog ? ({
+                ...card, type: card.setType || "normal", rarity: card.rarity || "common",
+                art: card.art || "", health: Number(card.health) || 0, attack: Number(card.attack) || 0,
+                battleType: card.type, resource: card.resource || "astral-magik",
+                cost: Number(card.cost) || 0, value: Number(card.value) || 0,
+                symbol: card.symbol || "✦", effect: card.effect || "",
+                abilities: Array.isArray(card.abilities) ? card.abilities : []
+            }) : card);
+            const ids = new Set();
+            for (const card of normalizedCards) {
+                if (!card || typeof card.id !== "string" || !card.id.trim() || ids.has(card.id)) throw new Error("Imported cards must have unique, non-empty IDs.");
+                ids.add(card.id);
             }
 
 
             state.set = {
 
-                id:
-                    String(
-                        imported.id || ""
-                    ),
-
-                name:
-                    String(
-                        imported.name || ""
-                    ),
+                id: String(Array.isArray(imported) ? "imported-catalog" : imported.id || ""),
+                name: String(Array.isArray(imported) ? "Imported Playable Catalogue" : imported.name || ""),
 
                 version:
                     String(
@@ -1031,7 +1060,7 @@ importFile.addEventListener(
                     "development",
 
                 cards:
-                    imported.cards
+                    normalizedCards
 
             };
 
@@ -1053,7 +1082,7 @@ importFile.addEventListener(
 
 
             setStatus(
-                "Set imported successfully.",
+                importingPlayableCatalog ? "Playable catalogue imported. Existing card IDs are preserved." : "Set imported successfully.",
                 "success"
             );
 
@@ -1164,6 +1193,50 @@ exportButton.addEventListener(
     }
 );
 
+
+/* ============================================================
+   PLAYABLE CATALOGUE EXPORT
+   ============================================================ */
+
+playableExportButton.addEventListener("click", () => {
+    updateSetFromInputs();
+    if (!state.set.cards.length) {
+        setStatus("Add or import cards before exporting a playable catalogue.", "error");
+        return;
+    }
+    const ids = new Set();
+    const output = [];
+    for (const card of state.set.cards) {
+        const validationError = validateCard(card);
+        if (validationError) {
+            setStatus("Cannot export " + (card.name || card.id) + ": " + validationError, "error");
+            return;
+        }
+        if (ids.has(card.id)) {
+            setStatus("Duplicate card ID: " + card.id, "error");
+            return;
+        }
+        ids.add(card.id);
+        output.push({
+            id: card.id, name: card.name, type: card.battleType, resource: card.resource,
+            cost: card.cost, value: card.value, symbol: card.symbol, description: card.description,
+            effect: card.effect, rarity: card.rarity, art: card.art, health: card.health,
+            attack: card.attack, setType: card.type, setId: state.set.id || "custom-set",
+            temporary: true,
+            abilities: (card.abilities || []).map(ability => ({
+                id: ability.id, name: ability.name, description: ability.description,
+                costs: { magik: 0, astralMagik: 0, gildedMagik: 0, bloodMagik: 0, darkMagik: 0, ...(ability.costs || {}) },
+                effects: (ability.effects || []).map(effect => ({ type: effect.type, target: effect.target, value: effect.value }))
+            }))
+        });
+    }
+    const blob = new Blob([JSON.stringify(output, null, 4)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = "cards.json";
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    setStatus("Playable cards.json exported. Import the existing catalogue first to preserve current cards.", "success");
+});
 
 /* ============================================================
    EVENTS
