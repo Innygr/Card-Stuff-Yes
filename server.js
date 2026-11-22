@@ -488,6 +488,56 @@ function view(match, viewerId) {
     };
 }
 
+const ABILITY_RESOURCE_KEYS = {
+    magik: "magik",
+    astralMagik: "energy",
+    gildedMagik: "gildedMagik",
+    bloodMagik: "bloodMagik",
+    darkMagik: "darkMagik"
+};
+
+function cardAbilityCosts(card) {
+    const totals = {};
+    for (const ability of Array.isArray(card.abilities) ? card.abilities : []) {
+        for (const [key, amount] of Object.entries(ability.costs || {})) {
+            if (ABILITY_RESOURCE_KEYS[key] && Number.isInteger(amount) && amount > 0) {
+                totals[key] = (totals[key] || 0) + amount;
+            }
+        }
+    }
+    return totals;
+}
+
+function canAffordCard(combatant, card, baseResourceKey) {
+    if ((combatant[baseResourceKey] || 0) < card.cost) return false;
+    return Object.entries(cardAbilityCosts(card)).every(([key, amount]) =>
+        (combatant[ABILITY_RESOURCE_KEYS[key]] || 0) >= amount
+    );
+}
+
+function resolveCardAbilities(match, own, opponent, card) {
+    for (const ability of Array.isArray(card.abilities) ? card.abilities : []) {
+        for (const effect of Array.isArray(ability.effects) ? ability.effects : []) {
+            const recipient = effect.target === "self" ? own : opponent;
+            const amount = effect.value;
+            if (!Number.isInteger(amount) || amount < 1 || amount > 99) continue;
+            if (effect.type === "damage") {
+                const hit = damage(recipient, amount);
+                log(match, own.name + " resolves " + (ability.name || "an ability") + ": " + recipient.name + " takes " + hit.healthDamage + " damage" + (hit.blocked ? " (" + hit.blocked + " blocked)" : "") + ".");
+            } else if (effect.type === "shield") {
+                recipient.shield += amount;
+                log(match, own.name + " resolves " + (ability.name || "an ability") + ": " + recipient.name + " gains " + amount + " shield.");
+            } else if (effect.type === "heal") {
+                const before = recipient.health;
+                recipient.health = Math.min(MAX_HEALTH, recipient.health + amount);
+                log(match, own.name + " resolves " + (ability.name || "an ability") + ": " + recipient.name + " restores " + (recipient.health - before) + " health.");
+            } else if (effect.type === "draw") {
+                log(match, own.name + " resolves " + (ability.name || "an ability") + ": " + recipient.name + " draws " + draw(recipient, amount) + " card(s).");
+            }
+        }
+    }
+}
+
 function playCard(match, own, opponent, instanceId) {
     const index = own.hand.findIndex(item => item.instanceId === instanceId);
     if (index < 0) return "That card is not in your hand.";
@@ -496,8 +546,10 @@ function playCard(match, own, opponent, instanceId) {
     if (!card) return "Unknown card.";
     const resourceKeys = { magik: "magik", "astral-magik": "energy", "gilded-magik": "gildedMagik", "blood-magik": "bloodMagik", "dark-magik": "darkMagik" };
     const resourceKey = resourceKeys[card.resource] || "energy";
-    if (own[resourceKey] < card.cost) return "Not enough " + (card.resource || "Astral Magik") + " for that card.";
+    const extraCosts = cardAbilityCosts(card);
+    if (!canAffordCard(own, card, resourceKey)) return "Not enough Magik resources to pay for that card and its abilities.";
     own[resourceKey] -= card.cost;
+    for (const [key, amount] of Object.entries(extraCosts)) own[ABILITY_RESOURCE_KEYS[key]] -= amount;
     own.hand.splice(index, 1);
     own.discard.push(instance);
 
@@ -533,6 +585,7 @@ function playCard(match, own, opponent, instanceId) {
     } else if (card.type === "draw") {
         log(match, own.name + " plays " + card.name + " and draws " + draw(own, card.value) + " card(s).");
     }
+    resolveCardAbilities(match, own, opponent, card);
     match.updatedAt = new Date().toISOString();
     finish(match);
     return null;
