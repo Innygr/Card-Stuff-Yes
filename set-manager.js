@@ -793,10 +793,9 @@ function validateCard(card) {
     }
 
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(card.id)) {
+    if (!/^[a-z0-9-]+$/.test(card.id)) {
         return (
-            "Card ID may only contain letters, numbers, " +
-            "underscores, and hyphens."
+            "Card ID must use lowercase letters, numbers, and hyphens, matching the game catalogue."
         );
     }
 
@@ -1033,10 +1032,18 @@ importFile.addEventListener(
                 ...card, type: card.setType || "normal", rarity: card.rarity || "common",
                 art: card.art || "", health: Number(card.health) || 0, attack: Number(card.attack) || 0,
                 battleType: card.type, resource: card.resource || "astral-magik",
-                cost: Number(card.cost) || 0, value: Number(card.value) || 0,
+                cost: Number.isInteger(card.cost) ? card.cost : 0,
+                value: Number.isInteger(card.value) ? card.value : 0,
                 symbol: card.symbol || "✦", effect: card.effect || "",
                 abilities: Array.isArray(card.abilities) ? card.abilities : []
-            }) : card);
+            }) : ({
+                ...card, battleType: card.battleType || "attack",
+                resource: card.resource || "astral-magik",
+                cost: Number.isInteger(card.cost) ? card.cost : 1,
+                value: Number.isInteger(card.value) ? card.value : (Number(card.attack) || 1),
+                symbol: card.symbol || "✦", effect: card.effect || "",
+                abilities: Array.isArray(card.abilities) ? card.abilities : []
+            }));
             const ids = new Set();
             for (const card of normalizedCards) {
                 if (!card || typeof card.id !== "string" || !card.id.trim() || ids.has(card.id)) throw new Error("Imported cards must have unique, non-empty IDs.");
