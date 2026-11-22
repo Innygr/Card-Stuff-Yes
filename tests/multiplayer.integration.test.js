@@ -494,6 +494,17 @@ test("a player cannot create or join a second unfinished match", async () => {
     assert.equal(joinExisting.status, 409);
 });
 
+test("multiplayer exposes all five independent Magik resource pools", async () => {
+    const host = new ApiClient();
+    const guest = new ApiClient();
+    const created = await host.request("/api/multiplayer/matches", { method: "POST" });
+    const joined = await guest.request("/api/multiplayer/matches/" + created.data.match.id + "/join", { method: "POST" });
+    assert.equal(joined.status, 200);
+    const resources = joined.data.match.you.resources;
+    assert.deepEqual(Object.keys(resources).sort(), ["astralMagik", "bloodMagik", "darkMagik", "gildedMagik", "magik"].sort());
+    assert.deepEqual(resources, { magik: 1, astralMagik: 1, gildedMagik: 1, bloodMagik: 1, darkMagik: 1 });
+});
+
 test("Magik draw is limited to once per turn", async () => {
     const host = new ApiClient();
     const guest = new ApiClient();
