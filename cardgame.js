@@ -80,7 +80,7 @@
             });
             return shuffled(cards);
         }
-        cardLibrary.forEach(function (definition) {
+        cardLibrary.slice(0, 15).forEach(function (definition) {
             for (let copy = 0; copy < 4; copy += 1) cards.push(cloneCard(definition));
         });
         return shuffled(cards);
