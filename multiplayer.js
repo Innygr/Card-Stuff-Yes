@@ -34,7 +34,7 @@
         youShield: $("you-shield"),
         youDeck: $("you-deck"),
         youDiscard: $("you-discard"),
-        youEnergy: $("you-energy"),
+        resourcePools: $("online-resource-pools"),
         hand: $("online-hand"),
         draw: $("online-draw-button"),
         endTurn: $("online-end-turn-button"),
@@ -268,7 +268,7 @@
     }
 
     function setControlsDisabled(disabled) {
-        ui.draw.disabled = disabled || !canAct() || !currentMatch.you.magik;
+        ui.draw.disabled = disabled || !canAct() || currentMatch.you.magik < 1;
         ui.endTurn.disabled = disabled || !canAct();
         ui.hand.querySelectorAll("button").forEach(button => {
             button.disabled = disabled || !canAct() || button.dataset.affordable !== "true";
@@ -277,6 +277,24 @@
 
     function canAct() {
         return Boolean(currentMatch && currentMatch.status === "active" && currentMatch.activePlayerId === currentPlayer.id);
+    }
+
+    function renderResources(resources) {
+        ui.resourcePools.replaceChildren();
+        [
+            ["magik", "Magik"], ["astralMagik", "Astral Magik"],
+            ["gildedMagik", "Gilded Magik"], ["bloodMagik", "Blood Magik"],
+            ["darkMagik", "Dark Magik"]
+        ].forEach(([key, label]) => {
+            const row = document.createElement("div");
+            row.className = "online-resource";
+            const name = document.createElement("span");
+            name.textContent = label;
+            const value = document.createElement("strong");
+            value.textContent = Number(resources[key] || 0) + " / 6";
+            row.append(name, value);
+            ui.resourcePools.appendChild(row);
+        });
     }
 
     function renderHealth(label, fill, health) {
@@ -294,7 +312,7 @@
         ui.youShield.textContent = String(match.you.shield);
         ui.youDeck.textContent = String(match.you.deckCount);
         ui.youDiscard.textContent = String(match.you.discardCount);
-        ui.youEnergy.textContent = match.you.energy + " / " + match.you.maxEnergy;
+        renderResources(match.you.resources || { magik: match.you.magik, astralMagik: match.you.energy, gildedMagik: match.you.gildedMagik || 0, bloodMagik: match.you.bloodMagik || 0, darkMagik: match.you.darkMagik || 0 });
         ui.opponentShield.textContent = match.opponent ? String(match.opponent.shield) : "0";
         ui.opponentDeck.textContent = match.opponent ? String(match.opponent.deckCount) : "60";
         ui.opponentHand.textContent = match.opponent ? String(match.opponent.handCount) : "0";
@@ -320,13 +338,16 @@
             const button = document.createElement("button");
             button.type = "button";
             button.className = "online-card";
-            const affordable = card.cost <= currentMatch.you.energy;
+            const resourceKey = ({ magik: "magik", "astral-magik": "astralMagik", "gilded-magik": "gildedMagik", "blood-magik": "bloodMagik", "dark-magik": "darkMagik" })[card.resource] || "astralMagik";
+            const resourceValue = (currentMatch.you.resources || {})[resourceKey] ?? (resourceKey === "astralMagik" ? currentMatch.you.energy : currentMatch.you[resourceKey]);
+            const affordable = card.cost <= Number(resourceValue || 0);
             button.dataset.affordable = String(affordable);
             button.disabled = !isMyTurn || !affordable || requestBusy;
 
             const cost = document.createElement("span");
             cost.className = "card-cost";
-            cost.textContent = String(card.cost);
+            const resourceLabel = ({ magik: "Magik", "astral-magik": "Astral", "gilded-magik": "Gilded", "blood-magik": "Blood", "dark-magik": "Dark" })[card.resource] || "Astral";
+            cost.textContent = card.cost + " " + resourceLabel;
             const symbol = document.createElement("span");
             symbol.className = "card-symbol";
             symbol.textContent = card.symbol;
