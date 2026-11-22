@@ -271,7 +271,7 @@
             combatant.shield += definition.cost;
             addLog(combatant.name + " gains " + definition.cost + " Gilded shield.");
         } else if (resourceKey === "bloodMagik") {
-            const paid = damage(combatant, 1);
+            combatant.health = Math.max(0, combatant.health - 1);
             addLog(combatant.name + " pays 1 health to Blood Magik.");
             if (combatant.health <= 0) checkGameOver();
         } else if (resourceKey === "darkMagik") {
