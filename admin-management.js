@@ -288,7 +288,7 @@ async function handleAdminManagement(req, res, url) {
 
     if (route.startsWith("/api/admin/players/") && route.includes("/packs/") && req.method === "PUT") {
         if (admin.rank !== "owner" && admin.rank !== "admin") { send(res, 403, { error: "Admin access required." }); return true; }
-        const match = route.match(/^\\/api\\/admin\\/players\\/([A-Za-z0-9_-]+)\\/packs\\/([a-z0-9-]+)$/);
+        const match = route.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]+)\/packs\/([a-z0-9-]+)$/);
         const packIds = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, "card-packs.json"), "utf8")).packs.map(pack => pack.id));
         if (!match || !packIds.has(match[2])) { send(res, 400, { error: "Invalid player or pack ID." }); return true; }
         let body;
