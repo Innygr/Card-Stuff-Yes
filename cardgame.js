@@ -262,8 +262,26 @@
         });
         combatant.discard.push(card);
 
+        // Provisional resource identities: each Magik type adds a distinct
+        // effect whenever a card spends that resource.
+        if (resourceKey === "magik") {
+            const drawn = drawCards(combatant, 1, false);
+            if (drawn) addLog(combatant.name + " draws 1 card from Magik resonance.");
+        } else if (resourceKey === "gildedMagik") {
+            combatant.shield += definition.cost;
+            addLog(combatant.name + " gains " + definition.cost + " Gilded shield.");
+        } else if (resourceKey === "bloodMagik") {
+            const paid = damage(combatant, 1);
+            addLog(combatant.name + " pays 1 health to Blood Magik.");
+            if (combatant.health <= 0) checkGameOver();
+        } else if (resourceKey === "darkMagik") {
+            target.health = Math.max(0, target.health - 1);
+            addLog(target.name + " loses 1 health to Dark Magik, bypassing shield.");
+        }
+
         if (definition.type === "attack") {
-            const result = damage(target, definition.value);
+            const attackValue = definition.value + (resourceKey === "astralMagik" ? 1 : 0);
+            const result = damage(target, attackValue);
             let line = combatant.name + " plays " + definition.name + " for " + result.healthDamage + " health damage";
             if (result.blocked > 0) {
                 line += " (" + result.blocked + " blocked)";
