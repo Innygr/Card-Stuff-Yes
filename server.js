@@ -376,7 +376,7 @@ function newDeck() {
 }
 
 function newCombatant(player) {
-    return { playerId: player.id, name: player.name, health: MAX_HEALTH, shield: 0, energy: 0, maxEnergy: 0, magik: 1, turnCount: 0, deck: newDeck(), hand: [], discard: [] };
+    return { playerId: player.id, name: player.name, health: MAX_HEALTH, shield: 0, energy: 0, maxEnergy: 0, magik: 0, gildedMagik: 0, bloodMagik: 0, darkMagik: 0, turnCount: 0, deck: newDeck(), hand: [], discard: [] };
 }
 
 function draw(combatant, count) {
@@ -404,7 +404,10 @@ function startTurn(match, combatant, drawOne) {
     combatant.shield = 0;
     combatant.maxEnergy = Math.min(MAX_ENERGY, combatant.turnCount);
     combatant.energy = combatant.maxEnergy;
-    combatant.magik = 1;
+    combatant.magik = Math.min(MAX_ENERGY, combatant.turnCount);
+    combatant.gildedMagik = Math.min(MAX_ENERGY, combatant.turnCount);
+    combatant.bloodMagik = Math.min(MAX_ENERGY, combatant.turnCount);
+    combatant.darkMagik = Math.min(MAX_ENERGY, combatant.turnCount);
     if (drawOne) log(match, combatant.name + (draw(combatant, 1) ? " draws a card." : " has no cards left to draw."));
 }
 
@@ -444,7 +447,16 @@ function finish(match) {
 }
 
 function publicPlayer(item) {
-    return { playerId: item.playerId, name: item.name, health: item.health, shield: item.shield, energy: item.energy, maxEnergy: item.maxEnergy, magik: item.magik, deckCount: item.deck.length, handCount: item.hand.length, discardCount: item.discard.length };
+    return {
+        playerId: item.playerId, name: item.name, health: item.health, shield: item.shield,
+        energy: item.energy, maxEnergy: item.maxEnergy, magik: item.magik,
+        gildedMagik: item.gildedMagik, bloodMagik: item.bloodMagik, darkMagik: item.darkMagik,
+        resources: {
+            magik: item.magik, astralMagik: item.energy, gildedMagik: item.gildedMagik,
+            bloodMagik: item.bloodMagik, darkMagik: item.darkMagik
+        },
+        deckCount: item.deck.length, handCount: item.hand.length, discardCount: item.discard.length
+    };
 }
 
 function view(match, viewerId) {
@@ -467,8 +479,10 @@ function playCard(match, own, opponent, instanceId) {
     const instance = own.hand[index];
     const card = CARD_BY_ID.get(instance.cardId);
     if (!card) return "Unknown card.";
-    if (own.energy < card.cost) return "Not enough Astral Magik for that card.";
-    own.energy -= card.cost;
+    const resourceKeys = { magik: "magik", "astral-magik": "energy", "gilded-magik": "gildedMagik", "blood-magik": "bloodMagik", "dark-magik": "darkMagik" };
+    const resourceKey = resourceKeys[card.resource] || "energy";
+    if (own[resourceKey] < card.cost) return "Not enough " + (card.resource || "Astral Magik") + " for that card.";
+    own[resourceKey] -= card.cost;
     own.hand.splice(index, 1);
     own.discard.push(instance);
     if (card.type === "attack") {
