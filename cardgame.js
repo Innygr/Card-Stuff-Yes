@@ -620,6 +620,14 @@
             const effect = document.createElement("p");
             effect.className = "game-card-effect";
             effect.textContent = definition.effect;
+            const abilitySummary = document.createElement("p");
+            abilitySummary.className = "game-card-effect";
+            abilitySummary.textContent = (Array.isArray(definition.abilities) ? definition.abilities : []).map(function (ability) {
+                const effects = (ability.effects || []).map(function (item) {
+                    return item.type + " " + item.value + " (" + item.target + ")";
+                }).join(", ");
+                return ability.name + (effects ? ": " + effects : "");
+            }).filter(Boolean).join(" · ");
 
             button.appendChild(cost);
             button.appendChild(symbol);
@@ -627,6 +635,7 @@
             button.appendChild(type);
             button.appendChild(description);
             button.appendChild(effect);
+            if (abilitySummary.textContent) button.appendChild(abilitySummary);
 
             button.addEventListener("click", function () {
                 try {
