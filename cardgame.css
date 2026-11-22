@@ -614,3 +614,24 @@ button {
 .solo-deck-picker > a { color: var(--color-link); font-size: 13px; white-space: nowrap; }
 @media(max-width:800px) { .solo-deck-picker { grid-template-columns: 1fr 1fr; } .solo-deck-picker > div { grid-column: 1/-1; } }
 @media(max-width:480px) { .solo-deck-picker { grid-template-columns: 1fr; } .solo-deck-picker > div { grid-column: auto; } }
+
+
+.resource-pools {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 14px;
+}
+.resource-pool {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: var(--color-background-tertiary);
+    font-size: 12px;
+}
+.resource-pool span { color: var(--color-text-secondary); }
+.resource-pool strong { white-space: nowrap; }
+@media(max-width:380px) { .resource-pools { grid-template-columns: 1fr; } }
