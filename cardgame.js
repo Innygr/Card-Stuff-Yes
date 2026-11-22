@@ -12,6 +12,23 @@
 (function () {
     const MAX_HEALTH = 30;
     const MAX_ENERGY = 6;
+    const RESOURCE_META = [
+        { key: "magik", label: "Magik" },
+        { key: "astralMagik", label: "Astral Magik" },
+        { key: "gildedMagik", label: "Gilded Magik" },
+        { key: "bloodMagik", label: "Blood Magik" },
+        { key: "darkMagik", label: "Dark Magik" }
+    ];
+    const RESOURCE_BY_ID = {
+        magik: "magik",
+        "astral-magik": "astralMagik",
+        "gilded-magik": "gildedMagik",
+        "blood-magik": "bloodMagik",
+        "dark-magik": "darkMagik"
+    };
+    function cardResourceKey(definition) {
+        return RESOURCE_BY_ID[definition.resource] || "astralMagik";
+    }
     const MAX_HAND = 10;
     const STARTING_HAND = 5;
 
@@ -33,8 +50,7 @@
         opponentDeckCount: document.getElementById("opponent-deck-count"),
         playerDiscardCount: document.getElementById("player-discard-count"),
         opponentHandCount: document.getElementById("opponent-hand-count"),
-        playerEnergy: document.getElementById("player-energy"),
-        energyPips: document.getElementById("energy-pips"),
+        resourcePools: document.getElementById("resource-pools"),
         playerHand: document.getElementById("player-hand"),
         intent: document.getElementById("opponent-intent"),
         handHint: document.getElementById("hand-hint"),
@@ -91,9 +107,7 @@
             name: name,
             health: MAX_HEALTH,
             shield: 0,
-            energy: 0,
-            maxEnergy: 0,
-            magik: 1,
+            resources: { magik: 0, astralMagik: 0, gildedMagik: 0, bloodMagik: 0, darkMagik: 0 },
             deck: makeDeck(isPlayer),
             hand: [],
             discard: []
@@ -173,16 +187,16 @@
         state.activeSide = "player";
         state.locked = false;
         state.player.shield = 0;
-        state.player.maxEnergy = Math.min(MAX_ENERGY, state.turn);
-        state.player.energy = state.player.maxEnergy;
-        state.player.magik = 1;
+        RESOURCE_META.forEach(function (resource) {
+            state.player.resources[resource.key] = Math.min(MAX_ENERGY, state.turn);
+        });
 
         if (drawOne) {
             drawCards(state.player, 1, true);
             addLog("You draw 1 card.");
         }
 
-        setStatus("Your turn. You have " + state.player.energy + " Astral Magik.", "");
+        setStatus("Your turn. Your five Magik pools have replenished.", "");
         elements.intent.textContent = "Rival is preparing its next move.";
         render();
     }
@@ -232,14 +246,16 @@
             return false;
         }
 
-        if (combatant.energy < definition.cost) {
+        const resourceKey = cardResourceKey(definition);
+        if (combatant.resources[resourceKey] < definition.cost) {
             if (isPlayer) {
-                setStatus("Not enough Astral Magik to play " + definition.name + ".", "error");
+                const resource = RESOURCE_META.find(function (item) { return item.key === resourceKey; });
+                setStatus("Not enough " + resource.label + " to play " + definition.name + ".", "error");
             }
             return false;
         }
 
-        combatant.energy -= definition.cost;
+        combatant.resources[resourceKey] -= definition.cost;
         combatant.hand = combatant.hand.filter(function (item) {
             return item.instanceId !== card.instanceId;
         });
@@ -350,7 +366,8 @@
 
     function chooseAiCard() {
         const affordable = state.opponent.hand.filter(function (card) {
-            return card.definition.cost <= state.opponent.energy;
+            const key = cardResourceKey(card.definition);
+            return card.definition.cost <= state.opponent.resources[key];
         });
 
         if (!affordable.length) {
@@ -389,11 +406,11 @@
         }
 
         const opponent = state.opponent;
-        opponent.maxEnergy = Math.min(MAX_ENERGY, state.turn);
-        opponent.energy = opponent.maxEnergy;
-        opponent.magik = 1;
+        RESOURCE_META.forEach(function (resource) {
+            opponent.resources[resource.key] = Math.min(MAX_ENERGY, state.turn);
+        });
         drawCards(opponent, 1, true);
-        addLog("Void Challenger starts turn " + state.turn + " with " + opponent.energy + " Astral Magik.");
+        addLog("Void Challenger starts turn " + state.turn + " with replenished Magik resources.");
 
         let plays = 0;
         while (plays < 3 && !state.finished) {
@@ -447,21 +464,23 @@
         elements.opponentDeckCount.textContent = String(state.opponent.deck.length);
         elements.playerDiscardCount.textContent = String(state.player.discard.length);
         elements.opponentHandCount.textContent = String(state.opponent.hand.length);
-        elements.playerEnergy.textContent = state.player.energy + " / " + state.player.maxEnergy;
-        elements.energyPips.innerHTML = "";
-
-        for (let i = 0; i < state.player.maxEnergy; i += 1) {
-            const pip = document.createElement("span");
-            pip.className = "energy-pip" + (i < state.player.energy ? " filled" : "");
-            pip.setAttribute("aria-hidden", "true");
-            elements.energyPips.appendChild(pip);
-        }
+        elements.resourcePools.replaceChildren();
+        RESOURCE_META.forEach(function (resource) {
+            const row = document.createElement("div");
+            row.className = "resource-pool";
+            const label = document.createElement("span");
+            label.textContent = resource.label;
+            const value = document.createElement("strong");
+            value.textContent = state.player.resources[resource.key] + " / " + MAX_ENERGY;
+            row.append(label, value);
+            elements.resourcePools.appendChild(row);
+        });
 
         elements.drawButton.disabled =
             state.finished ||
             state.locked ||
             state.activeSide !== "player" ||
-            state.player.magik < 1 ||
+            state.player.resources.magik < 1 ||
             state.player.deck.length === 0 && state.player.discard.length === 0 ||
             state.player.hand.length >= MAX_HAND;
 
@@ -493,11 +512,13 @@
                 state.finished ||
                 state.locked ||
                 state.activeSide !== "player" ||
-                state.player.energy < definition.cost;
+                state.player.resources[cardResourceKey(definition)] < definition.cost;
 
             const cost = document.createElement("span");
             cost.className = "game-card-cost";
-            cost.textContent = String(definition.cost);
+            const resourceLabel = RESOURCE_META.find(function (item) { return item.key === cardResourceKey(definition); }).label;
+            cost.textContent = definition.cost + " " + resourceLabel;
+            cost.setAttribute("aria-label", definition.cost + " " + resourceLabel);
             cost.setAttribute("aria-label", "Cost " + definition.cost);
 
             const symbol = document.createElement("span");
@@ -547,7 +568,7 @@
         });
 
         elements.handHint.textContent =
-            state.player.hand.length + " card(s) in hand. Cards cost Astral Magik to play.";
+            state.player.hand.length + " card(s) in hand. Each card spends its own Magik type.";
     }
 
     function renderLog() {
@@ -584,12 +605,12 @@
             return;
         }
 
-        if (state.player.magik < 1) {
+        if (state.player.resources.magik < 1) {
             setStatus("You need 1 Magik to draw a card.", "error");
             return;
         }
 
-        state.player.magik -= 1;
+        state.player.resources.magik -= 1;
         const drawn = drawCards(state.player, 1, true);
         if (drawn) {
             addLog("You spend 1 Magik to draw a card.");
