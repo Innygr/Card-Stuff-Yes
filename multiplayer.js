@@ -353,11 +353,14 @@
             const resourceValue = (currentMatch.you.resources || {})[resourceKey] ?? (resourceKey === "astralMagik" ? currentMatch.you.energy : currentMatch.you[resourceKey]);
             const abilityCosts = onlineAbilityCosts(card);
             const resources = currentMatch.you.resources || {};
-            const affordable = card.cost <= Number(resourceValue || 0) &&
-                Object.entries(abilityCosts).every(([key, amount]) => {
-                    const keyValue = resources[key] ?? currentMatch.you[key];
-                    return Number(keyValue || 0) >= amount;
-                });
+            const requiredCosts = { [resourceKey]: card.cost };
+            Object.entries(abilityCosts).forEach(([key, amount]) => {
+                requiredCosts[key] = (requiredCosts[key] || 0) + amount;
+            });
+            const affordable = Object.entries(requiredCosts).every(([key, amount]) => {
+                const keyValue = resources[key] ?? (key === "astralMagik" ? currentMatch.you.energy : currentMatch.you[key]);
+                return Number(keyValue || 0) >= amount;
+            });
             button.dataset.affordable = String(affordable);
             button.disabled = !isMyTurn || !affordable || requestBusy;
 
