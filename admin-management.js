@@ -20,11 +20,11 @@ function send(res, status, data, headers = {}) {
     res.end(JSON.stringify(data));
 }
 
-async function readJson(req) {
+async function readJson(req, maxBytes = 16384) {
     let body = "";
     for await (const chunk of req) {
         body += chunk.toString("utf8");
-        if (Buffer.byteLength(body) > 16384) throw new Error("Request body is too large.");
+        if (Buffer.byteLength(body) > maxBytes) throw new Error("Request body is too large.");
     }
     try { return body.trim() ? JSON.parse(body) : {}; }
     catch { throw new Error("Request body must be valid JSON."); }
