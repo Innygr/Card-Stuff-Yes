@@ -131,6 +131,7 @@ function loadState() {
         }
     }
 
+    let resourcesMigrated = false;
     for (const match of snapshot.matches) {
         if (matches.size >= MAX_MATCHES) break;
         if (!match || typeof match.id !== "string" ||
@@ -165,6 +166,20 @@ function loadState() {
             });
         if (!combatantsValid) continue;
 
+        for (const combatant of combatants) {
+            if (!Number.isFinite(combatant.gildedMagik) ||
+                !Number.isFinite(combatant.bloodMagik) ||
+                !Number.isFinite(combatant.darkMagik)) {
+                const turnResources = Math.min(MAX_ENERGY, Math.max(0, Number(combatant.turnCount) || 0));
+                if (!Number.isFinite(combatant.magik)) combatant.magik = 0;
+                if (!Number.isFinite(combatant.energy)) combatant.energy = 0;
+                if (!Number.isFinite(combatant.gildedMagik)) combatant.gildedMagik = turnResources;
+                if (!Number.isFinite(combatant.bloodMagik)) combatant.bloodMagik = turnResources;
+                if (!Number.isFinite(combatant.darkMagik)) combatant.darkMagik = turnResources;
+                resourcesMigrated = true;
+            }
+        }
+
         if (match.status === "active" && !playerIds.includes(match.activePlayerId)) continue;
         if (match.status !== "active" && match.activePlayerId !== null) continue;
 
@@ -186,7 +201,7 @@ function loadState() {
     // snapshot if validation rejected any entries, so corrupt records do not
     // linger on disk and get reconsidered at every restart.
     const expiredChanged = pruneExpiredMatches();
-    if (expiredChanged || players.size !== snapshot.players.length || matches.size !== snapshot.matches.length) saveState();
+    if (expiredChanged || resourcesMigrated || players.size !== snapshot.players.length || matches.size !== snapshot.matches.length) saveState();
 }
 
 function pruneExpiredMatches(now = Date.now()) {
