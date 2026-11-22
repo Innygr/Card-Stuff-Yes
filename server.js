@@ -253,7 +253,33 @@ try {
     console.error("Card catalog could not be loaded:", error.message);
     process.exit(1);
 }
-const CARD_BY_ID = new Map(CARDS.map(card => [card.id, card]));
+let CARD_BY_ID = new Map(CARDS.map(card => [card.id, card]));
+let publishedCatalogueCheckedAt = 0;
+async function refreshPublishedCatalogue(force = false) {
+    const now = Date.now();
+    if (!force && now - publishedCatalogueCheckedAt < 3000) return;
+    publishedCatalogueCheckedAt = now;
+    try {
+        const result = await getPool().query(
+            "SELECT cards FROM csy_private.card_catalogue_versions ORDER BY version DESC LIMIT 1"
+        );
+        if (!result.rows.length) return;
+        const cards = result.rows[0].cards;
+        if (!Array.isArray(cards) || !cards.length) return;
+        const ids = new Set();
+        for (const card of cards) {
+            if (!card || typeof card.id !== "string" || ids.has(card.id) ||
+                !["attack", "guard", "heal", "draw"].includes(card.type) ||
+                !Number.isInteger(card.cost) || !Number.isInteger(card.value)) return;
+            ids.add(card.id);
+        }
+        CARDS = cards;
+        CARD_BY_ID = new Map(cards.map(card => [card.id, card]));
+    } catch (error) {
+        // Before migration 009 is applied, the bundled catalogue remains authoritative.
+        if (error.code !== "42P01") throw error;
+    }
+}
 
 // Load only after card definitions exist, so saved card instances can be checked.
 loadState();
@@ -898,7 +924,7 @@ const server = http.createServer(async (req, res) => {
                 sendJson(res, 503, { error: "The guest player service is at capacity. Please try again later." });
                 return;
             }
-            await handleApi(req, res, url, player);
+            await refreshPublishedCatalogue();\n            await handleApi(req, res, url, player);
             return;
         }
         if (url.pathname.startsWith("/api/")) { sendJson(res, 404, { error: "API endpoint not implemented on this server." }); return; }
