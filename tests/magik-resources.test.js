@@ -27,3 +27,16 @@ test("multiplayer replenishes and exposes all five independent resource pools", 
     assert.match(server, /own\[resourceKey\] -= card\.cost/);
     assert.match(server, /resourceKeys\[card\.resource\]/);
 });
+
+test("each resource has a distinct gameplay effect in solo and authoritative multiplayer", () => {
+    const solo = fs.readFileSync(path.join(root, "cardgame.js"), "utf8");
+    for (const source of [solo, server]) {
+        assert.match(source, /Magik resonance/);
+        assert.match(source, /Gilded shield/);
+        assert.match(source, /Blood Magik/);
+        assert.match(source, /Dark Magik, bypassing shield/);
+        assert.match(source, /resourceKey === "astralMagik"|resourceKey === "energy"/);
+    }
+    assert.match(solo, /definition\.value \+ \(resourceKey === "astralMagik" \? 1 : 0\)/);
+    assert.match(server, /card\.value \+ \(resourceKey === "energy" \? 1 : 0\)/);
+});
