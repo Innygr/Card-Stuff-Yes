@@ -382,7 +382,14 @@
             const effect = document.createElement("p");
             effect.className = "card-effect";
             effect.textContent = card.effect;
+            const abilitySummary = document.createElement("p");
+            abilitySummary.className = "card-effect";
+            abilitySummary.textContent = (Array.isArray(card.abilities) ? card.abilities : []).map(ability => {
+                const effects = (ability.effects || []).map(item => item.type + " " + item.value + " (" + item.target + ")").join(", ");
+                return ability.name + (effects ? ": " + effects : "");
+            }).filter(Boolean).join(" · ");
             button.append(cost, symbol, title, description, effect);
+            if (abilitySummary.textContent) button.appendChild(abilitySummary);
             button.addEventListener("click", () => submitAction("play_card", card.instanceId));
             ui.hand.appendChild(button);
         });
