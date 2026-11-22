@@ -385,8 +385,8 @@ test("solo and multiplayer games receive the same shared card catalog", async ()
     const sourceCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, "cards.json"), "utf8"));
     assert.equal(payload.count, sourceCatalog.length);
     assert.deepEqual(payload.cards, sourceCatalog);
-    assert.equal(payload.cards.length, 15);
-    assert.equal(new Set(payload.cards.map(card => card.id)).size, payload.cards.length);
+    assert.equal(payload.cards.length, 120);
+    assert.equal(new Set(payload.cards.map(card => card.id)).size, 120);
 });
 
 test("two guests can create and join a match; turns are enforced", async () => {
