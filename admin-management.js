@@ -65,6 +65,87 @@ async function handleAdminManagement(req, res, url) {
         return true;
     }
 
+    if (route === "/api/admin/cards" && req.method === "GET") {
+        const result = await database.getPool().query(
+            "SELECT version, cards, published_at, published_by FROM csy_private.card_catalogue_versions ORDER BY version DESC LIMIT 1"
+        );
+        send(res, 200, { version: result.rows[0]?.version || 0, cards: result.rows[0]?.cards || CARD_CATALOG,
+            publishedAt: result.rows[0]?.published_at || null, publishedBy: result.rows[0]?.published_by || null });
+        return true;
+    }
+
+    if (route === "/api/admin/cards" && req.method === "PUT") {
+        if (admin.rank !== "owner") {
+            send(res, 403, { error: "Only the owner can publish the card catalogue." });
+            return true;
+        }
+        let body;
+        try { body = await readJson(req); }
+        catch (error) { send(res, 400, { error: error.message }); return true; }
+        const cards = body && body.cards;
+        const validTypes = new Set(["attack", "guard", "heal", "draw"]);
+        const resourceKeys = new Set(["magik", "astralMagik", "gildedMagik", "bloodMagik", "darkMagik"]);
+        const ids = new Set();
+        const valid = Array.isArray(cards) && cards.length > 0 && cards.length <= 2000 &&
+            cards.every(card => {
+                if (!card || typeof card.id !== "string" || !/^[a-z0-9-]{1,80}$/.test(card.id) ||
+                    ids.has(card.id) || typeof card.name !== "string" || !card.name.trim() ||
+                    card.name.length > 120 || !validTypes.has(card.type) ||
+                    !Number.isInteger(card.cost) || card.cost < 0 || card.cost > 99 ||
+                    !Number.isInteger(card.value) || card.value < 0 || card.value > 99 ||
+                    typeof card.symbol !== "string" || card.symbol.length > 12 ||
+                    typeof card.description !== "string" || card.description.length > 1000 ||
+                    typeof card.effect !== "string" || card.effect.length > 240) return false;
+                ids.add(card.id);
+                if (card.abilities !== undefined) {
+                    if (!Array.isArray(card.abilities) || card.abilities.length > 20) return false;
+                    for (const ability of card.abilities) {
+                        if (!ability || typeof ability.name !== "string" || !ability.name.trim() ||
+                            ability.name.length > 100 || !Array.isArray(ability.effects) ||
+                            ability.effects.length > 30 || !ability.costs || typeof ability.costs !== "object") return false;
+                        for (const [key, amount] of Object.entries(ability.costs)) {
+                            if (!resourceKeys.has(key) || !Number.isInteger(amount) || amount < 0 || amount > 99) return false;
+                        }
+                        for (const effect of ability.effects) {
+                            if (!effect || !["damage", "shield", "heal", "draw"].includes(effect.type) ||
+                                !["self", "opponent"].includes(effect.target) ||
+                                !Number.isInteger(effect.value) || effect.value < 1 || effect.value > 99) return false;
+                        }
+                    }
+                }
+                return true;
+            });
+        if (!valid) {
+            send(res, 400, { error: "Catalogue is invalid. Check card IDs, battle fields, abilities, costs, and effects." });
+            return true;
+        }
+        const client = await database.getPool().connect();
+        try {
+            await client.query("BEGIN");
+            const previous = await client.query(
+                "SELECT cards, version FROM csy_private.card_catalogue_versions ORDER BY version DESC LIMIT 1 FOR UPDATE"
+            );
+            const previousCards = previous.rows[0]?.cards || CARD_CATALOG;
+            const previousIds = new Set(previousCards.map(card => card.id));
+            if ([...previousIds].some(id => !ids.has(id))) {
+                await client.query("ROLLBACK");
+                send(res, 409, { error: "Publishing cannot remove existing card IDs; keep them for saved decks and active matches." });
+                return true;
+            }
+            const version = Number(previous.rows[0]?.version || 0) + 1;
+            await client.query(
+                "INSERT INTO csy_private.card_catalogue_versions (version, cards, published_by) VALUES ($1, $2::jsonb, $3)",
+                [version, JSON.stringify(cards), admin.username]
+            );
+            await client.query("COMMIT");
+            send(res, 201, { published: true, version, count: cards.length });
+        } catch (error) {
+            try { await client.query("ROLLBACK"); } catch {}
+            throw error;
+        } finally { client.release(); }
+        return true;
+    }
+
     if (route === "/api/admin/players" && req.method === "GET") {
         const result = await database.getPool().query(`
             SELECT id, player_id, username, "rank" AS rank, email, email_verified_at, created_at
