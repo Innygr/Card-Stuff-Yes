@@ -42,6 +42,7 @@ function isAdminRoute(pathname) {
          pathname.startsWith("/api/admin/players/") ||
          pathname === "/api/admin/news" ||
          pathname.startsWith("/api/admin/news/") ||
+         pathname === "/api/admin/cards" ||
          pathname === "/api/admin/community-servers" ||
          /^\/api\/admin\/community-servers\/[A-Za-z0-9._:-]{1,128}\/(approve|revoke|events)$/.test(pathname));
 }
