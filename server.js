@@ -509,9 +509,13 @@ function cardAbilityCosts(card) {
 }
 
 function canAffordCard(combatant, card, baseResourceKey) {
-    if ((combatant[baseResourceKey] || 0) < card.cost) return false;
-    return Object.entries(cardAbilityCosts(card)).every(([key, amount]) =>
-        (combatant[ABILITY_RESOURCE_KEYS[key]] || 0) >= amount
+    const required = { [baseResourceKey]: card.cost };
+    for (const [key, amount] of Object.entries(cardAbilityCosts(card))) {
+        const resourceKey = ABILITY_RESOURCE_KEYS[key];
+        required[resourceKey] = (required[resourceKey] || 0) + amount;
+    }
+    return Object.entries(required).every(([key, amount]) =>
+        (combatant[key] || 0) >= amount
     );
 }
 
