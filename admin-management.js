@@ -398,7 +398,7 @@ async function handleAccountCollection(req, res, url) {
         for (const card of drawn) await client.query(
             "INSERT INTO csy_private.account_card_inventory (account_id, card_id, quantity) VALUES ($1, $2, 1) ON CONFLICT (account_id, card_id) DO UPDATE SET quantity = LEAST(999, csy_private.account_card_inventory.quantity + 1), updated_at = now()",
             [accountSession.account.id, card.id]);
-        const resultCards = drawn.map(card => ({ id: card.id, name: card.name, rarity: card.rarity || "common", resource: card.resource || "astral-magik" }));
+        const resultCards = drawn.map(card => ({ id: card.id, name: card.name, symbol: card.symbol || "✦", description: card.description || "", rarity: card.rarity || "common", resource: card.resource || "astral-magik" }));
         await client.query("INSERT INTO csy_private.pack_openings (account_id, request_id, pack_id, cards) VALUES ($1, $2, $3, $4::jsonb)", [accountSession.account.id, body.requestId, pack.id, JSON.stringify(resultCards)]);
         await client.query("COMMIT");
         send(res, 200, { packId: pack.id, cards: resultCards, remaining: spent.rows[0].quantity, replayed: false });
