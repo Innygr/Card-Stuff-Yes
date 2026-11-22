@@ -99,3 +99,10 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--color-link-
     width: min(calc(100% - 32px), 1180px);
     margin: 16px auto 0;
 }
+
+
+.online-resource-pools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 14px; }
+.online-resource { display: flex; justify-content: space-between; gap: 8px; padding: 8px 9px; border: 1px solid var(--color-border); border-radius: 7px; background: var(--color-background-tertiary); font-size: 12px; }
+.online-resource span { color: var(--color-text-secondary); }
+.online-resource strong { white-space: nowrap; }
+@media(max-width:420px) { .online-resource-pools { grid-template-columns: 1fr; } }
