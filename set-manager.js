@@ -715,7 +715,13 @@ function renderAbilities(abilities) {
 function updateAbility(index, updater) {
     const card = JSON.parse(cardForm.dataset.temporaryCard || "{}");
     if (!card.abilities || !card.abilities[index]) return;
-    updater(card.abilities[index]);
+    const ability = card.abilities[index];
+    ability.costs = {
+        magik: 0, astralMagik: 0, gildedMagik: 0, bloodMagik: 0, darkMagik: 0,
+        ...(ability.costs || {})
+    };
+    if (!Array.isArray(ability.effects)) ability.effects = [];
+    updater(ability);
     cardForm.dataset.temporaryCard = JSON.stringify(card);
 }
 
