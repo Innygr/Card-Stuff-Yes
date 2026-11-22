@@ -4,6 +4,8 @@ const listEl=document.getElementById("pack-list");
 const revealEl=document.getElementById("reveal");
 const resultsEl=document.getElementById("card-results");
 const closeReveal=document.getElementById("close-reveal");
+let pendingRequestId=null;
+let pendingPackId=null;
 function status(message,error=false){statusEl.textContent=message;statusEl.classList.toggle("error",error);}
 function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;}
 function renderPacks(packs){
@@ -40,8 +42,9 @@ function renderResults(pack,cards){
 async function openPack(pack,button){
  button.disabled=true;button.textContent="Opening…";status("Opening "+pack.name+"…");
  try{
-  const requestId=crypto.randomUUID();
-  const result=await CSY_API.post("/api/account/packs/open",{packId:pack.id,requestId});
+  if(pendingPackId!==pack.id){pendingPackId=pack.id;pendingRequestId=crypto.randomUUID();}
+  const result=await CSY_API.post("/api/account/packs/open",{packId:pack.id,requestId:pendingRequestId});
+  pendingPackId=null;pendingRequestId=null;
   renderResults(pack,result.cards||[]);
   status("Pack opened successfully. Remaining: "+result.remaining);
   await loadPacks();
