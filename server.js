@@ -500,8 +500,24 @@ function playCard(match, own, opponent, instanceId) {
     own[resourceKey] -= card.cost;
     own.hand.splice(index, 1);
     own.discard.push(instance);
+
+    // Resource identity effects are resolved on the authoritative server.
+    if (resourceKey === "magik") {
+        const bonusDraw = draw(own, 1);
+        if (bonusDraw) log(match, own.name + " draws 1 card from Magik resonance.");
+    } else if (resourceKey === "gildedMagik") {
+        own.shield += card.cost;
+        log(match, own.name + " gains " + card.cost + " Gilded shield.");
+    } else if (resourceKey === "bloodMagik") {
+        damage(own, 1);
+        log(match, own.name + " pays 1 health to Blood Magik.");
+    } else if (resourceKey === "darkMagik") {
+        opponent.health = Math.max(0, opponent.health - 1);
+        log(match, opponent.name + " loses 1 health to Dark Magik, bypassing shield.");
+    }
     if (card.type === "attack") {
-        const hit = damage(opponent, card.value);
+        const attackValue = card.value + (resourceKey === "energy" ? 1 : 0);
+        const hit = damage(opponent, attackValue);
         let message = own.name + " plays " + card.name + " for " + hit.healthDamage + " health damage";
         if (hit.blocked) message += " (" + hit.blocked + " blocked)";
         log(match, message + ".");
