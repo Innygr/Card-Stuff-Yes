@@ -16,6 +16,8 @@
     const STARTING_HAND = 5;
 
     let cardLibrary = [];
+    let selectedDeckDefinitions = null;
+    let savedDecks = [];
 
     const elements = {
         status: document.getElementById("game-status"),
@@ -70,17 +72,21 @@
         return result;
     }
 
-    function makeDeck() {
+    function makeDeck(isPlayer) {
         const cards = [];
-        cardLibrary.forEach(function (definition) {
-            for (let copy = 0; copy < 4; copy += 1) {
+        if (isPlayer && selectedDeckDefinitions) {
+            selectedDeckDefinitions.forEach(function (definition) {
                 cards.push(cloneCard(definition));
-            }
+            });
+            return shuffled(cards);
+        }
+        cardLibrary.forEach(function (definition) {
+            for (let copy = 0; copy < 4; copy += 1) cards.push(cloneCard(definition));
         });
         return shuffled(cards);
     }
 
-    function createCombatant(name) {
+    function createCombatant(name, isPlayer) {
         return {
             name: name,
             health: MAX_HEALTH,
@@ -88,7 +94,7 @@
             energy: 0,
             maxEnergy: 0,
             magik: 1,
-            deck: makeDeck(),
+            deck: makeDeck(isPlayer),
             hand: [],
             discard: []
         };
@@ -100,14 +106,18 @@
             aiTimer = null;
         }
 
+        if (!selectedDeckDefinitions || !selectedDeckDefinitions.length) {
+            setStatus("Choose one of your saved decks before starting a solo battle.", "error");
+            return;
+        }
         cardInstanceCounter = 0;
         state = {
             turn: 1,
             activeSide: "player",
             locked: false,
             finished: false,
-            player: createCombatant("You"),
-            opponent: createCombatant("Void Challenger"),
+            player: createCombatant("You", true),
+            opponent: createCombatant("Void Challenger", false),
             log: []
         };
 
@@ -622,6 +632,7 @@
                 throw new Error("The server returned an empty card catalog.");
             }
             cardLibrary = payload.cards;
+            await loadSavedDecks();
             newMatch();
         } catch (error) {
             setStatus("The game could not load its shared card catalog. Please try again later.", "error");
@@ -631,6 +642,61 @@
             elements.endTurnButton.disabled = true;
         }
     }
+
+    async function loadSavedDecks() {
+        const select = document.getElementById("battle-deck-select");
+        const start = document.getElementById("use-battle-deck");
+        const pickerStatus = document.getElementById("deck-picker-status");
+        try {
+            const payload = await window.CSY_API.get("/api/account/decks");
+            savedDecks = Array.isArray(payload.decks) ? payload.decks : [];
+            select.replaceChildren();
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = savedDecks.length ? "Choose a saved deck" : "No saved decks yet";
+            select.appendChild(placeholder);
+            savedDecks.forEach(function (deck) {
+                const option = document.createElement("option");
+                option.value = deck.id;
+                option.textContent = deck.name + " (" + deck.cards.length + " cards)";
+                select.appendChild(option);
+            });
+            select.disabled = savedDecks.length === 0;
+            start.disabled = savedDecks.length === 0;
+            pickerStatus.textContent = savedDecks.length
+                ? savedDecks.length + " saved deck(s) available. Select one to battle."
+                : "You need to build and save a deck before starting. Use the deck builder below.";
+            if (savedDecks.length) select.value = savedDecks[0].id;
+        } catch (error) {
+            select.disabled = true;
+            start.disabled = true;
+            pickerStatus.textContent = error.status === 401
+                ? "Sign in to load your saved decks."
+                : "Could not load saved decks: " + error.message;
+        }
+    }
+
+    function startSelectedDeck() {
+        const select = document.getElementById("battle-deck-select");
+        const pickerStatus = document.getElementById("deck-picker-status");
+        const deck = savedDecks.find(function (item) { return item.id === select.value; });
+        if (!deck) {
+            pickerStatus.textContent = "Choose a saved deck first.";
+            return;
+        }
+        const definitions = new Map(cardLibrary.map(function (card) { return [card.id, card]; }));
+        const selected = deck.cards.map(function (id) { return definitions.get(id); });
+        if (selected.some(function (card) { return !card; }) || !selected.length) {
+            pickerStatus.textContent = "That deck contains unavailable cards. Open the deck builder and save it again.";
+            return;
+        }
+        selectedDeckDefinitions = selected;
+        elements.restartButton.disabled = false;
+        pickerStatus.textContent = "Using " + deck.name + " — " + selected.length + " cards.";
+        newMatch();
+    }
+
+    document.getElementById("use-battle-deck").addEventListener("click", startSelectedDeck);
 
     initializeGame();
 })();
