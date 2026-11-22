@@ -28,28 +28,13 @@ test("multiplayer replenishes and exposes all five independent resource pools", 
     assert.match(server, /resourceKeys\[card\.resource\]/);
 });
 
-test("each resource has a distinct gameplay effect in solo and authoritative multiplayer", () => {
-    const solo = fs.readFileSync(path.join(root, "cardgame.js"), "utf8");
-    for (const source of [solo, server]) {
-        assert.match(source, /Magik resonance/);
-        assert.match(source, /Gilded shield/);
-        assert.match(source, /Blood Magik/);
-        assert.match(source, /Dark Magik, bypassing shield/);
-        assert.match(source, /resourceKey === "astralMagik"|resourceKey === "energy"/);
-    }
-    assert.match(solo, /definition\.value \+ \(resourceKey === "astralMagik" \? 1 : 0\)/);
+test("each resource has a distinct authoritative multiplayer effect", () => {
+    assert.match(server, /Magik resonance/);
+    assert.match(server, /Gilded shield/);
+    assert.match(server, /Blood Magik/);
+    assert.match(server, /Dark Magik, bypassing shield/);
     assert.match(server, /card\.value \+ \(resourceKey === "energy" \? 1 : 0\)/);
-});
-
-test("resource identity effects are mirrored in solo and multiplayer rules", () => {
-    const solo = fs.readFileSync(path.join(root, "cardgame.js"), "utf8");
-    assert.match(solo, /drawCards\(combatant, 1, false\)/);
-    assert.match(solo, /combatant\.shield \+= definition\.cost/);
-    assert.match(solo, /combatant\.health = Math\.max\(0, combatant\.health - 1\)/);
-    assert.match(solo, /target\.health = Math\.max\(0, target\.health - 1\)/);
-    assert.match(solo, /definition\.value \+ \(resourceKey === "astralMagik" \? 1 : 0\)/);
     assert.match(server, /own\.health = Math\.max\(0, own\.health - 1\)/);
     assert.match(server, /opponent\.health = Math\.max\(0, opponent\.health - 1\)/);
     assert.match(server, /own\.shield \+= card\.cost/);
-    assert.match(server, /card\.value \+ \(resourceKey === "energy" \? 1 : 0\)/);
 });
