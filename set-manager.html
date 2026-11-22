@@ -181,6 +181,10 @@
 
             <div class="action-row">
 
+                <button id="playable-export-button" type="button">
+                    Export Playable cards.json
+                </button>
+
                 <button
                     id="export-button"
                     type="button"
@@ -388,6 +392,28 @@
 
                 </div>
 
+
+                <h3>Battle Configuration</h3>
+                <p>These fields map directly to the playable battle-card format.</p>
+                <div class="form-grid">
+                    <label>Battle effect type
+                        <select id="card-battle-type">
+                            <option value="attack">Attack</option><option value="guard">Guard</option>
+                            <option value="heal">Heal</option><option value="draw">Draw</option>
+                        </select>
+                    </label>
+                    <label>Resource
+                        <select id="card-resource">
+                            <option value="magik">Magik</option><option value="astral-magik">Astral Magik</option>
+                            <option value="gilded-magik">Gilded Magik</option><option value="blood-magik">Blood Magik</option>
+                            <option value="dark-magik">Dark Magik</option>
+                        </select>
+                    </label>
+                    <label>Card cost <input id="card-cost" type="number" min="0" max="99" step="1" value="1"></label>
+                    <label>Effect value <input id="card-value" type="number" min="0" max="99" step="1" value="1"></label>
+                    <label>Card symbol <input id="card-symbol" type="text" maxlength="12" value="✦"></label>
+                    <label>Battle effect text <input id="card-effect" type="text" maxlength="240"></label>
+                </div>
 
                 <div class="abilities-heading">
 
