@@ -58,6 +58,42 @@ test("verification and password reset templates contain plain text and escaped a
     assert.throws(() => buildVerificationEmail("http://example.com"), /HTTPS/);
 });
 
+test("Resend request uses the configured CardStuffYes reply-to address", async () => {
+    const oldKey = process.env.RESEND_API_KEY;
+    const oldFrom = process.env.CSY_EMAIL_FROM;
+    const oldReplyTo = process.env.CSY_EMAIL_REPLY_TO;
+    const oldFetch = global.fetch;
+    let request;
+    try {
+        process.env.RESEND_API_KEY = "test-key";
+        process.env.CSY_EMAIL_FROM = "CardStuffYes <noreply@cardstuffyes.ca>";
+        process.env.CSY_EMAIL_REPLY_TO = "contact@teamblacklight.ca";
+        global.fetch = async (url, options) => {
+            request = { url, options, body: JSON.parse(options.body) };
+            return { ok: true, json: async () => ({ id: "test-message-id" }) };
+        };
+        const result = await sendTransactionalEmail({
+            to: "player@example.test",
+            subject: "Test",
+            html: "<p>Test</p>",
+            text: "Test"
+        });
+        assert.equal(result.sent, true);
+        assert.equal(request.url, "https://api.resend.com/emails");
+        assert.equal(request.body.from, "CardStuffYes <noreply@cardstuffyes.ca>");
+        assert.equal(request.body.reply_to, "contact@teamblacklight.ca");
+        assert.equal(request.options.headers.Authorization, "Bearer test-key");
+    } finally {
+        global.fetch = oldFetch;
+        if (oldKey === undefined) delete process.env.RESEND_API_KEY;
+        else process.env.RESEND_API_KEY = oldKey;
+        if (oldFrom === undefined) delete process.env.CSY_EMAIL_FROM;
+        else process.env.CSY_EMAIL_FROM = oldFrom;
+        if (oldReplyTo === undefined) delete process.env.CSY_EMAIL_REPLY_TO;
+        else process.env.CSY_EMAIL_REPLY_TO = oldReplyTo;
+    }
+});
+
 test("sending reports disabled instead of pretending an email was delivered", async () => {
     const oldKey = process.env.RESEND_API_KEY;
     const oldFrom = process.env.CSY_EMAIL_FROM;
