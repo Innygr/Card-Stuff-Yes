@@ -98,7 +98,11 @@ async function sendTransactionalEmail({ to, subject, html, text, replyTo, idempo
         typeof text !== "string" || !text.trim() || text.length > 20_000) {
         throw new TypeError("Email subject and content are required and must be within size limits.");
     }
-    if (replyTo !== undefined && !validRecipient(replyTo)) {
+    const configuredReplyTo = typeof process.env.CSY_EMAIL_REPLY_TO === "string"
+        ? process.env.CSY_EMAIL_REPLY_TO.trim()
+        : "";
+    const effectiveReplyTo = replyTo || configuredReplyTo;
+    if (effectiveReplyTo && !validRecipient(effectiveReplyTo)) {
         throw new TypeError("Reply-to address is invalid.");
     }
     const response = await fetch(RESEND_ENDPOINT, {
@@ -115,7 +119,7 @@ async function sendTransactionalEmail({ to, subject, html, text, replyTo, idempo
             subject: subject.trim(),
             html,
             text,
-            ...(replyTo ? { reply_to: replyTo } : {})
+            ...(effectiveReplyTo ? { reply_to: effectiveReplyTo } : {})
         }),
         signal: AbortSignal.timeout(10_000)
     });
