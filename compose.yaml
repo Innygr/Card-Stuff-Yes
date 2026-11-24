@@ -14,6 +14,12 @@ services:
       CSY_ALLOWED_ORIGINS: ${CSY_ALLOWED_ORIGINS:-https://cardstuffyes.ca,https://www.cardstuffyes.ca,https://play.cardstuffyes.ca,https://pvp.cardstuffyes.ca,https://cards.cardstuffyes.ca,https://decks.cardstuffyes.ca,https://account.cardstuffyes.ca,https://profile.cardstuffyes.ca,https://settings.cardstuffyes.ca,https://news.cardstuffyes.ca,https://help.cardstuffyes.ca,https://admin.cardstuffyes.ca}
       CSY_COOKIE_SAMESITE: ${CSY_COOKIE_SAMESITE:-Lax}
       CSY_ADMIN_USERS: ${CSY_ADMIN_USERS:-[]}
+      DATABASE_URL: ${DATABASE_URL:-}
+      CSY_ACCOUNT_STORAGE: ${CSY_ACCOUNT_STORAGE:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      CSY_EMAIL_FROM: "${CSY_EMAIL_FROM:-CardStuffYes <noreply@cardstuffyes.ca>}"
+      CSY_EMAIL_REPLY_TO: ${CSY_EMAIL_REPLY_TO:-contact@teamblacklight.ca}
+      CSY_PUBLIC_BASE_URL: ${CSY_PUBLIC_BASE_URL:-https://account.cardstuffyes.ca}
 
     ports:
       - "${CSY_BIND_ADDRESS:-127.0.0.1}:6565:6565"
