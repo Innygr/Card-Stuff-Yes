@@ -14,14 +14,13 @@ The reply-to address is the Team Blacklight contact address because Card Stuff Y
 
 ## Server-only environment
 
-The Server branch's `compose.yaml` passes these values into the backend container. Docker Compose reads a `.env` file next to `compose.yaml` automatically for variable interpolation.
+The Server branch's `compose.yaml` passes these values into the backend container through Compose variable interpolation. The existing deployment documentation identifies `/opt/card-stuff-yes-secrets/database.env` as its protected environment file. Add the email settings to that existing file rather than replacing it, so its database and other runtime settings are preserved. When running Compose, pass that file with `docker compose --env-file /opt/card-stuff-yes-secrets/database.env ...`. For a new installation, copy `.env.example` to a private `.env` beside `compose.yaml` instead.
 
-1. Copy `.env.example` to `.env` on the server.
-2. Set `DATABASE_URL` to the existing PostgreSQL database connection string.
-3. Set `CSY_ACCOUNT_STORAGE=postgres` only after the account schema migrations have been applied to that database.
-4. Replace the example `RESEND_API_KEY` with the CSY-specific key from Resend.
-5. Keep the sender, reply-to, and public URL values as shown above unless the verified domain or account-site hostname changes.
-6. Restrict the file so only the server operator can read it (for example, `chmod 600 .env`).
+1. Preserve the existing `DATABASE_URL` and other server settings.
+2. Add the CSY-specific `RESEND_API_KEY` from Resend.
+3. Add or confirm `CSY_EMAIL_FROM`, `CSY_EMAIL_REPLY_TO`, and `CSY_PUBLIC_BASE_URL` exactly as listed above.
+4. Set `CSY_ACCOUNT_STORAGE=postgres` only after confirming the account database is PostgreSQL-backed and the required account migrations have been applied.
+5. Restrict the environment file so only the server operator can read it (for example, `chmod 600 /opt/card-stuff-yes-secrets/database.env`).
 
 Never commit the real `.env`, paste API keys into source files, or expose them to browser code. The example file contains placeholders only. The Resend API key is a secret; the sender and reply-to addresses are configuration, not credentials.
 
