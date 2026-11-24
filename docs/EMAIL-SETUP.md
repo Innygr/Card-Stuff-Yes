@@ -1,27 +1,51 @@
 # Card Stuff Yes account email
 
-Card Stuff Yes uses Resend for transactional mail. The server-side workflows support email linking/verification and password recovery. They remain disabled until the provider, sender, and canonical account-site URL are configured.
+Card Stuff Yes uses Resend for transactional mail. The Server branch already implements email verification and password recovery. These workflows remain disabled until the server has PostgreSQL account storage, a Resend API key, a verified sender, and the canonical account-site URL.
+
+## Sender configuration
+
+Use the Card Stuff Yes Resend API key (not the Team Blacklight key):
+
+- From: `CardStuffYes <noreply@cardstuffyes.ca>`
+- Reply-To: `contact@teamblacklight.ca`
+- Public action-link origin: `https://account.cardstuffyes.ca`
+
+The reply-to address is the Team Blacklight contact address because Card Stuff Yes is a Team Blacklight project. Replies are not routed to a separate Card Stuff Yes mailbox.
 
 ## Server-only environment
 
-Add these to the root-owned environment file used by the Docker Compose service (for this installation, `/opt/card-stuff-yes-secrets/database.env` is already mounted as an env file):
+The Server branch's `compose.yaml` passes these values into the backend container. Docker Compose reads a `.env` file next to `compose.yaml` automatically for variable interpolation.
 
-- `RESEND_API_KEY`: Resend API key. Secret; never commit or expose to browser code.
-- `CSY_EMAIL_FROM`: verified sender, e.g. `Card Stuff Yes <noreply@cardstuffyes.ca>`.
-- `CSY_PUBLIC_BASE_URL`: canonical HTTPS origin hosting the account pages, e.g. `https://account.cardstuffyes.ca`.
+1. Copy `.env.example` to `.env` on the server.
+2. Set `DATABASE_URL` to the existing PostgreSQL database connection string.
+3. Set `CSY_ACCOUNT_STORAGE=postgres` only after the account schema migrations have been applied to that database.
+4. Replace the example `RESEND_API_KEY` with the CSY-specific key from Resend.
+5. Keep the sender, reply-to, and public URL values as shown above unless the verified domain or account-site hostname changes.
+6. Restrict the file so only the server operator can read it (for example, `chmod 600 .env`).
 
-All three must be valid before email actions are enabled. The server fails closed when any is missing. Do not use a temporary Quick Tunnel URL as the production base URL.
+Never commit the real `.env`, paste API keys into source files, or expose them to browser code. The example file contains placeholders only. The Resend API key is a secret; the sender and reply-to addresses are configuration, not credentials.
 
-## DNS and provider setup (later)
+Required variables:
+
+- `RESEND_API_KEY`: CSY-specific Resend API key.
+- `CSY_EMAIL_FROM`: verified Resend sender, `CardStuffYes <noreply@cardstuffyes.ca>`.
+- `CSY_EMAIL_REPLY_TO`: `contact@teamblacklight.ca`.
+- `CSY_PUBLIC_BASE_URL`: canonical HTTPS account-site origin, `https://account.cardstuffyes.ca`.
+- `CSY_ACCOUNT_STORAGE`: must be `postgres` for account email routes.
+- `DATABASE_URL`: protected PostgreSQL connection string.
+
+The app intentionally reports email actions unavailable until the provider key, sender, and HTTPS public URL are valid. Account email routes also return unavailable unless PostgreSQL account storage is enabled.
+
+## DNS and Resend setup
 
 1. Add `cardstuffyes.ca` as a sending domain in Resend.
-2. Add the exact verification/DKIM/SPF records Resend provides.
-3. Coordinate SPF with any mailbox provider so the domain has one valid SPF policy.
-4. Publish a DMARC record and start with a monitoring policy before tightening it.
-5. Keep inbound MX records for the mailbox provider; do not replace them with sending-provider records unless its instructions explicitly require it.
-6. Verify the domain in Resend and create a restricted API key for this application.
+2. Publish the exact domain-verification, DKIM, and SPF records Resend provides in Cloudflare DNS.
+3. Coordinate SPF with any existing mailbox provider so the domain has one valid SPF policy.
+4. Publish a DMARC record, starting with a monitoring policy before tightening it.
+5. Preserve the existing inbound MX records and Cloudflare Email Routing. Do not replace MX records with Resend records; this project only uses Resend to send.
+6. Verify the domain in Resend and create a restricted API key specifically for Card Stuff Yes.
 
-DNS records must come from the provider dashboard; do not guess them.
+DNS records must come from the Resend dashboard; do not guess or reuse Team Blacklight's records or API key.
 
 ## Database migration
 
@@ -31,7 +55,7 @@ Migration `002_account_email.sql` adds:
 - `accounts.pending_email`: proposed new address; the existing verified address stays active until confirmation.
 - `account_email_tokens`: private, one-use token records.
 
-Only SHA-256 hashes of random 256-bit tokens are stored. A partial unique index ensures at most one unconsumed token per account and purpose. Apply migrations with `npm run db:migrate` after this change is merged and deployed. The migration is additive and does not change existing passwords, accounts, player IDs, sessions, decks, or settings.
+Only SHA-256 hashes of random 256-bit tokens are stored. A partial unique index ensures at most one unconsumed token per account and purpose. Apply migrations with `npm run db:migrate` after reviewing the target database and taking a backup. Do not run migrations against production until the database and deployment have been confirmed.
 
 ## Endpoints
 
@@ -73,4 +97,4 @@ The request endpoint always returns the same generic 202 response for known, unk
 
 ## Checks
 
-Run `npm run check` and `npm test`. The email tests do not contact Resend and require no credentials.
+Run `npm run check` and `npm test`. The email tests do not contact Resend and require no credentials. A real end-to-end test still requires a verified Resend domain, a protected API key, a reachable account site, and a working PostgreSQL account database.
