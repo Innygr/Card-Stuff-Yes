@@ -14,13 +14,14 @@ The reply-to address is the Team Blacklight contact address because Card Stuff Y
 
 ## Server-only environment
 
-The Server branch's `compose.yaml` passes these values into the backend container through Compose variable interpolation. The existing deployment documentation identifies `/opt/card-stuff-yes-secrets/database.env` as its protected environment file. Add the email settings to that existing file rather than replacing it, so its database and other runtime settings are preserved. When running Compose, pass that file with `docker compose --env-file /opt/card-stuff-yes-secrets/database.env ...`. For a new installation, copy `.env.example` to a private `.env` beside `compose.yaml` instead.
+The Server branch's `compose.yaml` passes these values into the backend container through Compose variable interpolation. The repository does not establish which environment-file path your actual host uses. First inspect the real deployment command and existing server configuration; do not assume a particular `/opt/...` directory. Add the email settings to the environment file actually used by that deployment, preserving its existing database and runtime settings. If you are setting up a new local Compose deployment, copy `.env.example` to a private `.env` beside `compose.yaml`.
 
-1. Preserve the existing `DATABASE_URL` and other server settings.
-2. Add the CSY-specific `RESEND_API_KEY` from Resend.
-3. Add or confirm `CSY_EMAIL_FROM`, `CSY_EMAIL_REPLY_TO`, and `CSY_PUBLIC_BASE_URL` exactly as listed above.
-4. Set `CSY_ACCOUNT_STORAGE=postgres` only after confirming the account database is PostgreSQL-backed and the required account migrations have been applied.
-5. Restrict the environment file so only the server operator can read it (for example, `chmod 600 /opt/card-stuff-yes-secrets/database.env`).
+1. Identify the environment file (or secret manager) actually used by the running deployment.
+2. Preserve the existing `DATABASE_URL` and other server settings.
+3. Add the CSY-specific `RESEND_API_KEY` from Resend.
+4. Add or confirm `CSY_EMAIL_FROM`, `CSY_EMAIL_REPLY_TO`, and `CSY_PUBLIC_BASE_URL` exactly as listed above.
+5. Set `CSY_ACCOUNT_STORAGE=postgres` only after confirming the account database is PostgreSQL-backed and the required account migrations have been applied.
+6. Restrict access to the actual environment file so only the server operator can read it.
 
 Never commit the real `.env`, paste API keys into source files, or expose them to browser code. The example file contains placeholders only. The Resend API key is a secret; the sender and reply-to addresses are configuration, not credentials.
 
