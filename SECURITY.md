@@ -7,10 +7,7 @@ currently being supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| nil     |  
-| 5.0.x   |                    |
-| 4.0.x   |                    |
-| < 4.0   |                    |
+| Any/All |  Yeah
 
 ## Reporting a Vulnerability
 
